@@ -28,8 +28,8 @@ Only jobs WITHOUT these keywords are kept. Add keywords to exclude more results.
 
 ### Required Secrets (GitHub)
 
-- `RAPIDAPI_KEY`: JSearch API key (816686c05emshc20944f2736c5c7p1ebabajsn046c93d75441)
-- `DISCORD_WEBHOOK`: Webhook URL for Discord notifications
+- `RAPIDAPI_KEY`: JSearch API key (set in GitHub Secrets, not exposed here)
+- `DISCORD_WEBHOOK`: Webhook URL for Discord notifications (set in GitHub Secrets, not exposed here)
 
 ### API Parameters
 

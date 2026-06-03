@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[scheduled-functions]]
+  name = "sync-emails"
+  schedule = "0 8,20 * * *"
+
+[[scheduled-functions]]
+  name = "fetch-jobs"
+  schedule = "0 7 * * 1-5"
+
+[build.environment]
+  NEXT_TELEMETRY_DISABLED = "1"

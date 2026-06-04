@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import gsap from 'gsap'
 
 const navItems = [
   {
@@ -57,10 +59,24 @@ const navItems = [
   },
 ]
 
-export function Nav() {
+interface NavProps {
+  onClose?: () => void
+}
+
+export function Nav({ onClose }: NavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const itemsRef = useRef<HTMLAnchorElement[]>([])
+
+  useEffect(() => {
+    if (itemsRef.current.length === 0) return
+    gsap.fromTo(
+      itemsRef.current,
+      { opacity: 0, x: -12 },
+      { opacity: 1, x: 0, duration: 0.35, stagger: 0.06, ease: 'power2.out' }
+    )
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -74,30 +90,26 @@ export function Nav() {
 
   return (
     <nav
-      className="fixed left-0 top-0 h-full w-56 flex flex-col"
+      className="flex flex-col h-full w-56"
       style={{
-        background: 'rgba(10, 11, 20, 0.95)',
-        borderRight: '1px solid #1a1d32',
-        backdropFilter: 'blur(12px)',
+        background: 'var(--card)',
+        borderRight: '1px solid var(--border)',
       }}
     >
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-border">
+      <div className="px-5 py-5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2.5">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-              boxShadow: '0 0 12px rgba(124, 58, 237, 0.4)',
-            }}
+            style={{ background: 'var(--accent)', boxShadow: 'var(--accent-glow)' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5}>
               <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
           <div>
-            <p className="text-foreground font-semibold text-sm leading-none">JobTracker</p>
-            <p className="text-muted text-xs mt-0.5 leading-none">IA</p>
+            <p className="font-semibold text-sm leading-none" style={{ color: 'var(--foreground)' }}>JobTracker</p>
+            <p className="text-xs mt-0.5 leading-none" style={{ color: 'var(--muted)' }}>IA</p>
           </div>
         </div>
       </div>
@@ -110,20 +122,21 @@ export function Nav() {
             <Link
               key={href}
               href={href}
-              className="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium relative group"
+              ref={el => { if (el) itemsRef.current[i] = el }}
+              onClick={onClose}
+              className="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium relative"
               style={{
-                color: active ? '#e8eaf5' : '#4b5175',
-                background: active ? 'rgba(124, 58, 237, 0.15)' : 'transparent',
-                animationDelay: `${i * 0.05}s`,
+                color: active ? 'var(--accent)' : 'var(--muted)',
+                background: active ? 'var(--accent-dim)' : 'transparent',
               }}
             >
               {active && (
                 <span
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full"
-                  style={{ background: '#9f67ff' }}
+                  style={{ background: 'var(--accent)' }}
                 />
               )}
-              <span style={{ color: active ? '#a78bfa' : '#4b5175' }}>{icon}</span>
+              <span style={{ color: active ? 'var(--accent)' : 'var(--muted-light)' }}>{icon}</span>
               {label}
             </Link>
           )
@@ -131,13 +144,13 @@ export function Nav() {
       </div>
 
       {/* Footer */}
-      <div className="p-3 border-t border-border space-y-0.5">
+      <div className="p-3" style={{ borderTop: '1px solid var(--border)' }}>
         <button
           onClick={handleLogout}
-          className="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left"
-          style={{ color: '#4b5175' }}
+          className="nav-item nav-item-logout w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left"
+          style={{ color: 'var(--muted)' }}
         >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#4b5175' }}>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
           Déconnexion

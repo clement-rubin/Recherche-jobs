@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
 import './globals.css'
-import { Nav } from '@/components/layout/Nav'
 import { createServerSupabase } from '@/lib/supabase/server'
-import { AssistantBubble } from '@/components/assistant/AssistantBubble'
+import { AppShell } from '@/components/layout/AppShell'
 
 const geist = Geist({ subsets: ['latin'] })
 
@@ -23,17 +22,9 @@ export default async function RootLayout({
   return (
     <html lang="fr" className="dark">
       <body className={`${geist.className} bg-background text-foreground min-h-screen`}>
-        {user ? (
-          <div className="flex min-h-screen">
-            <Nav />
-            <main className="flex-1 ml-56 p-6 min-h-screen">
-              {children}
-            </main>
-            <AssistantBubble />
-          </div>
-        ) : (
-          <div>{children}</div>
-        )}
+        <AppShell isAuthenticated={!!user}>
+          {children}
+        </AppShell>
       </body>
     </html>
   )

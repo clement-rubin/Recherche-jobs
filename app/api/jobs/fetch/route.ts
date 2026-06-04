@@ -15,14 +15,17 @@ function isAuthorized(req: NextRequest, user: unknown): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now()
   const supabase = await createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!isAuthorized(req, user)) {
+    console.warn('[jobs/fetch] Unauthorized request')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const userId = user?.id
+  console.log('[jobs/fetch] POST started', { userId: userId ?? 'cron' })
 
   // Rate limiting: check if any offer was scraped in the last 10 minutes for this user
   if (userId) {
@@ -36,6 +39,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (recentOffer) {
+      console.warn('[jobs/fetch] Rate limited', { userId })
       return NextResponse.json(
         { error: 'Vous avez déjà lancé une recherche récemment. Attendez 10 minutes.' },
         { status: 429 }
@@ -56,8 +60,10 @@ export async function POST(req: NextRequest) {
   const { data: profiles } = await profilesQuery
 
   if (!profiles || profiles.length === 0) {
+    console.warn('[jobs/fetch] No active search profile', { userId })
     return NextResponse.json({ error: 'No active search profile found' }, { status: 400 })
   }
+  console.log('[jobs/fetch] Profiles found', { count: profiles.length })
 
   const results = { inserted: 0, skipped: 0, errors: [] as string[] }
 
@@ -65,6 +71,7 @@ export async function POST(req: NextRequest) {
     const keywords = (profile.mots_cles ?? ['emploi']).join(' ')
     const location = profile.localisation ?? 'Lille'
 
+    console.log('[jobs/fetch] Fetching', { keywords, location })
     // Fetch from all sources in parallel
     const [jsearchJobs, apecJobs, helloworkJobs, ftJobs] = await Promise.allSettled([
       fetchJSearch(keywords, location),
@@ -72,6 +79,14 @@ export async function POST(req: NextRequest) {
       fetchHelloWork(keywords, location),
       fetchFranceTravail(keywords, location),
     ])
+
+    const scrapeLog = {
+      jsearch: jsearchJobs.status === 'fulfilled' ? jsearchJobs.value.length : `ERR: ${(jsearchJobs as PromiseRejectedResult).reason}`,
+      apec: apecJobs.status === 'fulfilled' ? apecJobs.value.length : `ERR: ${(apecJobs as PromiseRejectedResult).reason}`,
+      hellowork: helloworkJobs.status === 'fulfilled' ? helloworkJobs.value.length : `ERR: ${(helloworkJobs as PromiseRejectedResult).reason}`,
+      france_travail: ftJobs.status === 'fulfilled' ? ftJobs.value.length : `ERR: ${(ftJobs as PromiseRejectedResult).reason}`,
+    }
+    console.log('[jobs/fetch] Scrape results', scrapeLog)
 
     const allJobs: ScrapedJob[] = [
       ...(jsearchJobs.status === 'fulfilled'
@@ -127,5 +142,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  console.log('[jobs/fetch] Done', { ...results, totalMs: Date.now() - t0 })
   return NextResponse.json({ fetched: results })
 }

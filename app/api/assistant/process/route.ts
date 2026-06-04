@@ -4,14 +4,20 @@ import { processIntent } from '@/lib/assistant/groq'
 import type { Application } from '@/lib/supabase/types'
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now()
   const supabase = await createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    console.warn('[assistant/process] Unauthorized request')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const { transcription } = await req.json()
   if (!transcription?.trim()) {
     return NextResponse.json({ error: 'Transcription required' }, { status: 400 })
   }
+
+  console.log('[assistant/process] Request', { userId: user.id, transcriptionLength: transcription.length })
 
   // Fetch recent applications for context
   const { data: applications } = await supabase
@@ -31,7 +37,9 @@ export async function POST(req: NextRequest) {
   let intentResult
   try {
     intentResult = await processIntent(transcription, recentApps)
+    console.log('[assistant/process] Groq intent', { intent: intentResult.intent, confidence: intentResult.confidence, ms: Date.now() - t0 })
   } catch (err) {
+    console.error('[assistant/process] Groq error', err)
     return NextResponse.json(
       { error: 'Assistant unavailable', message: "Je ne suis pas disponible pour l'instant. Réessayez dans quelques secondes." },
       { status: 503 }
@@ -52,6 +60,7 @@ export async function POST(req: NextRequest) {
   const { intent, action } = intentResult
 
   try {
+    console.log('[assistant/process] Executing action', { intent, action })
     if (intent === 'update_application' && action.entreprise) {
       // Find matching application
       const match = recentApps.find(
@@ -107,8 +116,9 @@ export async function POST(req: NextRequest) {
       success: executed,
     } as any)
   } catch (err) {
-    console.error('Assistant action failed:', err)
+    console.error('[assistant/process] Action execution failed', err)
   }
 
+  console.log('[assistant/process] Done', { intent, executed, totalMs: Date.now() - t0 })
   return NextResponse.json({ ...intentResult, executed })
 }

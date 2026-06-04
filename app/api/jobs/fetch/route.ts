@@ -68,40 +68,40 @@ export async function POST(req: NextRequest) {
   const results = { inserted: 0, skipped: 0, errors: [] as string[] }
 
   for (const profile of profiles as SearchProfile[]) {
-    const keywords = (profile.mots_cles ?? ['emploi']).join(' ')
+    const keywordsList = profile.mots_cles ?? ['emploi']
     const location = profile.localisation ?? 'Lille'
+    const qualifications = profile.qualifications ?? []
 
-    console.log('[jobs/fetch] Fetching', { keywords, location })
-    // Fetch from all sources in parallel
-    const [jsearchJobs, apecJobs, helloworkJobs, ftJobs] = await Promise.allSettled([
-      fetchJSearch(keywords, location, profile.qualifications ?? []),
-      fetchAPEC(keywords, location),
-      fetchHelloWork(keywords, location),
-      fetchFranceTravail(keywords, location),
+    console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location })
+
+    // JSearch handles multi-term queries well → single call with all keywords
+    // APEC/FT/HW treat spaces as AND → one call per keyword (OR behavior)
+    const jsearchPromise = fetchJSearch(keywordsList.join(' '), location, qualifications)
+    const perKwPromises = keywordsList.flatMap(kw => [
+      fetchAPEC(kw, location),
+      fetchHelloWork(kw, location),
+      fetchFranceTravail(kw, location),
     ])
 
-    const scrapeLog = {
-      jsearch: jsearchJobs.status === 'fulfilled' ? jsearchJobs.value.length : `ERR: ${(jsearchJobs as PromiseRejectedResult).reason}`,
-      apec: apecJobs.status === 'fulfilled' ? apecJobs.value.length : `ERR: ${(apecJobs as PromiseRejectedResult).reason}`,
-      hellowork: helloworkJobs.status === 'fulfilled' ? helloworkJobs.value.length : `ERR: ${(helloworkJobs as PromiseRejectedResult).reason}`,
-      france_travail: ftJobs.status === 'fulfilled' ? ftJobs.value.length : `ERR: ${(ftJobs as PromiseRejectedResult).reason}`,
-    }
-    console.log('[jobs/fetch] Scrape results', scrapeLog)
+    const [jsearchResult, ...perKwResults] = await Promise.allSettled([jsearchPromise, ...perKwPromises])
 
-    const allJobs: ScrapedJob[] = [
-      ...(jsearchJobs.status === 'fulfilled'
-        ? jsearchJobs.value
-        : (results.errors.push(`jsearch: ${(jsearchJobs as PromiseRejectedResult).reason}`), [])),
-      ...(apecJobs.status === 'fulfilled'
-        ? apecJobs.value
-        : (results.errors.push(`apec: ${(apecJobs as PromiseRejectedResult).reason}`), [])),
-      ...(helloworkJobs.status === 'fulfilled'
-        ? helloworkJobs.value
-        : (results.errors.push(`hellowork: ${(helloworkJobs as PromiseRejectedResult).reason}`), [])),
-      ...(ftJobs.status === 'fulfilled'
-        ? ftJobs.value
-        : (results.errors.push(`france_travail: ${(ftJobs as PromiseRejectedResult).reason}`), [])),
-    ]
+    const jsearchJobs = jsearchResult.status === 'fulfilled' ? jsearchResult.value : []
+    if (jsearchResult.status === 'rejected') results.errors.push(`jsearch: ${(jsearchResult as PromiseRejectedResult).reason}`)
+
+    const perSourceJobs = perKwResults.flatMap((r, i) => {
+      if (r.status === 'fulfilled') return r.value
+      const source = ['apec', 'hellowork', 'france_travail'][i % 3]
+      results.errors.push(`${source}: ${(r as PromiseRejectedResult).reason}`)
+      return []
+    })
+
+    const allJobs: ScrapedJob[] = [...jsearchJobs, ...perSourceJobs]
+
+    console.log('[jobs/fetch] Scrape results', {
+      jsearch: jsearchJobs.length,
+      perKeyword: perSourceJobs.length,
+      total: allJobs.length,
+    })
 
     // Deduplicate by lien (URL)
     const seenLinks = new Set<string>()

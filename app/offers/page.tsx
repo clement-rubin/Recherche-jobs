@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Offer, OfferStatus } from '@/lib/supabase/types'
 import { OfferCard } from '@/components/offers/OfferCard'
+import { InlineConfirm } from '@/components/ui/InlineConfirm'
 
 const STATUS_FILTERS: { value: OfferStatus | ''; label: string }[] = [
   { value: '', label: 'À traiter' },
@@ -27,6 +28,7 @@ export default function OffersPage() {
   const [filterStatus, setFilterStatus] = useState<OfferStatus | ''>('')
   const [filterSource, setFilterSource] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
 
   const fetchOffers = useCallback(async () => {
     setLoading(true)
@@ -75,6 +77,15 @@ export default function OffersPage() {
     setOffers(prev => prev.filter(o => o.id !== id))
   }
 
+  const handleClearAll = async () => {
+    const statut = filterStatus || 'non_traite'
+    const res = await fetch(`/api/offers?statut=${statut}`, { method: 'DELETE' })
+    if (res.ok) {
+      setOffers([])
+      setConfirmClear(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -86,10 +97,30 @@ export default function OffersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Offres à traiter</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{offers.length} offre{offers.length !== 1 ? 's' : ''}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Offres à traiter</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{offers.length} offre{offers.length !== 1 ? 's' : ''}</p>
+        </div>
+        {offers.length > 0 && (
+          <button
+            onClick={() => setConfirmClear(true)}
+            className="text-xs px-3 py-1.5 rounded-lg border transition-colors flex-shrink-0 mt-1"
+            style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+          >
+            Tout ignorer
+          </button>
+        )}
       </div>
+      {confirmClear && (
+        <InlineConfirm
+          visible
+          message={`Ignorer toutes les offres affichées (${offers.length}) ?`}
+          confirmLabel="Tout ignorer"
+          onConfirm={handleClearAll}
+          onCancel={() => setConfirmClear(false)}
+        />
+      )}
 
       {/* Pill filters */}
       <div className="space-y-2">

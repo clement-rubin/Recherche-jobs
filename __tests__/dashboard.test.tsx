@@ -28,7 +28,7 @@ describe('DashboardPage', () => {
   it('renders stat cards', async () => {
     const page = await DashboardPage()
     render(page)
-    expect(screen.getByText('Total candidatures')).toBeInTheDocument()
+    expect(screen.getByText('Total')).toBeInTheDocument()
     expect(screen.getByText('En cours')).toBeInTheDocument()
     expect(screen.getByText('Relances')).toBeInTheDocument()
     expect(screen.getByText('Terminées')).toBeInTheDocument()

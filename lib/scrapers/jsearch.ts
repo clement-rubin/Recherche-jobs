@@ -10,13 +10,14 @@ export interface ScrapedJob {
   raw_data: Record<string, unknown>
 }
 
-export async function fetchJSearch(keywords: string, location: string): Promise<ScrapedJob[]> {
+export async function fetchJSearch(keywords: string, location: string, qualifications: string[] = []): Promise<ScrapedJob[]> {
   if (!process.env.RAPIDAPI_KEY) {
     console.warn('RAPIDAPI_KEY not set, skipping JSearch')
     return []
   }
 
-  const query = `${keywords} ${location}`
+  const qualStr = qualifications.length > 0 ? ' ' + qualifications.join(' ') : ''
+  const query = `${keywords}${qualStr} ${location}`
   const res = await fetch(
     `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&country=fr&num_pages=2`,
     {

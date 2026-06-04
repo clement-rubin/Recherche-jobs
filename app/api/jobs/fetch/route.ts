@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     console.log('[jobs/fetch] Fetching', { keywords, location })
     // Fetch from all sources in parallel
     const [jsearchJobs, apecJobs, helloworkJobs, ftJobs] = await Promise.allSettled([
-      fetchJSearch(keywords, location),
+      fetchJSearch(keywords, location, profile.qualifications ?? []),
       fetchAPEC(keywords, location),
       fetchHelloWork(keywords, location),
       fetchFranceTravail(keywords, location),

@@ -74,33 +74,29 @@ export async function POST(req: NextRequest) {
 
     console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location })
 
-    // JSearch handles multi-term queries well → single call with all keywords
-    // APEC/FT/HW treat spaces as AND → one call per keyword (OR behavior)
-    const jsearchPromise = fetchJSearch(keywordsList.join(' '), location, qualifications)
-    const perKwPromises = keywordsList.flatMap(kw => [
+    // All sources: one call per keyword (OR behavior)
+    // Qualifications are profile metadata only — not appended to queries
+    const allPromises = keywordsList.flatMap(kw => [
+      fetchJSearch(kw, location),
       fetchAPEC(kw, location),
       fetchHelloWork(kw, location),
       fetchFranceTravail(kw, location),
     ])
 
-    const [jsearchResult, ...perKwResults] = await Promise.allSettled([jsearchPromise, ...perKwPromises])
+    const settled = await Promise.allSettled(allPromises)
 
-    const jsearchJobs = jsearchResult.status === 'fulfilled' ? jsearchResult.value : []
-    if (jsearchResult.status === 'rejected') results.errors.push(`jsearch: ${(jsearchResult as PromiseRejectedResult).reason}`)
-
-    const perSourceJobs = perKwResults.flatMap((r, i) => {
+    const allJobs: ScrapedJob[] = settled.flatMap((r, i) => {
       if (r.status === 'fulfilled') return r.value
-      const source = ['apec', 'hellowork', 'france_travail'][i % 3]
-      results.errors.push(`${source}: ${(r as PromiseRejectedResult).reason}`)
+      const source = ['jsearch', 'apec', 'hellowork', 'france_travail'][i % 4]
+      if ((r as PromiseRejectedResult).reason) {
+        results.errors.push(`${source}: ${(r as PromiseRejectedResult).reason}`)
+      }
       return []
     })
 
-    const allJobs: ScrapedJob[] = [...jsearchJobs, ...perSourceJobs]
-
     console.log('[jobs/fetch] Scrape results', {
-      jsearch: jsearchJobs.length,
-      perKeyword: perSourceJobs.length,
       total: allJobs.length,
+      bySource: allJobs.reduce((acc, j) => { acc[j.source] = (acc[j.source] ?? 0) + 1; return acc }, {} as Record<string, number>),
     })
 
     // Deduplicate by lien (URL)

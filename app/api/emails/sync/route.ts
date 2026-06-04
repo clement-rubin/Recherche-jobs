@@ -49,10 +49,14 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const authorized = user || isAuthorized(req)
 
-  if (!authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!authorized) {
+    console.warn('[emails/sync] Unauthorized')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
+  console.log('[emails/sync] Starting', { userId: user?.id ?? 'cron' })
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000) // last 24h
-  const results = { gmail: 0, outlook: 0, errors: [] as string[] }
+  const results = { gmail: 0, outlook: 0, errors: [] as string[], totalFetched: 0, skippedImported: 0, skippedAutre: 0 }
 
   // Get tokens: current user (manual) or all users (cron)
   let tokensResult
@@ -62,14 +66,17 @@ export async function POST(req: NextRequest) {
     tokensResult = await db.from('oauth_tokens').select('*')
   }
   const tokens: OAuthToken[] = tokensResult.data ?? []
+  console.log('[emails/sync] Tokens found', { count: tokens.length, providers: tokens.map(t => t.provider) })
 
   for (const token of tokens) {
     try {
       const accessToken = await getValidToken(db, token)
+      console.log('[emails/sync] Token valid for', token.provider)
       let messages: Array<{ id: string; sujet: string; expediteur: string; date: string; corps: string }>
 
       if (token.provider === 'gmail') {
         const gmailMsgs = await fetchGmailMessages(accessToken, since)
+        console.log('[emails/sync] Gmail messages fetched', { count: gmailMsgs.length })
         messages = gmailMsgs.map(msg => ({
           id: msg.id,
           sujet: getGmailHeader(msg, 'Subject'),
@@ -88,6 +95,9 @@ export async function POST(req: NextRequest) {
         }))
       }
 
+      results.totalFetched += messages.length
+      console.log('[emails/sync] Messages to process', { count: messages.length, subjects: messages.slice(0, 5).map(m => m.sujet) })
+
       // Batch fetch already-imported email ids to avoid N+1
       const messageIds = messages.map(m => m.id)
       const { data: existingImports } = await db
@@ -99,11 +109,18 @@ export async function POST(req: NextRequest) {
       // Sequential for...of loop keeps Groq calls sequential (no uncontrolled parallelism)
       for (const msg of messages) {
         // Skip already-imported emails (batch check, no per-message query)
-        if (importedIds.has(msg.id)) continue
+        if (importedIds.has(msg.id)) {
+          results.skippedImported++
+          continue
+        }
 
         // Parse intent
         const parsed = await parseEmailIntent({ sujet: msg.sujet, corps: msg.corps })
-        if (parsed.type === 'autre') continue // Skip irrelevant emails
+        console.log('[emails/sync] Parsed email', { sujet: msg.sujet.slice(0, 60), type: parsed.type, entreprise: parsed.entreprise })
+        if (parsed.type === 'autre') {
+          results.skippedAutre++
+          continue
+        }
 
         // Try to match to existing application
         let application_id: string | null = null
@@ -170,5 +187,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  console.log('[emails/sync] Done', results)
   return NextResponse.json({ synced: results })
 }

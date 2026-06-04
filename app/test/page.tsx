@@ -331,16 +331,20 @@ export default function TestPage() {
       const ms = Date.now() - t0
       const body = await res.json()
       if (res.ok) {
+        const s = body.synced ?? {}
         updateResult('Email OAuth Tokens', {
-          status: (body.synced?.gmail > 0) ? 'pass' : 'warn',
+          status: (s.gmail > 0) ? 'pass' : 'warn',
           duration: ms,
           details: [
-            `Gmail emails synced: ${body.synced?.gmail ?? 0}`,
-            body.synced?.errors?.length > 0 ? `Errors: ${body.synced.errors.join(', ')}` : '',
+            `Gmail emails synced: ${s.gmail ?? 0}`,
+            `Total fetched from Gmail: ${s.totalFetched ?? '?'}`,
+            `Skipped (already imported): ${s.skippedImported ?? '?'}`,
+            `Skipped (type=autre): ${s.skippedAutre ?? '?'}`,
+            s.errors?.length > 0 ? `Errors: ${s.errors.join(', ')}` : '',
             '',
-            body.synced?.gmail === 0 ? '→ 0 emails: no OAuth token, token expired, or no job-related emails in last 24h.' : '',
+            s.gmail === 0 && (s.totalFetched ?? 0) === 0 ? '→ 0 fetched: no OAuth token, or no matching emails in last 24h.' : '',
+            s.gmail === 0 && (s.totalFetched ?? 0) > 0 ? '→ Emails found but all filtered out (already imported or type=autre).' : '',
             '→ To connect Gmail: go to Paramètres > Connecter Gmail',
-            '→ Requires GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI env vars',
           ].filter(Boolean).join('\n'),
           raw: body,
         })

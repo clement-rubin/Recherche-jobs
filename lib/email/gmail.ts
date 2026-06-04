@@ -41,7 +41,7 @@ export function extractGmailBody(msg: GmailMessage): string {
 }
 
 export async function fetchGmailMessages(accessToken: string, since: Date): Promise<GmailMessage[]> {
-  const query = `after:${Math.floor(since.getTime() / 1000)} (subject:emploi OR subject:candidature OR subject:offre OR subject:entretien OR subject:recrutement)`
+  const query = `after:${Math.floor(since.getTime() / 1000)} {emploi candidature offre entretien recrutement mission intérim poste CV profil embauche stage alternance CDD CDI manpower adecco randstad indeed linkedin}`
 
   const listRes = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=50`,

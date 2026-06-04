@@ -1,0 +1,45 @@
+name: ZAP Security Scan
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+  schedule:
+    # Weekly Monday 6h UTC
+    - cron: '0 6 * * 1'
+
+jobs:
+  zap-baseline:
+    name: OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for Netlify deploy
+        run: sleep 30
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline-scan@v0.10.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target: ${{ secrets.NETLIFY_URL || 'https://jobtrackeria.netlify.app' }}
+          rules_file_name: '.zap/rules.tsv'
+          # -a: include alpha passive rules
+          # -j: output JSON report
+          # -I: don't fail on warnings (only on errors)
+          cmd_options: '-a -I'
+          issue_title: '[Security] ZAP Baseline Scan — ${{ github.sha }}'
+          fail_action: false
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report-${{ github.run_number }}
+          path: report_html.html
+          retention-days: 30

@@ -6,7 +6,10 @@ import Link from 'next/link'
 async function getStats() {
   const supabase = await createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { total: 0, en_cours: 0, relance: 0, termine: 0, recent: [] }
+  if (!user) {
+    const { redirect } = await import('next/navigation')
+    return redirect('/login') as never
+  }
 
   const { data: applications, error } = await supabase
     .from('applications')

@@ -10,11 +10,28 @@ export interface AssistantIntent {
   requires_confirmation: boolean
 }
 
+async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (err: any) {
+      if (err?.status === 429 && attempt < maxRetries) {
+        const waitMs = (attempt + 1) * 2000
+        console.warn(`[groq] 429 rate limit, retry in ${waitMs}ms`)
+        await new Promise(r => setTimeout(r, waitMs))
+        continue
+      }
+      throw err
+    }
+  }
+  throw new Error('Unreachable')
+}
+
 export async function processIntent(
   transcription: string,
   recentApplications: Array<{ id: string; entreprise: string; poste: string; statut: string }>
 ): Promise<AssistantIntent> {
-  const completion = await groq.chat.completions.create({
+  const completion = await callWithRetry(() => groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [
       {
@@ -54,7 +71,7 @@ Règles importantes:
     response_format: { type: 'json_object' },
     temperature: 0.1,
     max_tokens: 512,
-  })
+  }))
 
   const raw = completion.choices[0].message.content
   if (!raw) throw new Error('Empty response from Groq assistant')

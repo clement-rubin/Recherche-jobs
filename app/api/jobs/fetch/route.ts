@@ -27,21 +27,21 @@ export async function POST(req: NextRequest) {
   const userId = user?.id
   console.log('[jobs/fetch] POST started', { userId: userId ?? 'cron' })
 
-  // Rate limiting: check if any offer was scraped in the last 10 minutes for this user
+  // Rate limiting: check if any offer was scraped in the last 2 minutes for this user
   if (userId) {
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
     const { data: recentOffer } = await supabase
       .from('offers')
       .select('date_scraped')
       .eq('user_id', userId)
-      .gte('date_scraped', tenMinutesAgo)
+      .gte('date_scraped', twoMinutesAgo)
       .limit(1)
       .single()
 
     if (recentOffer) {
       console.warn('[jobs/fetch] Rate limited', { userId })
       return NextResponse.json(
-        { error: 'Vous avez déjà lancé une recherche récemment. Attendez 10 minutes.' },
+        { error: 'Recherche déjà lancée récemment. Attendez 2 minutes.' },
         { status: 429 }
       )
     }

@@ -40,9 +40,21 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { data, error } = await supabase
+  const allowed = {
+    entreprise:       body.entreprise,
+    poste:            body.poste,
+    lien_offre:       body.lien_offre ?? null,
+    type_contrat:     body.type_contrat ?? null,
+    statut:           body.statut ?? 'en_cours',
+    resultat:         body.resultat ?? null,
+    notes:            body.notes ?? null,
+    source:           body.source ?? 'manuel',
+    date_postulation: body.date_postulation ?? new Date().toISOString().slice(0, 10),
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('applications')
-    .insert({ ...body, user_id: user.id })
+    .insert({ ...allowed, user_id: user.id })
     .select()
     .single()
 

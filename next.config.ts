@@ -1,15 +1,31 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Required for Netlify deployment with @netlify/plugin-nextjs
-  output: undefined, // Let Netlify plugin handle output mode
+  output: undefined,
 
-  // Allow images from common job sites
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: '*.googleapis.com' },
-      { protocol: 'https', hostname: '*.microsoftonline.com' },
+      // Employer logos from JSearch (Google User Content)
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      // Generic CDN logos returned by JSearch
+      { protocol: 'https', hostname: '*.logo.dev' },
+      { protocol: 'https', hostname: 'logo.clearbit.com' },
     ],
+  },
+
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options',           value: 'DENY' },
+          { key: 'X-Content-Type-Options',     value: 'nosniff' },
+          { key: 'Referrer-Policy',            value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy',         value: 'camera=(), microphone=(self), geolocation=()' },
+          { key: 'X-DNS-Prefetch-Control',     value: 'on' },
+        ],
+      },
+    ]
   },
 }
 

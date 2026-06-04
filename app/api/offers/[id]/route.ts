@@ -9,9 +9,11 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
-  delete body.user_id
-  delete body.id
+  const rawBody = await req.json()
+  // Only allow status updates from the UI — no raw_data / titre / source overwrite
+  const body = {
+    ...(rawBody.statut !== undefined && { statut: rawBody.statut }),
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)

@@ -30,10 +30,16 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const rawBody = await req.json()
-  // Prevent user_id override
-  delete rawBody.user_id
-  delete rawBody.id
-  const body: ApplicationUpdate = rawBody
+  const body: ApplicationUpdate = {
+    ...(rawBody.entreprise       !== undefined && { entreprise: rawBody.entreprise }),
+    ...(rawBody.poste            !== undefined && { poste: rawBody.poste }),
+    ...(rawBody.lien_offre       !== undefined && { lien_offre: rawBody.lien_offre }),
+    ...(rawBody.type_contrat     !== undefined && { type_contrat: rawBody.type_contrat }),
+    ...(rawBody.statut           !== undefined && { statut: rawBody.statut }),
+    ...(rawBody.resultat         !== undefined && { resultat: rawBody.resultat }),
+    ...(rawBody.notes            !== undefined && { notes: rawBody.notes }),
+    ...(rawBody.date_postulation !== undefined && { date_postulation: rawBody.date_postulation }),
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any

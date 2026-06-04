@@ -1,0 +1,28 @@
+<h2>Niveau d'animation GSAP ?</h2>
+<p class="subtitle">Les deux options utilisent GSAP — la différence c'est l'intensité</p>
+
+<div class="options">
+
+  <div class="option" data-choice="subtle" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Subtil & fluide</h3>
+      <p>Fade+slide au chargement des pages, hover lift sur les cartes (+2px), spinner animé sur les boutons async, success flash vert. Rien qui distrait.</p>
+      <div style="margin-top:10px;padding:10px;background:var(--surface);border-radius:6px;font-size:12px;color:var(--text-secondary)">
+        Ex: carte glisse vers le haut à l'apparition → reste là. Hover: légère élévation. Bouton "Lancer": spinner pendant 2s puis ✓ vert.
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="expressive" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Expressif & remarquable</h3>
+      <p>Stagger sur les listes (cartes entrent une par une), transition de page (ancien contenu sort, nouveau entre), tags mots-clés avec animation d'ajout/suppression, counter animé sur les stats.</p>
+      <div style="margin-top:10px;padding:10px;background:var(--surface);border-radius:6px;font-size:12px;color:var(--text-secondary)">
+        Ex: 5 profils → entrent avec délai 0.05s entre chaque. Stat "47 offres" → compte de 0 à 47. Supprimer un tag → shrink + fade.
+      </div>
+    </div>
+  </div>
+
+</div>

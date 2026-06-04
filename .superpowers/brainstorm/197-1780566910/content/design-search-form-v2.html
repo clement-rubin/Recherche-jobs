@@ -1,0 +1,122 @@
+<h2>Form recherche — version enrichie</h2>
+<p class="subtitle">Suggestions mots-clés + qualifications + durée de contrat</p>
+
+<div class="mockup" style="max-width:520px;margin:0 auto">
+  <div class="mockup-header" style="background:rgba(99,102,241,0.1);color:#6366f1">Nouveau form (modal)</div>
+  <div class="mockup-body" style="background:white;padding:20px;font-family:system-ui;font-size:10px">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="color:#0f172a;font-weight:800;font-size:13px">Nouveau profil de recherche</div>
+      <div style="color:#94a3b8;font-size:14px">×</div>
+    </div>
+
+    <!-- Row 1: Nom -->
+    <div style="margin-bottom:10px">
+      <div style="color:#374151;font-weight:600;margin-bottom:3px">Nom du profil</div>
+      <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;color:#0f172a;background:#f8fafc">Intérim Lille 2026</div>
+    </div>
+
+    <!-- Row 2: Localisation + Rayon -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="color:#374151;font-weight:600;margin-bottom:3px">Localisation</div>
+        <div style="border:1px solid #6366f1;border-radius:6px;padding:6px 10px;color:#0f172a;box-shadow:0 0 0 3px #ede9fe">Lille</div>
+      </div>
+      <div>
+        <div style="color:#374151;font-weight:600;margin-bottom:3px">Rayon (km)</div>
+        <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;color:#0f172a;background:#f8fafc">30</div>
+      </div>
+    </div>
+
+    <!-- Mots-clés avec suggestions -->
+    <div style="margin-bottom:10px">
+      <div style="color:#374151;font-weight:600;margin-bottom:3px">Mots-clés <span style="color:#94a3b8;font-weight:400">(intitulés de poste, secteurs)</span></div>
+      <div style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;background:#f8fafc;display:flex;flex-wrap:wrap;gap:4px;min-height:34px;align-items:center">
+        <div style="background:#ede9fe;border-radius:4px;padding:3px 7px;color:#7c3aed;font-weight:600;display:flex;align-items:center;gap:3px">logistique <span style="opacity:0.5;font-size:11px">×</span></div>
+        <div style="background:#ede9fe;border-radius:4px;padding:3px 7px;color:#7c3aed;font-weight:600;display:flex;align-items:center;gap:3px">entrepôt <span style="opacity:0.5;font-size:11px">×</span></div>
+        <div style="color:#94a3b8;padding:2px 4px;font-size:9px">Tapez + Entrée...</div>
+      </div>
+      <!-- Suggestions dropdown -->
+      <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;background:white;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin-top:2px">
+        <div style="color:#94a3b8;font-size:8px;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Suggestions populaires</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px">
+          <div style="border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;color:#374151;cursor:pointer;background:#f8fafc">magasinier</div>
+          <div style="border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;color:#374151;cursor:pointer;background:#f8fafc">préparateur commandes</div>
+          <div style="border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;color:#374151;cursor:pointer;background:#f8fafc">cariste</div>
+          <div style="border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;color:#374151;cursor:pointer;background:#f8fafc">manutention</div>
+          <div style="border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;color:#374151;cursor:pointer;background:#f8fafc">agent logistique</div>
+          <div style="border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;color:#374151;cursor:pointer;background:#f8fafc">chauffeur livreur</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Qualifications (NOUVEAU) -->
+    <div style="margin-bottom:10px">
+      <div style="color:#374151;font-weight:600;margin-bottom:3px">
+        Qualifications <span style="color:#94a3b8;font-weight:400">(filtrent les offres)</span>
+        <span style="background:#dbeafe;color:#2563eb;border-radius:3px;padding:1px 5px;font-size:7px;margin-left:4px;font-weight:700">NOUVEAU</span>
+      </div>
+      <div style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;background:#f8fafc;display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:34px">
+        <div style="background:#dbeafe;border-radius:4px;padding:3px 7px;color:#2563eb;font-weight:600;display:flex;align-items:center;gap:3px">Permis B <span style="opacity:0.5;font-size:11px">×</span></div>
+        <div style="background:#dbeafe;border-radius:4px;padding:3px 7px;color:#2563eb;font-weight:600;display:flex;align-items:center;gap:3px">Débutant accepté <span style="opacity:0.5;font-size:11px">×</span></div>
+        <div style="color:#94a3b8;padding:2px 4px;font-size:9px">Ajouter...</div>
+      </div>
+      <!-- Qualifications suggérées -->
+      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px">
+        <div style="color:#64748b;font-size:8px;align-self:center;margin-right:2px">Suggérées:</div>
+        <div style="border:1px dashed #bfdbfe;border-radius:4px;padding:2px 7px;color:#3b82f6;font-size:8px;cursor:pointer">+ Permis C</div>
+        <div style="border:1px dashed #bfdbfe;border-radius:4px;padding:2px 7px;color:#3b82f6;font-size:8px;cursor:pointer">+ Port de charges</div>
+        <div style="border:1px dashed #bfdbfe;border-radius:4px;padding:2px 7px;color:#3b82f6;font-size:8px;cursor:pointer">+ Horaires décalés</div>
+        <div style="border:1px dashed #bfdbfe;border-radius:4px;padding:2px 7px;color:#3b82f6;font-size:8px;cursor:pointer">+ 2x8/3x8</div>
+        <div style="border:1px dashed #bfdbfe;border-radius:4px;padding:2px 7px;color:#3b82f6;font-size:8px;cursor:pointer">+ Travail de nuit</div>
+        <div style="border:1px dashed #bfdbfe;border-radius:4px;padding:2px 7px;color:#3b82f6;font-size:8px;cursor:pointer">+ Travail weekend</div>
+      </div>
+    </div>
+
+    <!-- Contrat + Durée -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="color:#374151;font-weight:600;margin-bottom:3px">Types de contrat</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px">
+          <div style="background:#ede9fe;border:1px solid #6366f1;border-radius:5px;padding:3px 8px;color:#4f46e5;font-weight:600;font-size:9px">intérim</div>
+          <div style="background:#ede9fe;border:1px solid #6366f1;border-radius:5px;padding:3px 8px;color:#4f46e5;font-weight:600;font-size:9px">cdd</div>
+          <div style="border:1px solid #e2e8f0;border-radius:5px;padding:3px 8px;color:#94a3b8;font-size:9px">cdi</div>
+          <div style="border:1px solid #e2e8f0;border-radius:5px;padding:3px 8px;color:#94a3b8;font-size:9px">stage</div>
+        </div>
+      </div>
+      <div>
+        <div style="color:#374151;font-weight:600;margin-bottom:3px">
+          Durée mission
+          <span style="background:#dbeafe;color:#2563eb;border-radius:3px;padding:1px 5px;font-size:7px;margin-left:4px;font-weight:700">NOUVEAU</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;border:2px solid #6366f1;background:#6366f1"></div><div style="color:#0f172a">Peu importe</div></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;border:2px solid #e2e8f0"></div><div style="color:#64748b">1–3 mois</div></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;border:2px solid #e2e8f0"></div><div style="color:#64748b">3–6 mois</div></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;border:2px solid #e2e8f0"></div><div style="color:#64748b">> 6 mois</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Salaire min -->
+    <div style="margin-bottom:14px">
+      <div style="color:#374151;font-weight:600;margin-bottom:3px">Salaire min (€/mois)</div>
+      <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;color:#94a3b8;background:#f8fafc">1 500 €</div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;border:1px solid #e2e8f0;border-radius:7px;padding:8px;text-align:center;color:#64748b;font-weight:600">Annuler</div>
+      <div style="flex:2;background:#6366f1;border-radius:7px;padding:8px;text-align:center;color:white;font-weight:700">Enregistrer le profil</div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top:16px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:13px">
+  <strong style="color:var(--text-primary)">Nouveaux champs DB nécessaires sur <code>search_profiles</code>:</strong>
+  <ul style="margin:6px 0 0 16px;color:var(--text-secondary);line-height:1.8">
+    <li><code>qualifications text[]</code> — tags bleus, ajoutés comme mots-clés supplémentaires à JSearch</li>
+    <li><code>duree_contrat text</code> — "peu_importe" | "1_3_mois" | "3_6_mois" | "6_plus"</li>
+  </ul>
+</div>

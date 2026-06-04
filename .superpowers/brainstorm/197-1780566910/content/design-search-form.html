@@ -1,0 +1,115 @@
+<h2>Section 2 — Form recherche redesigné</h2>
+<p class="subtitle">Le form actuel est inline et cassé. Voici le nouveau design.</p>
+
+<div class="split">
+
+  <div class="mockup">
+    <div class="mockup-header">Actuel — problèmes</div>
+    <div class="mockup-body" style="background:#f8fafc;padding:14px;font-family:system-ui;height:320px;overflow:hidden">
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:9px">
+        <div style="color:#0f172a;font-weight:700;margin-bottom:10px">Nouveau profil</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="grid-column:span 2">
+            <div style="color:#94a3b8;margin-bottom:2px">Nom du profil</div>
+            <div style="border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;color:#0f172a;background:#f8fafc">Intérim Lille 2026</div>
+          </div>
+          <div>
+            <div style="color:#94a3b8;margin-bottom:2px">Localisation</div>
+            <div style="border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;color:#0f172a;background:#f8fafc">Lille</div>
+          </div>
+          <div>
+            <div style="color:#94a3b8;margin-bottom:2px">Rayon (km)</div>
+            <div style="border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;color:#0f172a;background:#f8fafc">30</div>
+          </div>
+          <div style="grid-column:span 2">
+            <div style="color:#94a3b8;margin-bottom:2px">Mots-clés <span style="color:#ef4444">(séparés par virgules ← bancal)</span></div>
+            <div style="border:1px solid #fca5a5;border-radius:5px;padding:5px 8px;color:#0f172a;background:#fff5f5">logistique, entrepôt, magasinier</div>
+          </div>
+          <div style="grid-column:span 2">
+            <div style="color:#94a3b8;margin-bottom:4px">Types de contrat</div>
+            <div style="display:flex;gap:3px">
+              <div style="border:1px solid #e2e8f0;border-radius:10px;padding:2px 7px;color:#94a3b8;font-size:7px">interim</div>
+              <div style="border:1px solid #6366f1;border-radius:10px;padding:2px 7px;color:#6366f1;background:#ede9fe;font-size:7px">cdd</div>
+            </div>
+          </div>
+        </div>
+        <div style="color:#ef4444;font-size:7px;margin-top:8px;padding:5px;background:#fef2f2;border-radius:4px;border:1px solid #fca5a5">
+          ⚠ Form pousse le layout inline — pas de modal. Pas de feedback sur erreur. CSV input non-intuitif.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header" style="background:rgba(99,102,241,0.1);color:#6366f1">Nouveau — modal + tag pills ✨</div>
+    <div class="mockup-body" style="background:#f8fafc;padding:0;font-family:system-ui;height:320px;overflow:hidden;position:relative">
+      <!-- Page background blurred -->
+      <div style="padding:14px;filter:blur(1px);opacity:0.4">
+        <div style="color:#0f172a;font-size:11px;font-weight:800">Recherche</div>
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-top:8px;height:40px"></div>
+      </div>
+      <!-- Modal overlay -->
+      <div style="position:absolute;inset:0;background:rgba(15,23,42,0.3);display:flex;align-items:center;justify-content:center;padding:12px">
+        <div style="background:white;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,0.15);padding:16px;width:100%;font-size:9px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="color:#0f172a;font-weight:800;font-size:11px">Nouveau profil</div>
+            <div style="color:#94a3b8;font-size:11px;cursor:pointer">×</div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="grid-column:span 2">
+              <div style="color:#64748b;margin-bottom:3px;font-weight:600">Nom du profil</div>
+              <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;color:#0f172a;background:#f8fafc">Intérim Lille 2026</div>
+            </div>
+            <div>
+              <div style="color:#64748b;margin-bottom:3px;font-weight:600">Localisation</div>
+              <div style="border:1px solid #6366f1;border-radius:6px;padding:6px 8px;color:#0f172a;box-shadow:0 0 0 3px #ede9fe">Lille</div>
+            </div>
+            <div>
+              <div style="color:#64748b;margin-bottom:3px;font-weight:600">Rayon (km)</div>
+              <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;color:#0f172a;background:#f8fafc">30</div>
+            </div>
+
+            <!-- Tag pills input -->
+            <div style="grid-column:span 2">
+              <div style="color:#64748b;margin-bottom:3px;font-weight:600">Mots-clés</div>
+              <div style="border:1px solid #e2e8f0;border-radius:6px;padding:5px;background:#f8fafc;display:flex;flex-wrap:wrap;gap:3px;min-height:32px">
+                <div style="background:#ede9fe;border-radius:4px;padding:2px 6px;color:#7c3aed;font-weight:600;display:flex;align-items:center;gap:3px">logistique <span style="opacity:0.6">×</span></div>
+                <div style="background:#ede9fe;border-radius:4px;padding:2px 6px;color:#7c3aed;font-weight:600;display:flex;align-items:center;gap:3px">entrepôt <span style="opacity:0.6">×</span></div>
+                <div style="background:#ede9fe;border-radius:4px;padding:2px 6px;color:#7c3aed;font-weight:600;display:flex;align-items:center;gap:3px">magasinier <span style="opacity:0.6">×</span></div>
+                <div style="color:#94a3b8;padding:2px 4px;font-size:7px;align-self:center">Tapez + Entrée...</div>
+              </div>
+            </div>
+
+            <!-- Contract types -->
+            <div style="grid-column:span 2">
+              <div style="color:#64748b;margin-bottom:3px;font-weight:600">Types de contrat</div>
+              <div style="display:flex;gap:3px;flex-wrap:wrap">
+                <div style="background:#ede9fe;border:1px solid #6366f1;border-radius:5px;padding:3px 8px;color:#4f46e5;font-weight:600">intérim</div>
+                <div style="background:#ede9fe;border:1px solid #6366f1;border-radius:5px;padding:3px 8px;color:#4f46e5;font-weight:600">cdd</div>
+                <div style="border:1px solid #e2e8f0;border-radius:5px;padding:3px 8px;color:#94a3b8">cdi</div>
+                <div style="border:1px solid #e2e8f0;border-radius:5px;padding:3px 8px;color:#94a3b8">stage</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <div style="flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:6px;text-align:center;color:#64748b">Annuler</div>
+            <div style="flex:2;background:#6366f1;border-radius:6px;padding:6px;text-align:center;color:white;font-weight:700">Enregistrer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:16px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text-secondary)">
+  <strong style="color:var(--text-primary)">Changements clés:</strong>
+  <ul style="margin:6px 0 0 16px;line-height:1.8">
+    <li>Mots-clés → <strong>tag pills</strong> (type + Entrée pour ajouter, × pour supprimer)</li>
+    <li>Form → <strong>modal</strong> avec overlay (ne pousse plus le layout)</li>
+    <li>Focus ring visible sur l'input actif</li>
+    <li>Bouton Enregistrer disabled + spinner pendant la sauvegarde</li>
+  </ul>
+</div>

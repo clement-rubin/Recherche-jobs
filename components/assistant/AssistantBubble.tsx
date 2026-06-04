@@ -102,12 +102,7 @@ export function AssistantBubble() {
     }
 
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      console.error('[Alex] SpeechRecognition error', {
-        error: e.error,
-        message: e.message,
-        timeStamp: e.timeStamp,
-        type: e.type,
-      })
+      console.error(`[Alex] SpeechRecognition error — error="${e.error}" message="${e.message}" t=${Math.round(e.timeStamp)}ms`)
       recognitionRef.current = null
       if (e.error !== 'aborted') {
         setErrorMsg(`Erreur microphone: ${e.error}`)

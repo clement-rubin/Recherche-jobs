@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy',             value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy',          value: 'camera=(), microphone=(self), geolocation=(), payment=()' },
           { key: 'X-DNS-Prefetch-Control',      value: 'on' },
-          { key: 'Cross-Origin-Opener-Policy',  value: 'same-origin' },
+          { key: 'Cross-Origin-Opener-Policy',  value: 'unsafe-none' },
           // CSP — Next.js needs unsafe-inline for hydration scripts
           // Connect-src covers Supabase WS, JSearch, France Travail, Groq
           {

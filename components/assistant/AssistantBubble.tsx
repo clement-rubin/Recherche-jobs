@@ -123,12 +123,12 @@ export function AssistantBubble() {
       setState(prev => prev === 'listening' ? 'idle' : prev)
     }
 
-    recognition.onaudiostart = () => console.log('[Alex] Audio capture started')
-    recognition.onaudioend = () => console.log('[Alex] Audio capture ended')
-    recognition.onsoundstart = () => console.log('[Alex] Sound detected')
-    recognition.onsoundend = () => console.log('[Alex] Sound ended')
-    recognition.onspeechstart = () => console.log('[Alex] Speech detected')
-    recognition.onspeechend = () => console.log('[Alex] Speech ended')
+    recognition.addEventListener('audiostart',  () => console.log('[Alex] Audio capture started'))
+    recognition.addEventListener('audioend',    () => console.log('[Alex] Audio capture ended'))
+    recognition.addEventListener('soundstart',  () => console.log('[Alex] Sound detected'))
+    recognition.addEventListener('soundend',    () => console.log('[Alex] Sound ended'))
+    recognition.addEventListener('speechstart', () => console.log('[Alex] Speech detected'))
+    recognition.addEventListener('speechend',   () => console.log('[Alex] Speech ended'))
 
     recognitionRef.current = recognition
     recognition.start()

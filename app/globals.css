@@ -3,23 +3,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --background: #08090e;
-  --surface: #0c0d16;
-  --card: #101220;
-  --card-hover: #141729;
-  --border: #1a1d32;
-  --border-light: #242847;
-  --accent: #7c3aed;
-  --accent-light: #9f67ff;
-  --accent-dim: rgba(124, 58, 237, 0.15);
-  --accent-glow: 0 0 20px rgba(124, 58, 237, 0.25);
-  --foreground: #e8eaf5;
-  --foreground-dim: #9ca3c8;
-  --muted: #4b5175;
-  --muted-light: #7880a0;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #f43f5e;
+  --background: #f4f4f5;
+  --surface:    #fafafa;
+  --card:       #ffffff;
+  --card-hover: #f9f9f9;
+  --border:     #e4e4e7;
+  --border-light: #d4d4d8;
+  --accent:     #6366f1;
+  --accent-light: #818cf8;
+  --accent-dim: rgba(99, 102, 241, 0.1);
+  --accent-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+  --foreground: #18181b;
+  --foreground-dim: #52525b;
+  --muted:      #71717a;
+  --muted-light: #a1a1aa;
+  --success:    #16a34a;
+  --warning:    #d97706;
+  --danger:     #ef4444;
   --radius: 10px;
 }
 
@@ -35,30 +35,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dot grid background */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(124, 58, 237, 0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Ambient top glow */
-body::after {
-  content: '';
-  position: fixed;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 600px;
-  height: 300px;
-  background: radial-gradient(ellipse, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
 
 main, nav {
   position: relative;
@@ -113,12 +89,13 @@ main, nav {
 
 /* Glow button */
 .btn-accent {
-  background: linear-gradient(135deg, var(--accent) 0%, #5b21b6 100%);
-  box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
-  transition: box-shadow 0.2s, transform 0.15s, opacity 0.15s;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.3);
+  transition: box-shadow 0.2s, transform 0.15s, background 0.15s;
 }
 .btn-accent:hover {
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+  background: #4f46e5;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
   transform: translateY(-1px);
 }
 .btn-accent:active {
@@ -138,6 +115,16 @@ main, nav {
 /* Nav item */
 .nav-item {
   transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+  background: var(--accent-dim);
+  color: var(--foreground);
+}
+
+.nav-item-logout:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #ef4444 !important;
 }
 
 /* Focus ring */

@@ -332,18 +332,15 @@ export default function TestPage() {
       const body = await res.json()
       if (res.ok) {
         updateResult('Email OAuth Tokens', {
-          status: (body.synced?.gmail > 0 || body.synced?.outlook > 0) ? 'pass' : 'warn',
+          status: (body.synced?.gmail > 0) ? 'pass' : 'warn',
           duration: ms,
           details: [
             `Gmail emails synced: ${body.synced?.gmail ?? 0}`,
-            `Outlook emails synced: ${body.synced?.outlook ?? 0}`,
             body.synced?.errors?.length > 0 ? `Errors: ${body.synced.errors.join(', ')}` : '',
             '',
-            body.synced?.gmail === 0 && body.synced?.outlook === 0 ? '→ 0 emails could mean: no OAuth tokens stored, tokens expired, or no job-related emails in last 24h.' : '',
-            '→ To connect Gmail: visit /api/auth/gmail/connect',
-            '→ To connect Outlook: visit /api/auth/outlook/connect',
-            '→ Requires GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI env vars (Gmail)',
-            '→ Requires MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, MICROSOFT_REDIRECT_URI env vars (Outlook)',
+            body.synced?.gmail === 0 ? '→ 0 emails: no OAuth token, token expired, or no job-related emails in last 24h.' : '',
+            '→ To connect Gmail: go to Paramètres > Connecter Gmail',
+            '→ Requires GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI env vars',
           ].filter(Boolean).join('\n'),
           raw: body,
         })
@@ -484,7 +481,7 @@ export default function TestPage() {
           </div>
           <div>
             <p className="text-foreground-dim font-medium">❌ Email sync 0 résultats</p>
-            <p>1) Pas de token OAuth → aller dans Paramètres &gt; Connecter Gmail/Outlook. 2) Token expiré sans refresh_token. 3) Pas d&apos;emails job-related dans les 24h. 4) GOOGLE_CLIENT_ID/SECRET manquants dans Netlify env.</p>
+            <p>1) Pas de token OAuth → aller dans Paramètres &gt; Connecter Gmail. 2) Token expiré sans refresh_token. 3) Pas d&apos;emails job-related dans les 24h. 4) GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI manquants dans Netlify env.</p>
           </div>
           <div>
             <p className="text-foreground-dim font-medium">⚠ 0 offres après fetch</p>

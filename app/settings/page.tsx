@@ -9,7 +9,6 @@ function SettingsContent() {
   const supabase = createClient()
   const searchParams = useSearchParams()
   const [gmailConnected, setGmailConnected] = useState(false)
-  const [outlookConnected, setOutlookConnected] = useState(false)
   const [groqKey, setGroqKey] = useState('')
   const [groqSaved, setGroqSaved] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -28,7 +27,6 @@ function SettingsContent() {
         .eq('user_id', user.id)
 
       setGmailConnected((tokens ?? []).some((t: { provider: string }) => t.provider === 'gmail'))
-      setOutlookConnected((tokens ?? []).some((t: { provider: string }) => t.provider === 'outlook'))
     }
     checkConnections()
 
@@ -54,7 +52,7 @@ function SettingsContent() {
     setSyncResult(null)
     const res = await fetch('/api/emails/sync', { method: 'POST' })
     const data = await res.json()
-    setSyncResult(res.ok ? `✓ ${(data.synced?.gmail ?? 0) + (data.synced?.outlook ?? 0)} emails traités` : `✗ ${data.error ?? 'Erreur'}`)
+    setSyncResult(res.ok ? `✓ ${data.synced?.gmail ?? 0} emails traités` : `✗ ${data.error ?? 'Erreur'}`)
     setSyncing(false)
   }
 
@@ -69,10 +67,9 @@ function SettingsContent() {
       </div>
 
       {/* OAuth feedback */}
-      {success && (
+      {success === 'gmail_connected' && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-2.5 text-success text-sm">
-          {success === 'gmail_connected' && '✓ Gmail connecté avec succès'}
-          {success === 'outlook_connected' && '✓ Outlook connecté avec succès'}
+          ✓ Gmail connecté avec succès
         </div>
       )}
       {error && (
@@ -80,9 +77,6 @@ function SettingsContent() {
           {error === 'gmail_denied' && 'Connexion Gmail annulée'}
           {error === 'gmail_csrf' && 'Erreur de sécurité Gmail. Réessayez.'}
           {error === 'gmail_token_failed' && 'Échec de connexion Gmail. Réessayez.'}
-          {error === 'outlook_denied' && 'Connexion Outlook annulée'}
-          {error === 'outlook_csrf' && 'Erreur de sécurité Outlook. Réessayez.'}
-          {error === 'outlook_token_failed' && 'Échec de connexion Outlook. Réessayez.'}
         </div>
       )}
 
@@ -110,31 +104,12 @@ function SettingsContent() {
             </a>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${outlookConnected ? 'bg-success' : 'bg-muted'}`} />
-              <div>
-                <p className="text-foreground text-sm font-medium">Outlook</p>
-                <p className="text-muted text-xs">{outlookConnected ? 'Connecté' : 'Non connecté'}</p>
-              </div>
-            </div>
-            <a
-              href="/api/auth/outlook/connect"
-              className={`text-sm px-4 py-2 rounded-lg border transition-colors ${
-                outlookConnected
-                  ? 'border-border text-muted hover:text-red-400 hover:border-red-500/30'
-                  : 'border-accent text-accent hover:bg-accent hover:text-white'
-              }`}
-            >
-              {outlookConnected ? 'Reconnecter' : 'Connecter'}
-            </a>
-          </div>
         </div>
 
         <div className="pt-2 border-t border-border">
           <button
             onClick={handleSyncNow}
-            disabled={syncing || (!gmailConnected && !outlookConnected)}
+            disabled={syncing || !gmailConnected}
             className="text-sm text-foreground border border-border hover:border-accent/50 px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
           >
             {syncing ? 'Synchronisation...' : '↻ Synchroniser maintenant'}

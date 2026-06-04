@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Outfit, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
 
-const geist = Geist({ subsets: ['latin'] })
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' })
+const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'Job Tracker',
@@ -20,8 +21,8 @@ export default async function RootLayout({
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <html lang="fr" className="dark">
-      <body className={`${geist.className} bg-background text-foreground min-h-screen`}>
+    <html lang="fr">
+      <body className={`${outfit.variable} ${jetbrainsMono.variable} bg-background text-foreground min-h-screen`}>
         <AppShell isAuthenticated={!!user}>
           {children}
         </AppShell>

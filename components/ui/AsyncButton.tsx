@@ -53,7 +53,12 @@ export function AsyncButton({
 
   const label: Record<BtnState, React.ReactNode> = {
     idle: children,
-    loading: loadingLabel,
+    loading: (
+      <span className="flex items-center gap-2 justify-center">
+        <span aria-hidden="true" className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin inline-block" />
+        {loadingLabel}
+      </span>
+    ),
     success: successLabel,
     error: errorLabel,
   }

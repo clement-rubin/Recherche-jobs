@@ -28,6 +28,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
     localisation: profile?.localisation ?? 'Lille',
     rayon_km: profile?.rayon_km ?? 30,
     mots_cles: profile?.mots_cles ?? ['emploi'],
+    mots_cles_exclus: profile?.mots_cles_exclus ?? [] as string[],
     qualifications: profile?.qualifications ?? [] as string[],
     duree_contrat: profile?.duree_contrat ?? 'peu_importe' as SearchProfile['duree_contrat'],
     type_contrat: profile?.type_contrat ?? [] as string[],
@@ -61,6 +62,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
       localisation: form.localisation,
       rayon_km: Number(form.rayon_km),
       mots_cles: form.mots_cles,
+      mots_cles_exclus: form.mots_cles_exclus,
       qualifications: form.qualifications,
       duree_contrat: form.duree_contrat,
       type_contrat: form.type_contrat,
@@ -143,6 +145,20 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
               suggestions={KW_SUGGESTIONS}
               placeholder="Tapez + Entrée ou virgule..."
               tagColor="indigo"
+            />
+          </div>
+
+          {/* Mots-clés exclus */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--muted)' }}>
+              Mots-clés à exclure
+              <span className="ml-1.5 font-normal" style={{ color: 'var(--muted-light)' }}>(offres contenant ces mots seront ignorées)</span>
+            </label>
+            <TagInput
+              value={form.mots_cles_exclus}
+              onChange={v => setForm(f => ({ ...f, mots_cles_exclus: v }))}
+              placeholder="Ex: cadre, senior, 5 ans d'expérience..."
+              tagColor="blue"
             />
           </div>
 

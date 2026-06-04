@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
 
   for (const profile of profiles as SearchProfile[]) {
     const keywordsList = profile.mots_cles ?? ['emploi']
+    const exclusions = (profile.mots_cles_exclus ?? []).map(k => k.toLowerCase())
     const location = profile.localisation ?? 'Lille'
-    const qualifications = profile.qualifications ?? []
 
     console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location })
 
@@ -99,10 +99,18 @@ export async function POST(req: NextRequest) {
       bySource: allJobs.reduce((acc, j) => { acc[j.source] = (acc[j.source] ?? 0) + 1; return acc }, {} as Record<string, number>),
     })
 
+    // Apply exclusion filter
+    const excluded = exclusions.length > 0
+      ? allJobs.filter(job => {
+          const text = (job.titre + ' ' + (job.entreprise ?? '')).toLowerCase()
+          return !exclusions.some(ex => text.includes(ex))
+        })
+      : allJobs
+
     // Deduplicate by lien (URL)
     const seenLinks = new Set<string>()
-    const uniqueJobs = allJobs.filter(job => {
-      if (!job.lien) return true // Keep jobs without link
+    const uniqueJobs = excluded.filter(job => {
+      if (!job.lien) return true
       if (seenLinks.has(job.lien)) return false
       seenLinks.add(job.lien)
       return true

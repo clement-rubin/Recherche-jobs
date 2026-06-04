@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 interface TestResult {
   name: string
@@ -31,11 +31,49 @@ function StatusIcon({ status }: { status: TestResult['status'] }) {
   }
 }
 
+interface ApiStats {
+  sources: Record<string, { total: number; this_month: number; this_week: number }>
+  jsearch_meta: { distinct_days_total: number; distinct_days_month: number; calls_per_run: number; estimated_calls_month: number; free_quota_month: number }
+  env: { rapidapi_key: boolean; france_travail: boolean; groq: boolean }
+}
+
+const SOURCE_QUOTAS: Record<string, { name: string; quota: string; color: string; note?: string }> = {
+  jsearch:       { name: 'JSearch (RapidAPI)', quota: '200 appels/mois', color: '#6366f1' },
+  apec:          { name: 'APEC',               quota: 'API non-officielle', color: '#f59e0b', note: 'Peut ne pas fonctionner (anti-scraping)' },
+  hellowork:     { name: 'HelloWork',           quota: 'Scraping HTML',     color: '#10b981', note: 'Site JS-rendu → résultats variables' },
+  france_travail:{ name: 'France Travail',      quota: '25 req/s',          color: '#3b82f6', note: 'Nécessite FRANCE_TRAVAIL_CLIENT_ID/SECRET' },
+}
+
+function QuotaBar({ used, total, color }: { used: number; total: number; color: string }) {
+  const pct = total > 0 ? Math.min(100, (used / total) * 100) : 0
+  const danger = pct > 80
+  return (
+    <div className="mt-1.5">
+      <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--muted)' }}>
+        <span>~{used} / {total} appels ce mois</span>
+        <span style={{ color: danger ? 'var(--danger)' : 'var(--muted)' }}>{Math.round(pct)}%</span>
+      </div>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: danger ? 'var(--danger)' : color }} />
+      </div>
+    </div>
+  )
+}
+
 export default function TestPage() {
   const [results, setResults] = useState<TestResult[]>([])
   const [running, setRunning] = useState(false)
   const [globalLog, setGlobalLog] = useState<string[]>([])
+  const [apiStats, setApiStats] = useState<ApiStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(true)
   const abortRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setApiStats(d); setStatsLoading(false) })
+      .catch(() => setStatsLoading(false))
+  }, [])
 
   const log = useCallback((msg: string) => {
     const ts = new Date().toISOString().slice(11, 23)
@@ -466,6 +504,71 @@ export default function TestPage() {
           </pre>
         </div>
       )}
+
+      {/* API Usage Dashboard */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <h2 className="text-foreground font-semibold text-sm">Quota API</h2>
+          {!statsLoading && (
+            <button onClick={() => { setStatsLoading(true); fetch('/api/stats').then(r => r.ok ? r.json() : null).then(d => { setApiStats(d); setStatsLoading(false) }).catch(() => setStatsLoading(false)) }} className="text-xs text-muted hover:text-foreground">↻ Rafraîchir</button>
+          )}
+        </div>
+        <div className="p-5">
+          {statsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-14 rounded-lg animate-pulse" style={{ background: 'var(--background)' }} />)}
+            </div>
+          ) : !apiStats ? (
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>Impossible de charger les stats (non connecté ?)</p>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(SOURCE_QUOTAS).map(([src, meta]) => {
+                const s = apiStats.sources[src] ?? { total: 0, this_month: 0, this_week: 0 }
+                const envOk = src === 'jsearch' ? apiStats.env.rapidapi_key
+                  : src === 'france_travail' ? apiStats.env.france_travail
+                  : true
+                return (
+                  <div key={src} className="rounded-lg p-3" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: meta.color }} />
+                          <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{meta.name}</span>
+                          {!envOk && <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>clé manquante</span>}
+                        </div>
+                        {meta.note && <p className="text-xs mt-0.5 ml-4" style={{ color: 'var(--muted-light)' }}>{meta.note}</p>}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-xs font-mono" style={{ color: 'var(--muted)' }}>{meta.quota}</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 ml-4 flex gap-4 text-xs" style={{ color: 'var(--muted)' }}>
+                      <span><strong style={{ color: 'var(--foreground-dim)' }}>{s.this_week}</strong> cette semaine</span>
+                      <span><strong style={{ color: 'var(--foreground-dim)' }}>{s.this_month}</strong> ce mois</span>
+                      <span><strong style={{ color: 'var(--foreground-dim)' }}>{s.total}</strong> total</span>
+                    </div>
+                    {src === 'jsearch' && (
+                      <div className="mt-2 ml-4">
+                        <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                          ~{apiStats.jsearch_meta.calls_per_run} appels par &quot;Lancer&quot; ({apiStats.jsearch_meta.calls_per_run} = profils × mots-clés actifs)
+                        </p>
+                        <QuotaBar
+                          used={apiStats.jsearch_meta.estimated_calls_month}
+                          total={apiStats.jsearch_meta.free_quota_month}
+                          color={meta.color}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              <div className="rounded-lg p-3 text-xs space-y-1" style={{ background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--muted)' }}>
+                <p><strong style={{ color: 'var(--foreground-dim)' }}>Groq (assistant vocal)</strong> — {apiStats.env.groq ? '✓ clé configurée' : '✗ GROQ_API_KEY manquante'} · Quota gratuit : 14 400 req/jour</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Quick fixes guide */}
       <div className="rounded-xl border border-border bg-card p-5">

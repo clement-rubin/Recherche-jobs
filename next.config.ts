@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://jsearch.p.rapidapi.com https://api.emploi-store.fr https://entreprise.francetravail.fr https://api.groq.com https://oauth2.googleapis.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://jsearch.p.rapidapi.com https://api.emploi-store.fr https://entreprise.francetravail.fr https://api.groq.com https://oauth2.googleapis.com https://www.google.com wss://www.google.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

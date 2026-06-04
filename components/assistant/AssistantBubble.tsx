@@ -38,6 +38,7 @@ export function AssistantBubble() {
   }, [])
 
   const processTranscription = useCallback(async (text: string) => {
+    console.log('[Alex] Sending to /api/assistant/process:', text)
     setState('processing')
     try {
       const res = await fetch('/api/assistant/process', {
@@ -45,15 +46,19 @@ export function AssistantBubble() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcription: text }),
       })
+      console.log('[Alex] API response status:', res.status, res.statusText)
       const data = await res.json()
+      console.log('[Alex] API response body:', data)
       if (!res.ok) {
+        console.error('[Alex] API error:', { status: res.status, data })
         setErrorMsg(data.message ?? "Une erreur est survenue")
         setState('error')
         return
       }
       setResponse(data)
       setState('response')
-    } catch {
+    } catch (err) {
+      console.error('[Alex] Fetch failed (network/CORS?):', err)
       setErrorMsg("Impossible de contacter l'assistant")
       setState('error')
     }
@@ -82,29 +87,48 @@ export function AssistantBubble() {
     recognition.interimResults = false
     recognition.maxAlternatives = 1
 
-    recognition.onstart = () => setState('listening')
+    recognition.onstart = () => {
+      console.log('[Alex] SpeechRecognition started, lang=fr-FR')
+      setState('listening')
+    }
 
     recognition.onresult = (e: SpeechRecognitionEvent) => {
       const text = e.results[0][0].transcript
+      const confidence = e.results[0][0].confidence
+      console.log('[Alex] Got transcript:', { text, confidence, resultCount: e.results.length })
       setTranscript(text)
       stopListening()
       processTranscription(text)
     }
 
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
+      console.error('[Alex] SpeechRecognition error', {
+        error: e.error,
+        message: e.message,
+        timeStamp: e.timeStamp,
+        type: e.type,
+      })
       recognitionRef.current = null
       if (e.error !== 'aborted') {
         setErrorMsg(`Erreur microphone: ${e.error}`)
         setState('error')
       } else {
+        console.log('[Alex] Recognition aborted (manual stop), returning idle')
         setState('idle')
       }
     }
 
     recognition.onend = () => {
-      // If still in listening state (no result triggered), reset to idle
+      console.log('[Alex] SpeechRecognition ended, current state will reset if still listening')
       setState(prev => prev === 'listening' ? 'idle' : prev)
     }
+
+    recognition.onaudiostart = () => console.log('[Alex] Audio capture started')
+    recognition.onaudioend = () => console.log('[Alex] Audio capture ended')
+    recognition.onsoundstart = () => console.log('[Alex] Sound detected')
+    recognition.onsoundend = () => console.log('[Alex] Sound ended')
+    recognition.onspeechstart = () => console.log('[Alex] Speech detected')
+    recognition.onspeechend = () => console.log('[Alex] Speech ended')
 
     recognitionRef.current = recognition
     recognition.start()

@@ -31,6 +31,8 @@ export async function processIntent(
   transcription: string,
   recentApplications: Array<{ id: string; entreprise: string; poste: string; statut: string }>
 ): Promise<AssistantIntent> {
+  console.log('[groq] processIntent start', { transcription: transcription.slice(0, 80), appsCount: recentApplications.length })
+  const t0 = Date.now()
   const completion = await callWithRetry(() => groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [
@@ -74,13 +76,16 @@ Règles importantes:
   }))
 
   const raw = completion.choices[0].message.content
+  console.log('[groq] raw response', { ms: Date.now() - t0, model: completion.model, raw: raw?.slice(0, 200) })
   if (!raw) throw new Error('Empty response from Groq assistant')
 
   let parsed: AssistantIntent
   try {
     parsed = JSON.parse(raw) as AssistantIntent
   } catch {
+    console.error('[groq] JSON parse failed, raw:', raw)
     throw new Error(`Invalid JSON from Groq assistant: ${raw.slice(0, 100)}`)
   }
+  console.log('[groq] parsed intent', { intent: parsed.intent, confidence: parsed.confidence, requires_confirmation: parsed.requires_confirmation })
   return parsed
 }

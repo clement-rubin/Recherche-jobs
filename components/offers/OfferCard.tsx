@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Offer } from '@/lib/supabase/types'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
+import { OfferDetailModal } from './OfferDetailModal'
 
 const SOURCE_LABELS: Record<string, string> = {
   jsearch: 'JSearch',
@@ -19,92 +20,98 @@ interface Props {
 
 export function OfferCard({ offer, onAction }: Props) {
   const [confirmIgnore, setConfirmIgnore] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
 
   return (
-    <div
-      className="rounded-xl p-4 transition-all hover:-translate-y-0.5"
-      style={{
-        background: 'var(--card)',
-        border: '1px solid var(--border)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--foreground)' }}>{offer.titre}</h3>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-            {offer.entreprise && <span className="font-medium" style={{ color: 'var(--foreground-dim)' }}>{offer.entreprise}</span>}
-            {offer.entreprise && offer.localisation && ' · '}
-            {offer.localisation}
-          </p>
-          <div className="flex items-center gap-3 mt-2">
-            {offer.type_contrat && (
-              <span className="text-xs capitalize" style={{ color: 'var(--muted-light)' }}>{offer.type_contrat}</span>
-            )}
-            {(offer.salaire_min || offer.salaire_max) && (
-              <span className="text-xs font-medium" style={{ color: 'var(--success)' }}>
-                {offer.salaire_min && `${offer.salaire_min.toLocaleString('fr-FR')}€`}
-                {offer.salaire_min && offer.salaire_max && ' – '}
-                {offer.salaire_max && `${offer.salaire_max.toLocaleString('fr-FR')}€`}
-              </span>
-            )}
+    <>
+      <div
+        className="rounded-xl p-4 transition-all hover:-translate-y-0.5 cursor-pointer"
+        style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        }}
+        onClick={() => setShowDetail(true)}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>{offer.titre}</h3>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
+              {offer.entreprise && <span className="font-medium" style={{ color: 'var(--foreground-dim)' }}>{offer.entreprise}</span>}
+              {offer.entreprise && offer.localisation && ' · '}
+              {offer.localisation}
+            </p>
+            <div className="flex items-center gap-3 mt-2">
+              {offer.type_contrat && (
+                <span className="text-xs capitalize" style={{ color: 'var(--muted-light)' }}>{offer.type_contrat}</span>
+              )}
+              {(offer.salaire_min || offer.salaire_max) && (
+                <span className="text-xs font-medium" style={{ color: 'var(--success)' }}>
+                  {offer.salaire_min && `${offer.salaire_min.toLocaleString('fr-FR')}€`}
+                  {offer.salaire_min && offer.salaire_max && ' – '}
+                  {offer.salaire_max && `${offer.salaire_max.toLocaleString('fr-FR')}€`}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+            <span
+              className="text-xs px-2 py-0.5 rounded border"
+              style={{ background: 'var(--accent-dim)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}
+            >
+              {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
+            </span>
+            <span className="text-xs" style={{ color: 'var(--muted-light)' }}>Voir détails →</span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          <span
-            className="text-xs px-2 py-0.5 rounded border"
-            style={{ background: 'var(--accent-dim)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}
+
+        <div
+          className="flex gap-2 mt-4 pt-3"
+          style={{ borderTop: '1px solid var(--border)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            onClick={() => onAction(offer.id, 'postule')}
+            className="flex-1 text-white text-xs font-medium py-1.5 rounded-lg transition-colors btn-accent"
           >
-            {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
-          </span>
-          {offer.lien && (
-            <a
-              href={offer.lien}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs transition-colors"
-              style={{ color: 'var(--muted-light)' }}
-            >
-              Voir l&apos;offre →
-            </a>
-          )}
+            Postuler
+          </button>
+          <button
+            onClick={() => onAction(offer.id, 'sauvegarde')}
+            className="flex-1 text-xs py-1.5 rounded-lg transition-colors border"
+            style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+          >
+            Sauvegarder
+          </button>
+          <button
+            onClick={() => setConfirmIgnore(true)}
+            className="px-3 text-xs py-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--muted-light)' }}
+          >
+            Ignorer
+          </button>
         </div>
+
+        {confirmIgnore && (
+          <div className="mt-2" onClick={e => e.stopPropagation()}>
+            <InlineConfirm
+              visible={confirmIgnore}
+              message="Ignorer cette offre ?"
+              confirmLabel="Ignorer"
+              onConfirm={() => { setConfirmIgnore(false); onAction(offer.id, 'ignore') }}
+              onCancel={() => setConfirmIgnore(false)}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-        <button
-          onClick={() => onAction(offer.id, 'postule')}
-          className="flex-1 text-white text-xs font-medium py-1.5 rounded-lg transition-colors btn-accent"
-        >
-          Postuler
-        </button>
-        <button
-          onClick={() => onAction(offer.id, 'sauvegarde')}
-          className="flex-1 text-xs py-1.5 rounded-lg transition-colors border"
-          style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
-        >
-          Sauvegarder
-        </button>
-        <button
-          onClick={() => setConfirmIgnore(true)}
-          className="px-3 text-xs py-1.5 rounded-lg transition-colors"
-          style={{ color: 'var(--muted-light)' }}
-        >
-          Ignorer
-        </button>
-      </div>
-
-      {confirmIgnore && (
-        <div className="mt-2">
-          <InlineConfirm
-            visible={confirmIgnore}
-            message="Ignorer cette offre ?"
-            confirmLabel="Ignorer"
-            onConfirm={() => { setConfirmIgnore(false); onAction(offer.id, 'ignore') }}
-            onCancel={() => setConfirmIgnore(false)}
-          />
-        </div>
+      {showDetail && (
+        <OfferDetailModal
+          offer={offer}
+          onAction={onAction}
+          onClose={() => setShowDetail(false)}
+        />
       )}
-    </div>
+    </>
   )
 }

@@ -78,7 +78,8 @@ export default function SearchPage() {
             successLabel="✓ Terminé"
             errorLabel="✕ Échec"
           >
-            ↻ Lancer maintenant
+            <span className="sm:hidden">↻</span>
+            <span className="hidden sm:inline">↻ Lancer maintenant</span>
           </AsyncButton>
           <button
             onClick={() => setShowModal(true)}
@@ -104,61 +105,77 @@ export default function SearchPage() {
       ) : (
         <div className="space-y-3">
           {profiles.map(profile => (
-            <div key={profile.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium" style={{ color: 'var(--foreground)' }}>{profile.nom || 'Profil sans nom'}</h3>
-                    {profile.actif && (
-                      <span className="text-xs bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">Actif</span>
-                    )}
-                  </div>
-                  <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
-                    {profile.localisation} · {profile.rayon_km}km
+            <div
+              key={profile.id}
+              className="bg-card border border-border rounded-xl p-4 space-y-3 transition-shadow duration-200 hover:shadow-md"
+            >
+              {/* Info — full width */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-medium" style={{ color: 'var(--foreground)' }}>
+                    {profile.nom || 'Profil sans nom'}
+                  </h3>
+                  {profile.actif && (
+                    <span className="text-xs bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
+                      Actif
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
+                  {profile.localisation} · {profile.rayon_km}km
+                </p>
+                {(profile.mots_cles ?? []).length > 0 && (
+                  <p className="text-xs mt-1" style={{ color: 'var(--muted-light)' }}>
+                    Mots-clés : {(profile.mots_cles ?? []).join(', ')}
                   </p>
-                  {(profile.mots_cles ?? []).length > 0 && (
-                    <p className="text-xs mt-1" style={{ color: 'var(--muted-light)' }}>
-                      Mots-clés : {(profile.mots_cles ?? []).join(', ')}
-                    </p>
-                  )}
-                  {(profile.qualifications ?? []).length > 0 && (
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--muted-light)' }}>
-                      Qualifications : {(profile.qualifications ?? []).join(', ')}
-                    </p>
-                  )}
-                  {(profile.type_contrat ?? []).length > 0 && (
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--muted-light)' }}>
-                      Contrats : {(profile.type_contrat ?? []).join(', ')}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 ml-4">
-                  <button
-                    onClick={() => handleActivate(profile.id, profile.actif)}
-                    className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
-                    style={
-                      profile.actif
-                        ? { borderColor: 'var(--border)', color: 'var(--muted)' }
-                        : { borderColor: 'var(--accent)', color: 'var(--accent)' }
-                    }
-                  >
-                    {profile.actif ? 'Désactiver' : 'Activer'}
-                  </button>
-                  <button
-                    onClick={() => setEditProfile(profile)}
-                    className="text-xs px-2 py-1.5 rounded-lg transition-colors hover:bg-zinc-100"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    Éditer
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirmId(profile.id)}
-                    className="text-xs px-2 py-1.5 rounded-lg transition-colors hover:bg-red-50"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    Sup.
-                  </button>
-                </div>
+                )}
+                {(profile.qualifications ?? []).length > 0 && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--muted-light)' }}>
+                    Qualifications : {(profile.qualifications ?? []).join(', ')}
+                  </p>
+                )}
+                {(profile.type_contrat ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {(profile.type_contrat ?? []).map(ct => (
+                      <span
+                        key={ct}
+                        className="text-xs px-2 py-0.5 rounded capitalize"
+                        style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
+                      >
+                        {ct}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Action buttons — 36px touch targets */}
+              <div className="flex items-center gap-2 border-t border-border pt-1">
+                <button
+                  onClick={() => handleActivate(profile.id, profile.actif)}
+                  className="flex-1 text-xs px-3 py-2.5 rounded-lg border transition-colors min-h-[36px]"
+                  style={
+                    profile.actif
+                      ? { borderColor: 'var(--border)', color: 'var(--muted)' }
+                      : { borderColor: 'var(--accent)', color: 'var(--accent)' }
+                  }
+                >
+                  {profile.actif ? 'Désactiver' : 'Activer'}
+                </button>
+                <button
+                  onClick={() => setEditProfile(profile)}
+                  className="text-xs px-3 py-2.5 rounded-lg transition-colors hover:bg-zinc-100 min-h-[36px]"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  Éditer
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmId(profile.id)}
+                  className="text-xs px-3 py-2.5 rounded-lg transition-colors hover:bg-red-50 hover:text-red-500 min-h-[36px]"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  ✕
+                </button>
               </div>
 
               <InlineConfirm

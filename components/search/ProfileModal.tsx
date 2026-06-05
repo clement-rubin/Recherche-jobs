@@ -7,15 +7,29 @@ import { TagInput } from '@/components/ui/TagInput'
 import { AsyncButton } from '@/components/ui/AsyncButton'
 
 const CONTRACT_TYPES = ['interim', 'stage', 'cdi', 'cdd', 'alternance']
-const DUREE_OPTIONS = [
-  { value: 'peu_importe',  label: 'Peu importe' },
-  { value: '1_semaine',    label: '1 semaine' },
-  { value: '2_semaines',   label: '2 semaines' },
-  { value: '3_semaines',   label: '3 semaines' },
-  { value: 'moins_1_mois', label: 'Moins de 1 mois' },
-  { value: '1_3_mois',     label: '1 à 3 mois' },
-  { value: '3_6_mois',     label: '3 à 6 mois' },
-  { value: '6_plus',       label: '6 mois et plus' },
+const DUREE_GROUPS = [
+  {
+    label: 'Court terme',
+    options: [
+      { value: '1_semaine',    label: '1 semaine' },
+      { value: '2_semaines',   label: '2 semaines' },
+      { value: '3_semaines',   label: '3 semaines' },
+      { value: 'moins_1_mois', label: 'Moins de 1 mois' },
+    ],
+  },
+  {
+    label: 'Moyen terme',
+    options: [
+      { value: '1_3_mois', label: '1 à 3 mois' },
+      { value: '3_6_mois', label: '3 à 6 mois' },
+    ],
+  },
+  {
+    label: 'Long terme',
+    options: [
+      { value: '6_plus', label: '6 mois et plus' },
+    ],
+  },
 ]
 const EXCLUSION_PRESETS = [
   { label: 'CDI', value: 'cdi' },
@@ -115,7 +129,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="px-4 sm:px-6 py-5 space-y-4 max-h-[80vh] overflow-y-auto">
           {/* Nom */}
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--muted)' }}>Nom du profil</label>
@@ -128,7 +142,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
           </div>
 
           {/* Localisation + Rayon */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--muted)' }}>Localisation</label>
               <input
@@ -187,10 +201,10 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
                         ? f.mots_cles_exclus.filter(k => k !== value)
                         : [...f.mots_cles_exclus, value],
                     }))}
-                    className="px-2 py-0.5 rounded text-xs border transition-colors"
+                    className={`px-2 py-0.5 rounded text-xs border transition-colors ${active ? 'ring-1 ring-offset-1' : ''}`}
                     style={
                       active
-                        ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
+                        ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff', outlineColor: 'var(--accent)' }
                         : { borderColor: 'var(--border)', color: 'var(--muted)', background: 'transparent' }
                     }
                   >
@@ -214,7 +228,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
           </div>
 
           {/* Durée contrat + Salaire */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--muted)' }}>Durée de contrat</label>
               <select
@@ -222,8 +236,13 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
                 onChange={e => setForm(f => ({ ...f, duree_contrat: e.target.value as SearchProfile['duree_contrat'] }))}
                 className={inputClass}
               >
-                {DUREE_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                <option value="peu_importe">Peu importe</option>
+                {DUREE_GROUPS.map(group => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>

@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Offer, OfferStatus } from '@/lib/supabase/types'
 import { OfferCard } from '@/components/offers/OfferCard'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
+import { SwipeDeck } from '@/components/offers/SwipeDeck'
+import { ViewToggle } from '@/components/offers/ViewToggle'
 
 const STATUS_FILTERS: { value: OfferStatus | ''; label: string }[] = [
   { value: '', label: 'À traiter' },
@@ -29,6 +31,21 @@ export default function OffersPage() {
   const [filterSource, setFilterSource] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'swipe'>('list')
+
+  useEffect(() => {
+    const stored = localStorage.getItem('offers-view-mode') as 'list' | 'swipe' | null
+    if (stored) {
+      setViewMode(stored)
+    } else {
+      setViewMode(window.innerWidth < 1024 ? 'swipe' : 'list')
+    }
+  }, [])
+
+  const handleViewModeChange = (mode: 'list' | 'swipe') => {
+    setViewMode(mode)
+    localStorage.setItem('offers-view-mode', mode)
+  }
 
   const fetchOffers = useCallback(async () => {
     setLoading(true)
@@ -102,15 +119,18 @@ export default function OffersPage() {
           <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Offres à traiter</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{offers.length} offre{offers.length !== 1 ? 's' : ''}</p>
         </div>
-        {offers.length > 0 && (
-          <button
-            onClick={() => setConfirmClear(true)}
-            className="text-xs px-3 py-1.5 rounded-lg border transition-colors flex-shrink-0 mt-1"
-            style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
-          >
-            Tout ignorer
-          </button>
-        )}
+        <div className="flex items-center gap-2 mt-1 flex-shrink-0">
+          <ViewToggle mode={viewMode} onChange={handleViewModeChange} />
+          {offers.length > 0 && viewMode === 'list' && (
+            <button
+              onClick={() => setConfirmClear(true)}
+              className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+              style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+            >
+              Tout ignorer
+            </button>
+          )}
+        </div>
       </div>
       {confirmClear && (
         <InlineConfirm
@@ -162,11 +182,19 @@ export default function OffersPage() {
         <div className="rounded-lg px-4 py-3 text-sm border bg-red-50 border-red-200 text-red-700">{error}</div>
       )}
 
-      {offers.length === 0 ? (
+      {offers.length === 0 && viewMode === 'list' ? (
         <div className="rounded-xl p-12 text-center" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
           <p className="font-medium mb-1" style={{ color: 'var(--foreground)' }}>Aucune offre</p>
           <p className="text-sm" style={{ color: 'var(--muted)' }}>Les offres apparaîtront ici après synchronisation ou recherche manuelle.</p>
         </div>
+      ) : viewMode === 'swipe' ? (
+        <SwipeDeck
+          offers={offers}
+          onAction={handleAction}
+          onNeedMore={() => {
+            if (offers.length <= 3) fetchOffers()
+          }}
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {offers.map(offer => (

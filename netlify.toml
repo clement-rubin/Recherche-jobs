@@ -10,12 +10,10 @@
   node_bundler = "esbuild"
   timeout = 26
 
-[[scheduled-functions]]
-  name = "sync-emails"
+[functions."sync-emails"]
   schedule = "0 8,20 * * *"
 
-[[scheduled-functions]]
-  name = "fetch-jobs"
+[functions."fetch-jobs"]
   schedule = "0 7 * * 1-5"
 
 [build.environment]

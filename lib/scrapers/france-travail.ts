@@ -96,7 +96,8 @@ function cityToDept(city: string): string | null {
 export async function fetchFranceTravail(
   keywords: string,
   location: string,
-  typeContrats?: string[]
+  typeContrats?: string[],
+  tempsPlein?: boolean
 ): Promise<ScrapedJob[]> {
   const token = await getFranceTravailToken()
   if (!token) return []
@@ -120,6 +121,10 @@ export async function fetchFranceTravail(
       if (ftCodes.length > 0) {
         params.typeContrat = ftCodes.join(',')
       }
+    }
+
+    if (tempsPlein !== undefined) {
+      params.tempsPlein = tempsPlein ? 'true' : 'false'
     }
 
     const res = await fetch(

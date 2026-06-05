@@ -75,7 +75,13 @@ export async function POST(req: NextRequest) {
     const location = profile.localisation ?? 'Lille'
     const typeContrats = profile.type_contrat ?? []
 
-    console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location })
+    // Detect work-time preference from exclusions → passed to FT API as tempsPlein filter
+    const excludesTempsPlein = exclusions.some(e => e.includes('temps plein'))
+    const excludesTempsPartiel = exclusions.some(e => e.includes('temps partiel'))
+    const tempsPleinFilter: boolean | undefined =
+      excludesTempsPlein ? false : excludesTempsPartiel ? true : undefined
+
+    console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location, typeContrats, tempsPleinFilter })
 
     // Wrap each scraper in a 7s timeout to prevent slow sources from blocking
     const withTimeout = <T>(p: Promise<T>, ms = 7000): Promise<T> =>
@@ -87,7 +93,7 @@ export async function POST(req: NextRequest) {
       withTimeout(fetchJSearch(kw, location), 15000),
       withTimeout(fetchAPEC(kw, location), 7000),
       withTimeout(fetchHelloWork(kw, location, typeContrats), 7000),
-      withTimeout(fetchFranceTravail(kw, location, typeContrats), 7000),
+      withTimeout(fetchFranceTravail(kw, location, typeContrats, tempsPleinFilter), 7000),
     ])
 
     const settled = await Promise.allSettled(allPromises)
@@ -106,10 +112,17 @@ export async function POST(req: NextRequest) {
       bySource: allJobs.reduce((acc, j) => { acc[j.source] = (acc[j.source] ?? 0) + 1; return acc }, {} as Record<string, number>),
     })
 
-    // Apply exclusion filter
+    // Apply exclusion filter — checks title, company, contract type, and work-time fields
     const excluded = exclusions.length > 0
       ? allJobs.filter(job => {
-          const text = (job.titre + ' ' + (job.entreprise ?? '')).toLowerCase()
+          const rawData = job.raw_data as Record<string, unknown> | undefined
+          const workTime = [
+            rawData?.dureeTravailLibelleConverti,
+            rawData?.dureeTravailLibelle,
+            rawData?.employment_type,
+          ].filter(Boolean).join(' ')
+          const text = [job.titre, job.entreprise, job.type_contrat, workTime]
+            .filter(Boolean).join(' ').toLowerCase()
           return !exclusions.some(ex => text.includes(ex))
         })
       : allJobs

@@ -61,7 +61,7 @@ export interface SearchProfile {
   mots_cles: string[] | null
   mots_cles_exclus: string[] | null
   qualifications: string[] | null
-  duree_contrat: 'peu_importe' | '1_3_mois' | '3_6_mois' | '6_plus' | null
+  duree_contrat: 'peu_importe' | '1_semaine' | '2_semaines' | '3_semaines' | 'moins_1_mois' | '1_3_mois' | '3_6_mois' | '6_plus' | null
   localisation: string | null
   rayon_km: number
   salaire_min: number | null

@@ -8,10 +8,23 @@ import { AsyncButton } from '@/components/ui/AsyncButton'
 
 const CONTRACT_TYPES = ['interim', 'stage', 'cdi', 'cdd', 'alternance']
 const DUREE_OPTIONS = [
-  { value: 'peu_importe', label: 'Peu importe' },
-  { value: '1_3_mois',    label: '1 à 3 mois' },
-  { value: '3_6_mois',    label: '3 à 6 mois' },
-  { value: '6_plus',      label: '6 mois et plus' },
+  { value: 'peu_importe',  label: 'Peu importe' },
+  { value: '1_semaine',    label: '1 semaine' },
+  { value: '2_semaines',   label: '2 semaines' },
+  { value: '3_semaines',   label: '3 semaines' },
+  { value: 'moins_1_mois', label: 'Moins de 1 mois' },
+  { value: '1_3_mois',     label: '1 à 3 mois' },
+  { value: '3_6_mois',     label: '3 à 6 mois' },
+  { value: '6_plus',       label: '6 mois et plus' },
+]
+const EXCLUSION_PRESETS = [
+  { label: 'CDI', value: 'cdi' },
+  { label: 'CDD', value: 'cdd' },
+  { label: 'Alternance', value: 'alternance' },
+  { label: 'Stage', value: 'stage' },
+  { label: 'Freelance', value: 'freelance' },
+  { label: 'Temps plein', value: 'temps plein' },
+  { label: 'Temps partiel', value: 'temps partiel' },
 ]
 const KW_SUGGESTIONS = ['magasinier', 'logistique', 'entrepôt', 'manutentionnaire', 'cariste', 'préparateur de commandes']
 const QUAL_SUGGESTIONS = ['CACES 1', 'CACES 3', 'CACES 5', 'Permis B', 'Bac+2', 'Bac+3']
@@ -160,6 +173,32 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
               placeholder="Ex: cadre, senior, 5 ans d'expérience..."
               tagColor="blue"
             />
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <span className="text-xs" style={{ color: 'var(--muted-light)' }}>Ajouter :</span>
+              {EXCLUSION_PRESETS.map(({ label, value }) => {
+                const active = form.mots_cles_exclus.includes(value)
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setForm(f => ({
+                      ...f,
+                      mots_cles_exclus: active
+                        ? f.mots_cles_exclus.filter(k => k !== value)
+                        : [...f.mots_cles_exclus, value],
+                    }))}
+                    className="px-2 py-0.5 rounded text-xs border transition-colors"
+                    style={
+                      active
+                        ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
+                        : { borderColor: 'var(--border)', color: 'var(--muted)', background: 'transparent' }
+                    }
+                  >
+                    {active ? '✕ ' : '+ '}{label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Qualifications */}

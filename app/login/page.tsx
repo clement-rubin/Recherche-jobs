@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -125,11 +126,29 @@ export default function LoginPage() {
           <p className="text-center text-xs" style={{ color: '#4b5175' }}>
             Connexion sécurisée via votre compte Google
           </p>
+
+          <Link
+            href="/about"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: 'transparent',
+              border: '1px solid #1a1d32',
+              color: '#6b7280',
+            }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            En savoir plus sur JobTracker IA
+          </Link>
         </div>
 
         {/* Footer */}
         <p className="text-center text-xs mt-6" style={{ color: '#2a2f4a' }}>
-          JobTracker IA · Recherche d&apos;emploi intelligente
+          JobTracker IA ·{' '}
+          <Link href="/about" className="hover:underline" style={{ color: '#4b5175' }}>
+            Comment ça fonctionne ?
+          </Link>
         </p>
       </div>
     </div>

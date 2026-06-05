@@ -8,7 +8,6 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  timeout = 26
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"

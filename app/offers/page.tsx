@@ -191,9 +191,7 @@ export default function OffersPage() {
         <SwipeDeck
           offers={offers}
           onAction={handleAction}
-          onNeedMore={() => {
-            if (offers.length <= 3) fetchOffers()
-          }}
+          onNeedMore={fetchOffers}
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

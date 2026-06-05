@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import gsap from 'gsap'
 import type { Offer } from '@/lib/supabase/types'
 
@@ -50,6 +50,16 @@ export function SwipeCard({ offer, onAction, stackIndex }: Props) {
   const cardRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const dragState = useRef({ dragging: false, startX: 0, startY: 0, x: 0, y: 0 })
+  const reducedMotion = useRef(
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+
+  useEffect(() => {
+    const card = cardRef.current
+    return () => {
+      if (card) gsap.killTweensOf(card)
+    }
+  }, [])
 
   const getDirection = useCallback((x: number, y: number): SwipeDirection => {
     const absX = Math.abs(x)
@@ -80,7 +90,9 @@ export function SwipeCard({ offer, onAction, stackIndex }: Props) {
 
   const flyOut = useCallback((dir: SwipeDirection, action: Action) => {
     if (!cardRef.current) return
-    if (prefersReducedMotion()) {
+    dragState.current.dragging = false
+    gsap.killTweensOf(cardRef.current)
+    if (reducedMotion.current) {
       fireAction(action)
       return
     }
@@ -96,7 +108,7 @@ export function SwipeCard({ offer, onAction, stackIndex }: Props) {
 
   const springBack = useCallback(() => {
     if (!cardRef.current) return
-    if (prefersReducedMotion()) {
+    if (reducedMotion.current) {
       cardRef.current.style.transform = ''
       cardRef.current.style.opacity = '1'
       if (overlayRef.current) { overlayRef.current.style.opacity = '0' }
@@ -126,7 +138,7 @@ export function SwipeCard({ offer, onAction, stackIndex }: Props) {
     dragState.current.y = y
 
     if (!cardRef.current) return
-    if (prefersReducedMotion()) {
+    if (reducedMotion.current) {
       cardRef.current.style.transform = `translate(${x}px, ${y}px)`
     } else {
       gsap.set(cardRef.current, { x, y, rotation: x * 0.08 })
@@ -174,6 +186,7 @@ export function SwipeCard({ offer, onAction, stackIndex }: Props) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
       style={{
         position: 'absolute',
         width: '100%',

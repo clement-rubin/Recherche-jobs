@@ -15,6 +15,7 @@ export function SwipeDeck({ offers, onAction, onNeedMore }: Props) {
   const [stack, setStack] = useState<Offer[]>(offers)
   const prevOffersRef = useRef<Offer[]>(offers)
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+  const needMoreCalledRef = useRef(false)
 
   // Sync new offers (prefetch batch arrives)
   useEffect(() => {
@@ -28,22 +29,25 @@ export function SwipeDeck({ offers, onAction, onNeedMore }: Props) {
 
   // Request more when running low
   useEffect(() => {
-    if (stack.length <= 3) onNeedMore()
+    if (stack.length <= 3 && !needMoreCalledRef.current) {
+      needMoreCalledRef.current = true
+      onNeedMore()
+    }
+    if (stack.length > 3) {
+      needMoreCalledRef.current = false
+    }
   }, [stack.length, onNeedMore])
 
   const handleAction = async (id: string, action: 'postule' | 'ignore' | 'sauvegarde') => {
     await onAction(id, action)
-    setStack(prev => {
-      const next = prev.filter(o => o.id !== id)
-      const newTopRef = cardRefs.current[1]
-      if (newTopRef && typeof requestAnimationFrame !== 'undefined') {
-        gsap.fromTo(newTopRef,
-          { rotation: 3, scale: 0.97 },
-          { rotation: 0, scale: 1, duration: 0.4, ease: 'back.out(1.2)' }
-        )
-      }
-      return next
-    })
+    const nextTopRef = cardRefs.current[1]
+    setStack(prev => prev.filter(o => o.id !== id))
+    if (nextTopRef && typeof requestAnimationFrame !== 'undefined') {
+      gsap.fromTo(nextTopRef,
+        { rotation: 3, scale: 0.97 },
+        { rotation: 0, scale: 1, duration: 0.4, ease: 'back.out(1.2)' }
+      )
+    }
   }
 
   if (stack.length === 0) {

@@ -74,13 +74,17 @@ export async function POST(req: NextRequest) {
 
     console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location })
 
+    // Wrap each scraper in a 7s timeout to prevent slow sources from blocking
+    const withTimeout = <T>(p: Promise<T>, ms = 7000): Promise<T> =>
+      Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))])
+
     // All sources: one call per keyword (OR behavior)
     // Qualifications are profile metadata only — not appended to queries
     const allPromises = keywordsList.flatMap(kw => [
-      fetchJSearch(kw, location),
-      fetchAPEC(kw, location),
-      fetchHelloWork(kw, location),
-      fetchFranceTravail(kw, location),
+      withTimeout(fetchJSearch(kw, location)),
+      withTimeout(fetchAPEC(kw, location)),
+      withTimeout(fetchHelloWork(kw, location)),
+      withTimeout(fetchFranceTravail(kw, location)),
     ])
 
     const settled = await Promise.allSettled(allPromises)
@@ -116,32 +120,36 @@ export async function POST(req: NextRequest) {
       return true
     })
 
-    // Batch insert, ignore duplicates (unique constraint on lien)
-    for (const job of uniqueJobs) {
-      const { error } = await supabase
+    // Batch upsert in chunks of 100 — ignore duplicates on lien unique constraint
+    const rows = uniqueJobs.map(job => ({
+      user_id: profile.user_id,
+      titre: job.titre,
+      entreprise: job.entreprise,
+      lien: job.lien,
+      localisation: job.localisation,
+      source: job.source,
+      type_contrat: job.type_contrat,
+      salaire_min: job.salaire_min,
+      salaire_max: job.salaire_max,
+      statut: 'non_traite' as const,
+      raw_data: job.raw_data,
+    }))
+
+    const CHUNK = 100
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const chunk = rows.slice(i, i + CHUNK)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error, data } = await (supabase as any)
         .from('offers')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .insert({
-          user_id: profile.user_id,
-          titre: job.titre,
-          entreprise: job.entreprise,
-          lien: job.lien,
-          localisation: job.localisation,
-          source: job.source,
-          type_contrat: job.type_contrat,
-          salaire_min: job.salaire_min,
-          salaire_max: job.salaire_max,
-          statut: 'non_traite',
-          raw_data: job.raw_data,
-        // Supabase generated types may not include all fields; cast to any for insert
-        } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .upsert(chunk, { onConflict: 'lien', ignoreDuplicates: true })
+        .select('id')
 
       if (error) {
-        // Duplicate link (unique constraint) — expected, skip
-        if (error.code !== '23505') results.errors.push(`insert: ${error.message}`)
-        results.skipped++
+        results.errors.push(`upsert: ${error.message}`)
       } else {
-        results.inserted++
+        const inserted = (data as { id: string }[] | null)?.length ?? 0
+        results.inserted += inserted
+        results.skipped += chunk.length - inserted
       }
     }
   }

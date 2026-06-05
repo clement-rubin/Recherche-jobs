@@ -8,6 +8,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  timeout = 26
 
 [[scheduled-functions]]
   name = "sync-emails"

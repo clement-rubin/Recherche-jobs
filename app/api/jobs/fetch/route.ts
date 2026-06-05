@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
     const keywordsList = profile.mots_cles ?? ['emploi']
     const exclusions = (profile.mots_cles_exclus ?? []).map(k => k.toLowerCase())
     const location = profile.localisation ?? 'Lille'
+    const typeContrats = profile.type_contrat ?? []
 
     console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location })
 
@@ -83,8 +84,8 @@ export async function POST(req: NextRequest) {
     const allPromises = keywordsList.flatMap(kw => [
       withTimeout(fetchJSearch(kw, location)),
       withTimeout(fetchAPEC(kw, location)),
-      withTimeout(fetchHelloWork(kw, location)),
-      withTimeout(fetchFranceTravail(kw, location)),
+      withTimeout(fetchHelloWork(kw, location, typeContrats)),
+      withTimeout(fetchFranceTravail(kw, location, typeContrats)),
     ])
 
     const settled = await Promise.allSettled(allPromises)

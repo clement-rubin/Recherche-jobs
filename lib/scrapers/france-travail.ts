@@ -40,20 +40,90 @@ async function getFranceTravailToken(): Promise<string | null> {
   }
 }
 
-export async function fetchFranceTravail(keywords: string, commune: string): Promise<ScrapedJob[]> {
+// Maps app contract types to France Travail typeContrat codes
+const CONTRACT_TYPE_MAP: Record<string, string> = {
+  interim: 'MIS',
+  cdi: 'CDI',
+  cdd: 'CDD',
+  alternance: 'CNA',
+  stage: 'PRO',
+}
+
+// Maps common French cities to their department code (used as fallback when no INSEE commune code)
+const CITY_TO_DEPT: Record<string, string> = {
+  lille: '59',
+  paris: '75',
+  lyon: '69',
+  marseille: '13',
+  toulouse: '31',
+  bordeaux: '33',
+  nantes: '44',
+  strasbourg: '67',
+  rennes: '35',
+  grenoble: '38',
+  montpellier: '34',
+  nice: '06',
+  rouen: '76',
+  toulon: '83',
+  douai: '59',
+  valenciennes: '59',
+  roubaix: '59',
+  tourcoing: '59',
+  amiens: '80',
+  reims: '51',
+  metz: '57',
+  nancy: '54',
+  dijon: '21',
+  clermont: '63',
+  'clermont-ferrand': '63',
+  brest: '29',
+  le: '72', // Le Mans
+  caen: '14',
+  limoges: '87',
+  besancon: '25',
+  tours: '37',
+  angers: '49',
+  perpignan: '66',
+  orléans: '45',
+  orleans: '45',
+}
+
+function cityToDept(city: string): string | null {
+  const normalized = city.toLowerCase().trim().replace(/[éèêë]/g, 'e').replace(/[àâ]/g, 'a')
+  return CITY_TO_DEPT[normalized] ?? null
+}
+
+export async function fetchFranceTravail(
+  keywords: string,
+  location: string,
+  typeContrats?: string[]
+): Promise<ScrapedJob[]> {
   const token = await getFranceTravailToken()
   if (!token) return []
 
   try {
-    const params = new URLSearchParams({
+    const params: Record<string, string> = {
       motsCles: keywords,
-      lieuTravail: commune,
       distance: '30',
       nbMaxResultats: '20',
-    })
+    }
+
+    const dept = cityToDept(location)
+    if (dept) {
+      params.departement = dept
+    }
+
+    if (typeContrats && typeContrats.length > 0) {
+      const ftCodes = typeContrats
+        .map(t => CONTRACT_TYPE_MAP[t.toLowerCase()])
+        .filter(Boolean)
+      if (ftCodes.length > 0) {
+        params.typeContrat = ftCodes.join(',')
+      }
+    }
 
     const res = await fetch(
-      `https://api.emploi-store.fr/partenaire/offresdemploi/v2/offres/search?${params}`,
+      `https://api.emploi-store.fr/partenaire/offresdemploi/v2/offres/search?${new URLSearchParams(params)}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -74,9 +144,9 @@ export async function fetchFranceTravail(keywords: string, commune: string): Pro
         titre: (j.intitule as string) ?? 'Poste inconnu',
         entreprise: (entreprise?.nom as string) ?? null,
         lien: (origine?.urlOrigine as string) ?? null,
-        localisation: (lieu?.libelle as string) ?? commune,
+        localisation: (lieu?.libelle as string) ?? location,
         source: 'france_travail',
-        type_contrat: (j.typeContrat as string) ?? null,
+        type_contrat: (j.typeContratLibelle as string) ?? (j.typeContrat as string) ?? null,
         salaire_min: null,
         salaire_max: null,
         raw_data: j,

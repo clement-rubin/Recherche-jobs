@@ -1,9 +1,25 @@
 import * as cheerio from 'cheerio'
 import type { ScrapedJob } from './jsearch'
 
-export async function fetchHelloWork(keywords: string, location: string): Promise<ScrapedJob[]> {
+const HW_CONTRACT_MAP: Record<string, string> = {
+  interim: 'INTERIM',
+  cdi: 'CDI',
+  cdd: 'CDD',
+  alternance: 'ALTERNANCE',
+  stage: 'STAGE',
+}
+
+export async function fetchHelloWork(
+  keywords: string,
+  location: string,
+  typeContrats?: string[]
+): Promise<ScrapedJob[]> {
   try {
-    const url = `https://www.hellowork.com/fr-fr/emploi/recherche.html?k=${encodeURIComponent(keywords)}&l=${encodeURIComponent(location)}&c=CDD,CDI,INTERIM,STAGE`
+    const contractFilter =
+      typeContrats && typeContrats.length > 0
+        ? typeContrats.map(t => HW_CONTRACT_MAP[t.toLowerCase()] ?? t.toUpperCase()).join(',')
+        : 'CDI,CDD,INTERIM,STAGE,ALTERNANCE'
+    const url = `https://www.hellowork.com/fr-fr/emploi/recherche.html?k=${encodeURIComponent(keywords)}&l=${encodeURIComponent(location)}&c=${contractFilter}`
 
     const res = await fetch(url, {
       headers: {

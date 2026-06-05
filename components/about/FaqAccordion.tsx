@@ -36,13 +36,15 @@ export function FaqAccordion() {
     <div className="space-y-2">
       {FAQS.map((faq, i) => (
         <div
-          key={i}
+          key={faq.q}
           className="rounded-xl overflow-hidden"
           style={{ border: '1px solid rgba(124,58,237,0.2)', background: 'rgba(16,18,32,0.6)' }}
         >
           <button
             className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
             onClick={() => setOpen(open === i ? null : i)}
+            aria-expanded={open === i}
+            aria-controls={`faq-answer-${i}`}
           >
             <span className="text-sm font-medium" style={{ color: '#e8eaf5' }}>{faq.q}</span>
             <span
@@ -58,7 +60,7 @@ export function FaqAccordion() {
             </span>
           </button>
           {open === i && (
-            <div className="px-5 pb-4">
+            <div id={`faq-answer-${i}`} className="px-5 pb-4">
               <p className="text-sm leading-relaxed" style={{ color: '#8b92b8' }}>{faq.a}</p>
             </div>
           )}

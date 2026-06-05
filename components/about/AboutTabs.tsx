@@ -36,7 +36,7 @@ export function AboutTabs() {
           key={id}
           href={`#${id}`}
           onClick={() => setActive(id)}
-          className="px-4 py-1.5 rounded-full text-xs font-medium transition-all"
+          className="px-4 py-1.5 rounded-full text-xs font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
           style={{
             background: active === id ? 'rgba(124,58,237,0.2)' : 'transparent',
             color: active === id ? '#a78bfa' : '#4b5175',

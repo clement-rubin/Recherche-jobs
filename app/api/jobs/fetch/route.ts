@@ -1,3 +1,5 @@
+export const maxDuration = 30
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { fetchJSearch } from '@/lib/scrapers/jsearch'
@@ -82,10 +84,10 @@ export async function POST(req: NextRequest) {
     // All sources: one call per keyword (OR behavior)
     // Qualifications are profile metadata only — not appended to queries
     const allPromises = keywordsList.flatMap(kw => [
-      withTimeout(fetchJSearch(kw, location)),
-      withTimeout(fetchAPEC(kw, location)),
-      withTimeout(fetchHelloWork(kw, location, typeContrats)),
-      withTimeout(fetchFranceTravail(kw, location, typeContrats)),
+      withTimeout(fetchJSearch(kw, location), 15000),
+      withTimeout(fetchAPEC(kw, location), 7000),
+      withTimeout(fetchHelloWork(kw, location, typeContrats), 7000),
+      withTimeout(fetchFranceTravail(kw, location, typeContrats), 7000),
     ])
 
     const settled = await Promise.allSettled(allPromises)
@@ -140,10 +142,27 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < rows.length; i += CHUNK) {
       const chunk = rows.slice(i, i + CHUNK)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error, data } = await (supabase as any)
+      let { error, data } = await (supabase as any)
         .from('offers')
         .upsert(chunk, { onConflict: 'lien', ignoreDuplicates: true })
         .select('id')
+
+      // 42P10 = no unique constraint on lien — fall back to manual dedup + insert
+      if (error?.code === '42P10') {
+        const liens = chunk.map((r: { lien: string | null }) => r.lien).filter(Boolean) as string[]
+        const { data: existing } = await supabase.from('offers').select('lien').in('lien', liens)
+        const existingSet = new Set((existing ?? []).map((r: { lien: string }) => r.lien))
+        const fresh = chunk.filter((r: { lien: string | null }) => !r.lien || !existingSet.has(r.lien))
+        if (fresh.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const res = await (supabase as any).from('offers').insert(fresh).select('id')
+          error = res.error
+          data = res.data
+        } else {
+          error = null
+          data = []
+        }
+      }
 
       if (error) {
         results.errors.push(`upsert: ${error.message}`)

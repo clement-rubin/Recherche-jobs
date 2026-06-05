@@ -592,7 +592,7 @@ export default function TestPage() {
           </div>
           <div>
             <p className="text-foreground-dim font-medium">⚠ 0 offres après fetch</p>
-            <p>Les scrapers (apec, hellowork, france_travail) sont des stubs — seul jsearch est implémenté. Vérifier RAPIDAPI_KEY dans Netlify env.</p>
+            <p>1) JSearch timeout → normal si quota ou réseau lent, RAPIDAPI_KEY manquante. 2) Erreur upsert &quot;no unique constraint&quot; → ajouter contrainte SQL : <code>ALTER TABLE offers ADD CONSTRAINT offers_lien_key UNIQUE (lien);</code> 3) APEC retourne 0 pour postes non-cadres (normal). 4) HelloWork/FT → vérifier FRANCE_TRAVAIL_CLIENT_ID/SECRET dans Netlify env.</p>
           </div>
         </div>
       </div>

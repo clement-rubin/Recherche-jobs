@@ -19,7 +19,9 @@ Object.defineProperty(window, 'matchMedia', {
 jest.mock('gsap', () => ({
   set: jest.fn(),
   to: jest.fn((_el: unknown, opts: { onComplete?: () => void }) => { opts?.onComplete?.() }),
+  fromTo: jest.fn(),
   killTweensOf: jest.fn(),
+  quickSetter: jest.fn(() => jest.fn()),
 }))
 
 const offer: Offer = {
@@ -40,57 +42,55 @@ const offer: Offer = {
 
 describe('SwipeCard', () => {
   it('renders title, company and location', () => {
-    render(<SwipeCard offer={offer} onAction={jest.fn()} stackIndex={0} />)
+    render(<SwipeCard offer={offer} onAction={jest.fn()} isTop={true} />)
     expect(screen.getByText('Ingénieur Full Stack')).toBeInTheDocument()
     expect(screen.getByText(/Airbus/)).toBeInTheDocument()
     expect(screen.getByText(/Toulouse/)).toBeInTheDocument()
   })
 
   it('renders contract type', () => {
-    render(<SwipeCard offer={offer} onAction={jest.fn()} stackIndex={0} />)
+    render(<SwipeCard offer={offer} onAction={jest.fn()} isTop={true} />)
     expect(screen.getByText('CDI')).toBeInTheDocument()
   })
 
   it('renders duration from raw_data', () => {
-    render(<SwipeCard offer={offer} onAction={jest.fn()} stackIndex={0} />)
+    render(<SwipeCard offer={offer} onAction={jest.fn()} isTop={true} />)
     expect(screen.getByText(/18 mois/)).toBeInTheDocument()
   })
 
   it('renders description from raw_data', () => {
-    render(<SwipeCard offer={offer} onAction={jest.fn()} stackIndex={0} />)
+    render(<SwipeCard offer={offer} onAction={jest.fn()} isTop={true} />)
     expect(screen.getByText(/Développement applications web/)).toBeInTheDocument()
   })
 
   it('calls onAction("postule") when Postuler button clicked', async () => {
     const onAction = jest.fn().mockResolvedValue(undefined)
-    render(<SwipeCard offer={offer} onAction={onAction} stackIndex={0} />)
+    render(<SwipeCard offer={offer} onAction={onAction} isTop={true} />)
     fireEvent.click(screen.getByRole('button', { name: /postuler/i }))
     expect(onAction).toHaveBeenCalledWith('o1', 'postule')
   })
 
   it('calls onAction("ignore") when Ignorer button clicked', async () => {
     const onAction = jest.fn().mockResolvedValue(undefined)
-    render(<SwipeCard offer={offer} onAction={onAction} stackIndex={0} />)
+    render(<SwipeCard offer={offer} onAction={onAction} isTop={true} />)
     fireEvent.click(screen.getByRole('button', { name: /ignorer/i }))
     expect(onAction).toHaveBeenCalledWith('o1', 'ignore')
   })
 
   it('calls onAction("sauvegarde") when Sauvegarder button clicked', async () => {
     const onAction = jest.fn().mockResolvedValue(undefined)
-    render(<SwipeCard offer={offer} onAction={onAction} stackIndex={0} />)
+    render(<SwipeCard offer={offer} onAction={onAction} isTop={true} />)
     fireEvent.click(screen.getByRole('button', { name: /sauvegarder/i }))
     expect(onAction).toHaveBeenCalledWith('o1', 'sauvegarde')
   })
 
-  it('stacks card -1 with rotation 3deg style', () => {
-    const { container } = render(<SwipeCard offer={offer} onAction={jest.fn()} stackIndex={1} />)
-    const card = container.firstChild as HTMLElement
-    expect(card.style.transform).toContain('rotate(3deg)')
+  it('does not render action buttons when isTop=false', () => {
+    render(<SwipeCard offer={offer} onAction={jest.fn()} isTop={false} />)
+    expect(screen.queryByRole('button', { name: /postuler/i })).not.toBeInTheDocument()
   })
 
-  it('stacks card -2 with rotation 6deg style', () => {
-    const { container } = render(<SwipeCard offer={offer} onAction={jest.fn()} stackIndex={2} />)
-    const card = container.firstChild as HTMLElement
-    expect(card.style.transform).toContain('rotate(6deg)')
+  it('renders action buttons when isTop=true', () => {
+    render(<SwipeCard offer={offer} onAction={jest.fn()} isTop={true} />)
+    expect(screen.getByRole('button', { name: /postuler/i })).toBeInTheDocument()
   })
 })

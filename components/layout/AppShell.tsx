@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { Nav } from './Nav'
 import { MobileHeader } from './MobileHeader'
+import { PageTransition } from './PageTransition'
 import { AssistantBubble } from '../assistant/AssistantBubble'
 
 const PUBLIC_PATHS = ['/login', '/auth']
@@ -25,9 +26,11 @@ export function AppShell({ children, isAuthenticated }: { children: React.ReactN
       {/* Mobile header + drawer */}
       <MobileHeader />
 
-      {/* Main content */}
+      {/* Main content — keyed by pathname so PageTransition re-mounts on navigation */}
       <main className="flex-1 lg:ml-56 p-6 pt-20 lg:pt-6 min-h-screen">
-        {children}
+        <PageTransition key={pathname}>
+          {children}
+        </PageTransition>
       </main>
 
       <AssistantBubble />

@@ -1,6 +1,7 @@
+import { schedule } from '@netlify/functions'
 import type { Handler } from '@netlify/functions'
 
-export const handler: Handler = async () => {
+export const handler: Handler = schedule('0 8,20 * * *', async () => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
   const cronSecret = process.env.CRON_SECRET
 
@@ -30,4 +31,4 @@ export const handler: Handler = async () => {
     console.error(`fetch-jobs failed: ${msg}`)
     return { statusCode: 500, body: msg }
   }
-}
+})

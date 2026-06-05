@@ -10,12 +10,6 @@
   node_bundler = "esbuild"
   timeout = 26
 
-[functions."sync-emails"]
-  schedule = "0 8,20 * * *"
-
-[functions."fetch-jobs"]
-  schedule = "0 7 * * 1-5"
-
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
   SECRETS_SCAN_OMIT_PATHS = "node_modules,.netlify,docs"

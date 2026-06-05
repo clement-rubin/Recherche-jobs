@@ -21,6 +21,8 @@ jest.mock('gsap', () => ({
   to: jest.fn((_el: unknown, opts: { onComplete?: () => void }) => { opts?.onComplete?.() }),
   fromTo: jest.fn(),
   killTweensOf: jest.fn(),
+  context: jest.fn(() => ({ revert: jest.fn() })),
+  quickSetter: jest.fn(() => jest.fn()),
 }))
 
 const makeOffer = (id: string): Offer => ({
@@ -63,5 +65,16 @@ describe('SwipeDeck', () => {
     const btn = screen.getByRole('button', { name: /postuler/i })
     await act(async () => { btn.click() })
     expect(onAction).toHaveBeenCalledWith('a', 'postule')
+  })
+
+  it('removes top card from DOM after action', async () => {
+    const onAction = jest.fn().mockResolvedValue(undefined)
+    render(<SwipeDeck offers={[makeOffer('a'), makeOffer('b'), makeOffer('c')]} onAction={onAction} onNeedMore={jest.fn()} />)
+    expect(screen.getByText('Offre a')).toBeInTheDocument()
+    await act(async () => {
+      screen.getByRole('button', { name: /postuler/i }).click()
+    })
+    expect(screen.queryByText('Offre a')).not.toBeInTheDocument()
+    expect(screen.getByText('Offre b')).toBeInTheDocument()
   })
 })

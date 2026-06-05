@@ -145,6 +145,16 @@ export function Nav({ onClose }: NavProps) {
 
       {/* Footer */}
       <div className="p-3" style={{ borderTop: '1px solid var(--border)' }}>
+        <Link
+          href="/about"
+          className="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm"
+          style={{ color: 'var(--muted)' }}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          À propos
+        </Link>
         <button
           onClick={handleLogout}
           className="nav-item nav-item-logout w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left"

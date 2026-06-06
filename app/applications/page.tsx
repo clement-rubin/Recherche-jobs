@@ -75,21 +75,21 @@ export default function ApplicationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Candidatures</h1>
           <p className="text-muted text-sm mt-1">{applications.length} candidature{applications.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-1">
+        <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-1 flex-shrink-0">
           <button
             onClick={() => setView('table')}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${view === 'table' ? 'bg-accent text-white' : 'text-muted hover:text-foreground'}`}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors min-h-[34px] ${view === 'table' ? 'bg-accent text-white' : 'text-muted hover:text-foreground'}`}
           >
             Tableau
           </button>
           <button
             onClick={() => setView('kanban')}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${view === 'kanban' ? 'bg-accent text-white' : 'text-muted hover:text-foreground'}`}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors min-h-[34px] ${view === 'kanban' ? 'bg-accent text-white' : 'text-muted hover:text-foreground'}`}
           >
             Kanban
           </button>

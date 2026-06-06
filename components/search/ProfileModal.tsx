@@ -118,7 +118,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
           </h2>
           <button
             onClick={handleClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-zinc-100"
+            className="w-8 h-8 -mr-1 rounded-lg flex items-center justify-center transition-colors hover:bg-zinc-100 active:scale-95"
             style={{ color: 'var(--muted)' }}
             aria-label="Fermer"
           >
@@ -267,7 +267,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
                   key={ct}
                   type="button"
                   onClick={() => toggleContract(ct)}
-                  className="px-3 py-1 rounded-full text-xs border transition-colors capitalize"
+                  className="px-3 py-1.5 rounded-full text-xs border transition-colors capitalize min-h-[32px]"
                   style={
                     form.type_contrat.includes(ct)
                       ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
@@ -286,7 +286,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 border rounded-lg py-2 text-sm transition-colors"
+            className="flex-1 border rounded-lg py-2.5 text-sm transition-colors min-h-[42px]"
             style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
           >
             Annuler
@@ -295,7 +295,7 @@ export function ProfileModal({ profile, onSave, onClose }: ProfileModalProps) {
             onClick={handleSave}
             loadingLabel="Enregistrement..."
             successLabel="✓ Enregistré"
-            className="flex-1 py-2"
+            className="flex-1 py-2.5 min-h-[42px]"
           >
             Enregistrer
           </AsyncButton>

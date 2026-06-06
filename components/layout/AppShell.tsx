@@ -27,7 +27,7 @@ export function AppShell({ children, isAuthenticated }: { children: React.ReactN
       <MobileHeader />
 
       {/* Main content — keyed by pathname so PageTransition re-mounts on navigation */}
-      <main className="flex-1 lg:ml-56 p-6 pt-20 lg:pt-6 min-h-screen">
+      <main className="flex-1 lg:ml-56 px-4 sm:px-6 lg:px-8 pt-20 pb-8 lg:pt-8 min-h-dvh">
         <PageTransition key={pathname}>
           {children}
         </PageTransition>

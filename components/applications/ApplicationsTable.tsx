@@ -49,8 +49,8 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onCreate }
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <div className="flex flex-wrap gap-2">
           <select
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value as ApplicationStatus | '')}
@@ -70,15 +70,15 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onCreate }
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="btn-accent text-white text-sm font-medium px-4 py-2 rounded-lg"
+          className="btn-accent text-white text-sm font-medium px-4 py-2.5 rounded-lg min-h-[40px] flex-shrink-0"
         >
-          + Nouvelle candidature
+          + Nouvelle
         </button>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-        <table className="w-full">
+      {/* Table — horizontal scroll on small screens */}
+      <div className="rounded-xl overflow-hidden overflow-x-auto" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <table className="w-full min-w-[560px]">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th className="text-left text-xs px-4 py-3 font-medium" style={{ color: 'var(--muted)' }}>Entreprise</th>
@@ -126,14 +126,14 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onCreate }
                         </select>
                         <button
                           onClick={() => setEditApp(app)}
-                          className="text-xs px-2 py-1 rounded transition-colors"
+                          className="text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[32px] hover:bg-zinc-100"
                           style={{ color: 'var(--muted)' }}
                         >
                           Éditer
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(app.id)}
-                          className="text-xs px-2 py-1 rounded transition-colors"
+                          className="text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[32px] hover:bg-red-50 hover:text-red-500"
                           style={{ color: 'var(--muted)' }}
                         >
                           Sup.

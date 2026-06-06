@@ -50,15 +50,15 @@ export function ApplicationForm({ application, onClose, onSave }: Props) {
   const inputClass = "w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none focus:border-accent transition-colors placeholder:text-muted"
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-      <div className="bg-card border border-border rounded-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 px-4 sm:px-4 pb-0 sm:pb-0">
+      <div className="bg-card border border-border rounded-t-2xl sm:rounded-xl w-full max-w-md max-h-[92dvh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-foreground font-semibold">
             {application ? 'Modifier la candidature' : 'Nouvelle candidature'}
           </h2>
           <button onClick={onClose} className="text-muted hover:text-foreground transition-colors text-xl leading-none">×</button>
         </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto">
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-sm">{error}</div>
           )}

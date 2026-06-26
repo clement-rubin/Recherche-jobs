@@ -37,10 +37,12 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://jsearch.p.rapidapi.com https://api.emploi-store.fr https://entreprise.francetravail.fr https://api.groq.com https://oauth2.googleapis.com https://www.google.com wss://www.google.com",
+              // connect-src: Supabase realtime/REST/auth, job APIs, Groq, Google OAuth token endpoint
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://jsearch.p.rapidapi.com https://api.emploi-store.fr https://entreprise.francetravail.fr https://api.groq.com https://oauth2.googleapis.com https://accounts.google.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
-              "form-action 'self'",
+              // form-action must include Google OAuth — supabase signInWithOAuth can use a form redirect
+              "form-action 'self' https://accounts.google.com",
             ].join('; '),
           },
         ],

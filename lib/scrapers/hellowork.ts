@@ -60,7 +60,8 @@ export async function fetchHelloWork(
     })
 
     return jobs.slice(0, 20)
-  } catch {
+  } catch (err) {
+    console.warn('[hellowork] fetch error', err)
     return []
   }
 }

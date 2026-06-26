@@ -85,7 +85,6 @@ export async function POST(req: NextRequest) {
         }))
 
         results.totalFetched = messages.length
-        console.log('[emails/sync] Subjects', messages.slice(0, 5).map(m => m.sujet.slice(0, 60)))
 
         // Filter already imported
         const messageIds = messages.map(m => m.id)

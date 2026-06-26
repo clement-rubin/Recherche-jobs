@@ -70,8 +70,8 @@ export default function LoginPage() {
               <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">JobTracker IA</h1>
-          <p className="text-muted text-sm mt-1">Gérez vos candidatures intelligemment</p>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#f0f0f5' }}>JobTracker IA</h1>
+          <p className="text-sm mt-1" style={{ color: '#9ca3af' }}>Gérez vos candidatures intelligemment</p>
         </div>
 
         <div
@@ -100,9 +100,10 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid #242847',
-              color: '#e8eaf5',
+              background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+              border: '1px solid rgba(124,58,237,0.5)',
+              color: '#ffffff',
+              boxShadow: '0 0 24px rgba(124,58,237,0.35)',
             }}
           >
             {loading ? (
@@ -123,7 +124,7 @@ export default function LoginPage() {
             )}
           </button>
 
-          <p className="text-center text-xs" style={{ color: '#4b5175' }}>
+          <p className="text-center text-xs" style={{ color: '#6b7394' }}>
             Connexion sécurisée via votre compte Google
           </p>
 
@@ -144,9 +145,9 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs mt-6" style={{ color: '#2a2f4a' }}>
+        <p className="text-center text-xs mt-6" style={{ color: '#4b5175' }}>
           JobTracker IA ·{' '}
-          <Link href="/about" className="hover:underline" style={{ color: '#4b5175' }}>
+          <Link href="/about" className="hover:underline" style={{ color: '#7c6fa8' }}>
             Comment ça fonctionne ?
           </Link>
         </p>

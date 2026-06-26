@@ -35,7 +35,8 @@ async function getFranceTravailToken(): Promise<string | null> {
       expires: Date.now() + expires_in * 1000 - 5000,
     }
     return access_token
-  } catch {
+  } catch (err) {
+    console.warn('[france-travail] token fetch error', err)
     return null
   }
 }
@@ -157,7 +158,8 @@ export async function fetchFranceTravail(
         raw_data: j,
       }
     })
-  } catch {
+  } catch (err) {
+    console.warn('[france-travail] fetch error', err)
     return []
   }
 }

@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
   if (!transcription?.trim()) {
     return NextResponse.json({ error: 'Transcription required' }, { status: 400 })
   }
+  if (transcription.length > 1000) {
+    return NextResponse.json({ error: 'Transcription trop longue' }, { status: 400 })
+  }
 
   console.log('[assistant/process] Request', { userId: user.id, transcriptionLength: transcription.length })
 
@@ -69,9 +72,11 @@ export async function POST(req: NextRequest) {
       )
 
       if (match) {
+        const VALID_STATUTS = ['en_cours', 'relance', 'termine'] as const
+        const VALID_RESULTATS = ['accepte', 'refus'] as const
         const update: Record<string, unknown> = {}
-        if (action.statut) update.statut = action.statut
-        if (action.resultat) update.resultat = action.resultat
+        if (action.statut && VALID_STATUTS.includes(action.statut as any)) update.statut = action.statut
+        if (action.resultat && VALID_RESULTATS.includes(action.resultat as any)) update.resultat = action.resultat
         if (action.note) {
           // Append note to existing notes
           const { data: current } = await (supabase as any)

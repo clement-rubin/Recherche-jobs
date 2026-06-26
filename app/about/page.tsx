@@ -1,36 +1,37 @@
 // app/about/page.tsx
 import Link from 'next/link'
+import { BarChart3, Search, ClipboardList, Mail, Mic, ShieldCheck, type LucideIcon } from 'lucide-react'
 import { AboutTabs } from '@/components/about/AboutTabs'
 import { FaqAccordion } from '@/components/about/FaqAccordion'
 
-const FEATURES = [
+const FEATURES: { icon: LucideIcon; title: string; desc: string }[] = [
   {
-    icon: '📊',
+    icon: BarChart3,
     title: 'Dashboard',
     desc: "Vue d'ensemble de vos candidatures avec statistiques de progression en temps réel.",
   },
   {
-    icon: '🔍',
+    icon: Search,
     title: 'Scraping automatique',
     desc: "Recherche quotidienne sur JSearch, APEC, France Travail et HelloWork selon vos profils.",
   },
   {
-    icon: '📋',
+    icon: ClipboardList,
     title: 'Gestion des offres',
     desc: "Consultez les détails complets, filtrez, sauvegardez et archivez les offres pertinentes.",
   },
   {
-    icon: '✉️',
+    icon: Mail,
     title: 'Suivi des candidatures',
     desc: "Statuts, notes et relances — historique complet de chaque candidature en un endroit.",
   },
   {
-    icon: '🎤',
+    icon: Mic,
     title: 'Alex — Assistant IA',
     desc: "Dictez des commandes vocales en français pour mettre à jour vos candidatures instantanément.",
   },
   {
-    icon: '🔒',
+    icon: ShieldCheck,
     title: 'Sécurité',
     desc: "Authentification Google OAuth, données chiffrées Supabase EU, headers HTTP renforcés.",
   },
@@ -55,7 +56,7 @@ export default function AboutPage() {
 
       <div className="relative">
         {/* ── Hero ─────────────────────────────────────────── */}
-        <section className="flex flex-col items-center text-center px-6 pt-20 pb-14">
+        <section className="flex flex-col items-center text-center px-6 pt-16 pb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style={{
             background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
             boxShadow: '0 0 40px rgba(124,58,237,0.4), 0 0 0 1px rgba(124,58,237,0.3)',
@@ -65,7 +66,7 @@ export default function AboutPage() {
             </svg>
           </div>
           <h1 className="text-4xl font-bold tracking-tight mb-3">JobTracker IA</h1>
-          <p className="text-lg max-w-lg mb-8" style={{ color: '#8b92b8' }}>
+          <p className="text-lg max-w-lg mb-6" style={{ color: '#8b92b8' }}>
             Gérez votre recherche d&apos;emploi avec intelligence, en toute transparence.
           </p>
           <div className="flex gap-3">
@@ -90,17 +91,19 @@ export default function AboutPage() {
         <AboutTabs />
 
         {/* ── Section: Fonctionnalités ──────────────────────── */}
-        <section id="features" className="max-w-4xl mx-auto px-6 py-16" style={{ scrollMarginTop: '56px' }}>
+        <section id="features" className="max-w-4xl mx-auto px-6 py-10" style={{ scrollMarginTop: '56px' }}>
           <h2 className="text-2xl font-bold mb-2">Fonctionnalités</h2>
-          <p className="mb-10" style={{ color: '#8b92b8' }}>Tout ce dont vous avez besoin pour une recherche d&apos;emploi structurée.</p>
+          <p className="mb-6" style={{ color: '#8b92b8' }}>Tout ce dont vous avez besoin pour une recherche d&apos;emploi structurée.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {FEATURES.map(({ icon, title, desc }) => (
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
               <div
                 key={title}
                 className="rounded-xl p-5 transition-all"
                 style={{ background: 'rgba(16,18,32,0.7)', border: '1px solid rgba(124,58,237,0.12)' }}
               >
-                <div className="text-2xl mb-3">{icon}</div>
+                <div className="mb-3 flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(124,58,237,0.15)' }}>
+                  <Icon size={16} style={{ color: '#a78bfa' }} />
+                </div>
                 <h3 className="font-semibold mb-1.5 text-sm">{title}</h3>
                 <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>{desc}</p>
               </div>
@@ -109,9 +112,9 @@ export default function AboutPage() {
         </section>
 
         {/* ── Section: Données ─────────────────────────────── */}
-        <section id="data" className="max-w-4xl mx-auto px-6 py-16" style={{ scrollMarginTop: '56px' }}>
+        <section id="data" className="max-w-4xl mx-auto px-6 py-10" style={{ scrollMarginTop: '56px' }}>
           <h2 className="text-2xl font-bold mb-2">Données &amp; Confidentialité</h2>
-          <p className="mb-10" style={{ color: '#8b92b8' }}>Nous croyons en une transparence totale sur l&apos;usage de vos données.</p>
+          <p className="mb-6" style={{ color: '#8b92b8' }}>Nous croyons en une transparence totale sur l&apos;usage de vos données.</p>
           <div className="space-y-4">
             <div className="rounded-xl p-6" style={{ background: 'rgba(16,18,32,0.7)', border: '1px solid rgba(124,58,237,0.15)' }}>
               <div className="flex items-center gap-2 mb-3">
@@ -130,10 +133,10 @@ export default function AboutPage() {
                 <h3 className="font-semibold text-sm">Ce que nous ne faisons pas</h3>
               </div>
               <ul className="space-y-2 text-sm" style={{ color: '#8b92b8' }}>
-                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✗</span> Pas de revente de données à des tiers</li>
-                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✗</span> Pas de tracking publicitaire ni d&apos;analytics tiers</li>
-                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✗</span> Pas d&apos;accès à vos données par d&apos;autres utilisateurs</li>
-                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✗</span> Pas d&apos;entraînement de modèles IA sur vos données</li>
+                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✓</span> Pas de revente de données à des tiers</li>
+                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✓</span> Pas de tracking publicitaire ni d&apos;analytics tiers</li>
+                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✓</span> Pas d&apos;accès à vos données par d&apos;autres utilisateurs</li>
+                <li className="flex gap-2"><span style={{ color: '#22c55e' }}>✓</span> Pas d&apos;entraînement de modèles IA sur vos données</li>
               </ul>
             </div>
             <div className="rounded-xl p-6" style={{ background: 'rgba(16,18,32,0.7)', border: '1px solid rgba(96,165,250,0.15)' }}>
@@ -152,14 +155,14 @@ export default function AboutPage() {
         </section>
 
         {/* ── Section: FAQ ─────────────────────────────────── */}
-        <section id="faq" className="max-w-4xl mx-auto px-6 py-16" style={{ scrollMarginTop: '56px' }}>
+        <section id="faq" className="max-w-4xl mx-auto px-6 py-10" style={{ scrollMarginTop: '56px' }}>
           <h2 className="text-2xl font-bold mb-2">FAQ — Assistant Alex</h2>
-          <p className="mb-10" style={{ color: '#8b92b8' }}>Tout ce que vous devez savoir sur l&apos;assistant vocal.</p>
+          <p className="mb-6" style={{ color: '#8b92b8' }}>Tout ce que vous devez savoir sur l&apos;assistant vocal.</p>
           <FaqAccordion />
         </section>
 
         {/* ── Footer CTA ───────────────────────────────────── */}
-        <section className="flex flex-col items-center text-center px-6 py-20">
+        <section className="flex flex-col items-center text-center px-6 py-14">
           <h2 className="text-2xl font-bold mb-3">Prêt à commencer ?</h2>
           <p className="mb-8" style={{ color: '#8b92b8' }}>Connectez-vous pour accéder à votre espace de suivi de candidatures.</p>
           <Link

@@ -18,6 +18,13 @@ export async function middleware(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        auth: {
+          // Never refresh tokens in the edge function — a network call here
+          // causes the Netlify edge timeout when Supabase is slow or the token
+          // is expired. Client-side code handles refresh after hydration.
+          autoRefreshToken: false,
+          persistSession: false,
+        },
         cookies: {
           getAll() {
             return request.cookies.getAll()
@@ -31,11 +38,13 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    // getSession() reads the JWT from cookies — no HTTP call in the happy path.
-    // Only makes a network call when the access token is expired and needs
-    // refreshing. Wrapped in try/catch so any Supabase/network error falls
-    // back to treating the user as unauthenticated instead of crashing with 500.
-    const result = await supabase.auth.getSession()
+    // Pure cookie read — no network call. 4 s timeout as last-resort guard.
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<{ data: { session: null } }>((resolve) =>
+        setTimeout(() => resolve({ data: { session: null } }), 4000)
+      ),
+    ])
     session = result.data.session
   } catch {
     // Auth check failed (network error, Supabase timeout, etc.).

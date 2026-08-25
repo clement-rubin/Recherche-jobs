@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
   for (const profile of profiles as SearchProfile[]) {
     const keywordsList = profile.mots_cles ?? ['emploi']
     const exclusions = (profile.mots_cles_exclus ?? []).map(k => k.toLowerCase())
-    const location = profile.localisation ?? 'Lille'
+    const locations = profile.localisations?.length ? profile.localisations : [{ ville: 'Lille', rayon_km: 30 }]
     const typeContrats = profile.type_contrat ?? []
 
     // Detect work-time preference from exclusions → passed to FT API as tempsPlein filter
@@ -81,20 +81,20 @@ export async function POST(req: NextRequest) {
     const tempsPleinFilter: boolean | undefined =
       excludesTempsPlein ? false : excludesTempsPartiel ? true : undefined
 
-    console.log('[jobs/fetch] Fetching', { keywords: keywordsList, location, typeContrats, tempsPleinFilter })
+    console.log('[jobs/fetch] Fetching', { keywords: keywordsList, locations, typeContrats, tempsPleinFilter })
 
     // Wrap each scraper in a 7s timeout to prevent slow sources from blocking
     const withTimeout = <T>(p: Promise<T>, ms = 7000): Promise<T> =>
       Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))])
 
-    // All sources: one call per keyword (OR behavior)
+    // All sources: one call per city × keyword combination (OR behavior across keywords)
     // Qualifications are profile metadata only — not appended to queries
-    const allPromises = keywordsList.flatMap(kw => [
-      withTimeout(fetchJSearch(kw, location), 15000),
-      withTimeout(fetchAPEC(kw, location), 7000),
-      withTimeout(fetchHelloWork(kw, location, typeContrats), 7000),
-      withTimeout(fetchFranceTravail(kw, location, typeContrats, tempsPleinFilter), 7000),
-    ])
+    const allPromises = locations.flatMap(loc => keywordsList.flatMap(kw => [
+      withTimeout(fetchJSearch(kw, loc.ville), 15000),
+      withTimeout(fetchAPEC(kw, loc.ville), 7000),
+      withTimeout(fetchHelloWork(kw, loc.ville, typeContrats), 7000),
+      withTimeout(fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter), 7000),
+    ]))
 
     const settled = await Promise.allSettled(allPromises)
 

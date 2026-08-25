@@ -3,7 +3,7 @@ export type ApplicationResult = 'accepte' | 'refus' | 'sans_reponse'
 export type ContractType = 'interim' | 'stage' | 'cdi' | 'cdd' | 'alternance'
 export type OfferStatus = 'non_traite' | 'ignore' | 'postule' | 'sauvegarde'
 export type EmailType = 'offre' | 'reponse' | 'relance' | 'autre'
-export type OAuthProvider = 'gmail' | 'outlook'
+export type OAuthProvider = 'gmail'
 
 export interface Application {
   id: string

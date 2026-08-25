@@ -2,6 +2,7 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   output: undefined,
+  outputFileTracingRoot: __dirname,
 
   // Hide X-Powered-By: Next.js (info disclosure)
   poweredByHeader: false,

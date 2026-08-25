@@ -13,13 +13,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const body: Record<string, unknown> = {
     ...(rawBody.nom              !== undefined && { nom: rawBody.nom }),
     ...(rawBody.actif            !== undefined && { actif: rawBody.actif }),
+    ...(rawBody.domaine          !== undefined && { domaine: rawBody.domaine }),
     ...(rawBody.type_contrat     !== undefined && { type_contrat: rawBody.type_contrat }),
     ...(rawBody.mots_cles        !== undefined && { mots_cles: rawBody.mots_cles }),
     ...(rawBody.mots_cles_exclus !== undefined && { mots_cles_exclus: rawBody.mots_cles_exclus }),
     ...(rawBody.qualifications   !== undefined && { qualifications: rawBody.qualifications }),
     ...(rawBody.duree_contrat    !== undefined && { duree_contrat: rawBody.duree_contrat }),
-    ...(rawBody.localisation     !== undefined && { localisation: rawBody.localisation }),
-    ...(rawBody.rayon_km         !== undefined && { rayon_km: Number(rawBody.rayon_km) }),
+    ...(rawBody.localisations    !== undefined && { localisations: rawBody.localisations }),
     ...(rawBody.salaire_min      !== undefined && { salaire_min: rawBody.salaire_min }),
   }
 

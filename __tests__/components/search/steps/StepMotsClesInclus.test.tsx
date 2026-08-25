@@ -29,4 +29,23 @@ describe('StepMotsClesInclus', () => {
     expect(onChange).not.toHaveBeenCalled()
     expect(screen.getByText(/déjà dans les mots-clés à exclure/i)).toBeInTheDocument()
   })
+
+  it('clears the error after a valid change following a blocked add', async () => {
+    const onChange = jest.fn()
+    render(
+      <StepMotsClesInclus
+        value={[]}
+        onChange={onChange}
+        domaineKey="data_ia"
+        conflictsWith={['senior']}
+      />
+    )
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'senior{enter}')
+    expect(screen.getByText(/déjà dans les mots-clés à exclure/i)).toBeInTheDocument()
+    await userEvent.clear(input)
+    await userEvent.type(input, 'data scientist{enter}')
+    expect(onChange).toHaveBeenCalledWith(['data scientist'])
+    expect(screen.queryByText(/déjà dans les mots-clés à exclure/i)).not.toBeInTheDocument()
+  })
 })

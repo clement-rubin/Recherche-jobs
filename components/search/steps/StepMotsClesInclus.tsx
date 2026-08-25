@@ -15,18 +15,6 @@ export function StepMotsClesInclus({ value, onChange, domaineKey, conflictsWith 
   const [error, setError] = useState<string | null>(null)
   const suggestions = DOMAIN_SUGGESTIONS[domaineKey]?.motsCles ?? []
 
-  const handleChange = (newTags: string[]) => {
-    if (newTags.length > value.length) {
-      const added = newTags[newTags.length - 1]
-      if (conflictsWith.includes(added)) {
-        setError(`"${added}" est déjà dans les mots-clés à exclure`)
-        return
-      }
-    }
-    setError(null)
-    onChange(newTags)
-  }
-
   return (
     <div>
       <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--muted)' }}>Mots-clés à inclure</label>
@@ -35,10 +23,12 @@ export function StepMotsClesInclus({ value, onChange, domaineKey, conflictsWith 
       </p>
       <TagInput
         value={value}
-        onChange={handleChange}
+        onChange={newTags => { setError(null); onChange(newTags) }}
         suggestions={suggestions}
         placeholder="Tapez + Entrée ou virgule..."
         tagColor="indigo"
+        validateAdd={tag => !conflictsWith.includes(tag)}
+        onRejected={tag => setError(`"${tag}" est déjà dans les mots-clés à exclure`)}
       />
       {error && <p className="text-xs mt-1.5 text-red-500">{error}</p>}
     </div>

@@ -35,12 +35,12 @@ export async function fetchHelloWork(
     const $ = cheerio.load(html)
     const jobs: ScrapedJob[] = []
 
-    // HelloWork uses various selectors — try multiple patterns
-    $('[data-id-job], [data-offer-id], article.offer').each((_, el) => {
-      const titleEl = $(el).find('[data-cy="jobTitle"], .job-title, h2, h3').first()
-      const companyEl = $(el).find('[data-cy="company"], .company-name, .employer').first()
-      const linkEl = $(el).find('a[href*="/emploi/"]').first()
-      const contractEl = $(el).find('[data-cy="contract"], .contract-type').first()
+    $('li[data-id-storage-item-id]').each((_, el) => {
+      const linkEl = $(el).find('a[data-cy="offerTitle"]').first()
+      const titleEl = linkEl.find('h3 p').first()
+      const companyEl = linkEl.find('h3 p').eq(1)
+      const contractEl = $(el).find('[data-cy="contractCard"]').first()
+      const localisationEl = $(el).find('[data-cy="localisationCard"]').first()
 
       const titre = titleEl.text().trim()
       if (!titre) return // Skip if no title found
@@ -50,7 +50,7 @@ export async function fetchHelloWork(
         titre,
         entreprise: companyEl.text().trim() || null,
         lien: href ? (href.startsWith('http') ? href : `https://www.hellowork.com${href}`) : null,
-        localisation: location,
+        localisation: localisationEl.text().trim() || location,
         source: 'hellowork',
         type_contrat: contractEl.text().trim() || null,
         salaire_min: null,

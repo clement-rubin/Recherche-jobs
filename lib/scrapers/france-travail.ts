@@ -129,7 +129,7 @@ export async function fetchFranceTravail(
     }
 
     const res = await fetch(
-      `https://api.emploi-store.fr/partenaire/offresdemploi/v2/offres/search?${new URLSearchParams(params)}`,
+      `https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?${new URLSearchParams(params)}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

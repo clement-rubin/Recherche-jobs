@@ -19,10 +19,11 @@ function resolveDomaine(domaineKey: string, domaineAutre: string): string | null
   return domaineKey
 }
 
-function initDomain(domaine: string | null | undefined): { domaineKey: string; domaineAutre: string } {
-  if (!domaine) return { domaineKey: DOMAIN_OPTIONS[0].value, domaineAutre: '' }
-  if (domaine in DOMAIN_SUGGESTIONS) return { domaineKey: domaine, domaineAutre: '' }
-  return { domaineKey: 'autre', domaineAutre: domaine }
+function initDomain(profile: SearchProfile | null | undefined): { domaineKey: string; domaineAutre: string } {
+  const domaine = profile?.domaine
+  if (domaine && domaine in DOMAIN_SUGGESTIONS) return { domaineKey: domaine, domaineAutre: '' }
+  if (!profile) return { domaineKey: DOMAIN_OPTIONS[0].value, domaineAutre: '' }
+  return { domaineKey: 'autre', domaineAutre: domaine ?? '' }
 }
 
 interface WizardModalProps {
@@ -32,7 +33,7 @@ interface WizardModalProps {
 }
 
 export function WizardModal({ profile, onSave, onClose }: WizardModalProps) {
-  const { domaineKey: initialDomaineKey, domaineAutre: initialDomaineAutre } = initDomain(profile?.domaine)
+  const { domaineKey: initialDomaineKey, domaineAutre: initialDomaineAutre } = initDomain(profile)
 
   const [form, setForm] = useState({
     nom: profile?.nom ?? '',
@@ -216,6 +217,7 @@ export function WizardModal({ profile, onSave, onClose }: WizardModalProps) {
               loadingLabel="Enregistrement..."
               successLabel="✓ Enregistré"
               className="flex-1 py-2"
+              disabled={!isStepValid(0) || !isStepValid(1)}
             >
               Enregistrer
             </AsyncButton>

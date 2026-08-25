@@ -74,4 +74,29 @@ describe('WizardModal', () => {
       })
     )
   })
+
+  it('disables Enregistrer if the name is cleared after being marked valid', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined)
+    const profile: SearchProfile = {
+      id: 'p1',
+      user_id: 'u1',
+      nom: 'Existant',
+      actif: true,
+      domaine: 'data_ia',
+      type_contrat: [],
+      mots_cles: [],
+      mots_cles_exclus: [],
+      qualifications: [],
+      duree_contrat: 'peu_importe',
+      localisations: [{ ville: 'Lille', rayon_km: 30 }],
+      salaire_min: null,
+      created_at: '2026-01-01T00:00:00Z',
+    }
+    render(<WizardModal profile={profile} onSave={onSave} onClose={jest.fn()} />)
+    const nomInput = screen.getByDisplayValue('Existant')
+    await userEvent.clear(nomInput)
+    await userEvent.click(screen.getByLabelText('Étape 6 : Contrat'))
+    expect(screen.getByText('Enregistrer')).toBeDisabled()
+    expect(onSave).not.toHaveBeenCalled()
+  })
 })

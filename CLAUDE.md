@@ -36,7 +36,7 @@ lib/supabase/types.ts  → all DB types (Application, Offer, SearchProfile, etc.
 ### Scraping Pipeline (`/api/jobs/fetch` POST)
 
 Called from UI "Lancer maintenant" or via cron. For each active `search_profile`:
-- Iterates **per keyword** (OR behavior) across 4 sources in parallel
+- Iterates **per city** (`localisations[]`) **then per keyword** (OR behavior on both axes) across 4 sources in parallel
 - `lib/scrapers/jsearch.ts` — JSearch RapidAPI (requires `RAPIDAPI_KEY`)
 - `lib/scrapers/apec.ts` — APEC REST API (cadre jobs, often 0 for manual work)
 - `lib/scrapers/hellowork.ts` — cheerio HTML scraping
@@ -55,6 +55,7 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
     ADD COLUMN IF NOT EXISTS qualifications text[] DEFAULT '{}',
     ADD COLUMN IF NOT EXISTS duree_contrat text DEFAULT 'peu_importe';
   ```
+- **`SearchProfile.domaine`/`localisations`**: added by `supabase/migrations/004_search_profile_wizard.sql` (adds `domaine text`, `localisations jsonb`, backfills old `localisation`/`rayon_km` into `localisations`) then `005_drop_old_location_columns.sql` (drops the old columns). Apply manually via the Supabase SQL Editor, **004 first**, verify the backfill (`select domaine, localisations from search_profiles limit 5;`), then **005**. The old `localisation`/`rayon_km` scalar columns/fields no longer exist anywhere in the codebase after this — a project not yet migrated will 500 on every search-profile save.
 - **Fonts**: `Outfit` (body) + `JetBrains Mono` (numbers) loaded via `next/font/google` in `layout.tsx`, exposed as CSS vars `--font-outfit` / `--font-mono`.
 - **Theme**: light zinc — CSS vars defined in `globals.css` `:root`. Never use hardcoded dark hex colors like `#101220` or `#1a1d32`.
 - **GSAP**: used for nav stagger, modal scale-in, mobile drawer slide. Guard against missing `requestAnimationFrame` in tests — TagInput does this already.

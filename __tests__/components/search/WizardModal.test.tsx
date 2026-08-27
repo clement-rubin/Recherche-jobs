@@ -99,4 +99,28 @@ describe('WizardModal', () => {
     expect(screen.getByText('Enregistrer')).toBeDisabled()
     expect(onSave).not.toHaveBeenCalled()
   })
+
+  it('allows saving a legacy profile with domaine: null without requiring domain text', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined)
+    const legacyProfile: SearchProfile = {
+      id: 'p1',
+      user_id: 'u1',
+      nom: 'Profil existant',
+      actif: true,
+      domaine: null,
+      type_contrat: [],
+      mots_cles: [],
+      mots_cles_exclus: [],
+      qualifications: [],
+      duree_contrat: 'peu_importe',
+      localisations: [{ ville: 'Lille', rayon_km: 30 }],
+      salaire_min: null,
+      created_at: '2026-01-01T00:00:00Z',
+    }
+    render(<WizardModal profile={legacyProfile} onSave={onSave} onClose={jest.fn()} />)
+    await userEvent.click(screen.getByLabelText('Étape 6 : Contrat'))
+    expect(screen.getByText('Enregistrer')).toBeEnabled()
+    await userEvent.click(screen.getByText('Enregistrer'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ domaine: null }))
+  })
 })

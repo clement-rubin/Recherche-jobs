@@ -70,9 +70,7 @@ export function WizardModal({ profile, onSave, onClose }: WizardModalProps) {
 
   const isStepValid = (s: number): boolean => {
     if (s === 0) {
-      if (!form.nom.trim()) return false
-      if (form.domaineKey === 'autre' && !form.domaineAutre.trim()) return false
-      return true
+      return form.nom.trim().length > 0
     }
     if (s === 1) {
       return form.localisations.some(l => l.ville.trim().length > 0)

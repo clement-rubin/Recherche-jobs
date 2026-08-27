@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { SearchProfile } from '@/lib/supabase/types'
-import { ProfileModal } from '@/components/search/ProfileModal'
+import { WizardModal } from '@/components/search/WizardModal'
+import { DOMAIN_LABELS } from '@/components/search/domainSuggestions'
 import { AsyncButton } from '@/components/ui/AsyncButton'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
 
@@ -115,6 +116,11 @@ export default function SearchPage() {
                   <h3 className="font-medium" style={{ color: 'var(--foreground)' }}>
                     {profile.nom || 'Profil sans nom'}
                   </h3>
+                  {profile.domaine && (
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                      {DOMAIN_LABELS[profile.domaine] ?? profile.domaine}
+                    </span>
+                  )}
                   {profile.actif && (
                     <span className="text-xs bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
                       Actif
@@ -122,7 +128,7 @@ export default function SearchPage() {
                   )}
                 </div>
                 <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
-                  {profile.localisation} · {profile.rayon_km}km
+                  {(profile.localisations ?? []).map(l => `${l.ville} (${l.rayon_km}km)`).join(', ')}
                 </p>
                 {(profile.mots_cles ?? []).length > 0 && (
                   <p className="text-xs mt-1" style={{ color: 'var(--muted-light)' }}>
@@ -192,13 +198,13 @@ export default function SearchPage() {
 
       {/* Modals */}
       {showModal && (
-        <ProfileModal
+        <WizardModal
           onSave={handleCreate}
           onClose={() => setShowModal(false)}
         />
       )}
       {editProfile && (
-        <ProfileModal
+        <WizardModal
           profile={editProfile}
           onSave={(data) => handleUpdate(editProfile.id, data)}
           onClose={() => setEditProfile(null)}

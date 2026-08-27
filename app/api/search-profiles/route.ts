@@ -23,16 +23,16 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const allowed = {
-    nom:             body.nom ?? null,
-    actif:           body.actif ?? false,
-    type_contrat:    body.type_contrat ?? [],
-    mots_cles:       body.mots_cles ?? [],
+    nom:              body.nom ?? null,
+    actif:            body.actif ?? false,
+    domaine:          body.domaine ?? null,
+    type_contrat:     body.type_contrat ?? [],
+    mots_cles:        body.mots_cles ?? [],
     mots_cles_exclus: body.mots_cles_exclus ?? [],
-    qualifications:  body.qualifications ?? [],
-    duree_contrat:   body.duree_contrat ?? 'peu_importe',
-    localisation:    body.localisation ?? 'Lille',
-    rayon_km:        Number(body.rayon_km ?? 30),
-    salaire_min:     body.salaire_min ?? null,
+    qualifications:   body.qualifications ?? [],
+    duree_contrat:    body.duree_contrat ?? 'peu_importe',
+    localisations:    body.localisations ?? [{ ville: 'Lille', rayon_km: 30 }],
+    salaire_min:      body.salaire_min ?? null,
   }
   const { data, error } = await supabase
     .from('search_profiles')

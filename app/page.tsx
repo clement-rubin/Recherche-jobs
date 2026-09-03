@@ -5,7 +5,10 @@ import Link from 'next/link'
 
 async function getStats() {
   const supabase = await createServerSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession() reads the already-verified cookie set by middleware/layout —
+  // avoids a second network round-trip to Supabase Auth on every dashboard load.
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
   if (!user) {
     const { redirect } = await import('next/navigation')
     return redirect('/login') as never

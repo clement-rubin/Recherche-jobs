@@ -53,4 +53,22 @@ describe('TagInput', () => {
     await userEvent.click(screen.getByText('magasinier'))
     expect(onChange).toHaveBeenCalledWith(['magasinier'])
   })
+
+  it('rejects an add when validateAdd returns false, without clearing input or calling onChange', async () => {
+    const onChange = jest.fn()
+    const onRejected = jest.fn()
+    render(
+      <TagInput
+        value={[]}
+        onChange={onChange}
+        validateAdd={tag => tag !== 'senior'}
+        onRejected={onRejected}
+      />
+    )
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'senior{enter}')
+    expect(onChange).not.toHaveBeenCalled()
+    expect(onRejected).toHaveBeenCalledWith('senior')
+    expect(input).toHaveValue('senior')
+  })
 })

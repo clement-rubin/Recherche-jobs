@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react'
 jest.mock('@/lib/supabase/server', () => ({
   createServerSupabase: async () => ({
     auth: {
-      getUser: async () => ({ data: { user: { id: 'user-1' } } }),
+      getSession: async () => ({ data: { session: { user: { id: 'user-1' } } } }),
     },
     from: () => ({
       select: () => ({

@@ -10,6 +10,8 @@ interface TagInputProps {
   placeholder?: string
   tagColor?: 'indigo' | 'blue'
   className?: string
+  validateAdd?: (tag: string) => boolean
+  onRejected?: (tag: string) => void
 }
 
 export function TagInput({
@@ -19,6 +21,8 @@ export function TagInput({
   placeholder = 'Tapez + Entrée...',
   tagColor = 'indigo',
   className = '',
+  validateAdd,
+  onRejected,
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -31,6 +35,10 @@ export function TagInput({
   const addTag = (tag: string) => {
     const trimmed = tag.trim().replace(/,$/, '').trim()
     if (!trimmed || value.includes(trimmed)) return
+    if (validateAdd && !validateAdd(trimmed)) {
+      onRejected?.(trimmed)
+      return
+    }
     const newTags = [...value, trimmed]
     onChange(newTags)
     setInputValue('')

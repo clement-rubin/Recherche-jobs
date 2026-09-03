@@ -24,12 +24,15 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const supabase = await createServerSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession() reads the cookie locally — no network call. Safe here because
+  // middleware already verifies/enforces auth before this layout ever renders
+  // (unauthenticated → redirected to /login, authenticated-on-/login → redirected away).
+  const { data: { session } } = await supabase.auth.getSession()
 
   return (
     <html lang="fr">
       <body className={`${outfit.variable} ${jetbrainsMono.variable} bg-background text-foreground min-h-screen`}>
-        <AppShell isAuthenticated={!!user}>
+        <AppShell isAuthenticated={!!session}>
           {children}
         </AppShell>
       </body>

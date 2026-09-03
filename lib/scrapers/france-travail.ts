@@ -35,7 +35,8 @@ async function getFranceTravailToken(): Promise<string | null> {
       expires: Date.now() + expires_in * 1000 - 5000,
     }
     return access_token
-  } catch {
+  } catch (err) {
+    console.warn('[france-travail] token fetch error', err)
     return null
   }
 }
@@ -128,7 +129,7 @@ export async function fetchFranceTravail(
     }
 
     const res = await fetch(
-      `https://api.emploi-store.fr/partenaire/offresdemploi/v2/offres/search?${new URLSearchParams(params)}`,
+      `https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?${new URLSearchParams(params)}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -157,7 +158,8 @@ export async function fetchFranceTravail(
         raw_data: j,
       }
     })
-  } catch {
+  } catch (err) {
+    console.warn('[france-travail] fetch error', err)
     return []
   }
 }

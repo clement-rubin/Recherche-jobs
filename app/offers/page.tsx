@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Offer, OfferStatus } from '@/lib/supabase/types'
 import { OfferCard } from '@/components/offers/OfferCard'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
@@ -47,8 +47,14 @@ export default function OffersPage() {
     localStorage.setItem('offers-view-mode', mode)
   }
 
+  // Guards the initial-load skeleton so a background prefetch (SwipeDeck's
+  // onNeedMore) doesn't unmount the deck mid-flight — that reset its
+  // internal prefetch-guard ref and caused an unmount/refetch loop when the
+  // offer count stayed <= 3.
+  const hasLoadedRef = useRef(false)
+
   const fetchOffers = useCallback(async () => {
-    setLoading(true)
+    if (!hasLoadedRef.current) setLoading(true)
     setError(null)
     const params = new URLSearchParams()
     params.set('statut', filterStatus || 'non_traite')
@@ -62,9 +68,13 @@ export default function OffersPage() {
     }
     setOffers(await res.json())
     setLoading(false)
+    hasLoadedRef.current = true
   }, [filterStatus, filterSource])
 
-  useEffect(() => { fetchOffers() }, [fetchOffers])
+  useEffect(() => {
+    hasLoadedRef.current = false
+    fetchOffers()
+  }, [fetchOffers])
 
   const handleAction = async (id: string, action: 'postule' | 'ignore' | 'sauvegarde') => {
     const patchRes = await fetch(`/api/offers/${id}`, {

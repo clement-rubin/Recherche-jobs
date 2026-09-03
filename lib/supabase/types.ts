@@ -3,7 +3,7 @@ export type ApplicationResult = 'accepte' | 'refus' | 'sans_reponse'
 export type ContractType = 'interim' | 'stage' | 'cdi' | 'cdd' | 'alternance'
 export type OfferStatus = 'non_traite' | 'ignore' | 'postule' | 'sauvegarde'
 export type EmailType = 'offre' | 'reponse' | 'relance' | 'autre'
-export type OAuthProvider = 'gmail' | 'outlook'
+export type OAuthProvider = 'gmail'
 
 export interface Application {
   id: string
@@ -52,18 +52,23 @@ export interface EmailImport {
   traite: boolean
 }
 
+export interface SearchLocation {
+  ville: string
+  rayon_km: number
+}
+
 export interface SearchProfile {
   id: string
   user_id: string
   nom: string | null
   actif: boolean
+  domaine: string | null
   type_contrat: string[] | null
   mots_cles: string[] | null
   mots_cles_exclus: string[] | null
   qualifications: string[] | null
   duree_contrat: 'peu_importe' | '1_semaine' | '2_semaines' | '3_semaines' | 'moins_1_mois' | '1_3_mois' | '3_6_mois' | '6_plus' | null
-  localisation: string | null
-  rayon_km: number
+  localisations: SearchLocation[]
   salaire_min: number | null
   created_at: string
 }

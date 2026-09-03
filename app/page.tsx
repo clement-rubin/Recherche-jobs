@@ -103,7 +103,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map(({ label, value, accent, bg, border, icon }, i) => (
           <div
             key={label}
@@ -178,10 +178,10 @@ export default async function DashboardPage() {
       )}
 
       {/* Quick actions */}
-      <div className="flex gap-3 animate-fade-up delay-4">
+      <div className="flex flex-wrap gap-3 animate-fade-up delay-4">
         <Link
           href="/applications"
-          className="btn-accent text-white text-sm font-semibold px-5 py-2.5 rounded-lg inline-flex items-center gap-2"
+          className="btn-accent text-white text-sm font-semibold px-5 py-2.5 rounded-lg inline-flex items-center gap-2 min-h-[42px]"
         >
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path d="M12 4v16m8-8H4" />
@@ -190,7 +190,7 @@ export default async function DashboardPage() {
         </Link>
         <Link
           href="/offers"
-          className="text-sm font-medium px-5 py-2.5 rounded-lg border border-border text-foreground-dim hover:border-border-light hover:text-foreground transition-all inline-flex items-center gap-2"
+          className="text-sm font-medium px-5 py-2.5 rounded-lg border border-border text-foreground-dim hover:border-border-light hover:text-foreground transition-all inline-flex items-center gap-2 min-h-[42px]"
           style={{ background: 'var(--card)' }}
         >
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -247,7 +247,7 @@ export default async function DashboardPage() {
                 className="px-5 py-3.5 flex items-center justify-between hover:bg-zinc-50 transition-colors"
                 style={{ borderBottom: i < stats.recent.length - 1 ? '1px solid var(--border)' : 'none' }}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
                     style={{
@@ -258,9 +258,9 @@ export default async function DashboardPage() {
                   >
                     {app.entreprise?.charAt(0)?.toUpperCase() ?? '?'}
                   </div>
-                  <div>
-                    <p className="text-foreground text-sm font-medium leading-none">{app.entreprise}</p>
-                    <p className="text-muted text-xs mt-1">{app.poste}</p>
+                  <div className="min-w-0">
+                    <p className="text-foreground text-sm font-medium leading-none truncate">{app.entreprise}</p>
+                    <p className="text-muted text-xs mt-1 truncate">{app.poste}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

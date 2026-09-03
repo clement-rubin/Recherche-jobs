@@ -32,7 +32,7 @@ export function KanbanBoard({ applications, onUpdate }: Props) {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {COLUMNS.map(col => {
           const colApps = applications.filter(a => a.statut === col.id)
           return (

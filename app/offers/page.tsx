@@ -124,12 +124,12 @@ export default function OffersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Offres à traiter</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{offers.length} offre{offers.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="flex items-center gap-2 mt-1 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <ViewToggle mode={viewMode} onChange={handleViewModeChange} />
           {offers.length > 0 && viewMode === 'list' && (
             <button
@@ -204,7 +204,7 @@ export default function OffersPage() {
           onNeedMore={fetchOffers}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {offers.map(offer => (
             <OfferCard key={offer.id} offer={offer} onAction={handleAction} />
           ))}

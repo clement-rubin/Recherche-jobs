@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState, type ReactNode, type FormEvent } from 'react'
 import type { OfferData } from '@/lib/analyzer/scraper'
 import type { CompanyData } from '@/lib/analyzer/company'
 import type { FitResult } from '@/lib/analyzer/fit'
@@ -113,14 +113,14 @@ export default function AnalyzePage() {
     }
   }
 
-  const handleSubmitUrl = (e: React.FormEvent) => {
+  const handleSubmitUrl = (e: FormEvent) => {
     e.preventDefault()
     if (!url.trim()) return
     reset()
     runAnalysis()
   }
 
-  const handleSubmitManual = (e: React.FormEvent) => {
+  const handleSubmitManual = (e: FormEvent) => {
     e.preventDefault()
     runAnalysis({ manualText: manualText.trim() })
   }
@@ -138,7 +138,7 @@ export default function AnalyzePage() {
       <div>
         <h1 className="text-xl font-semibold" style={{ color: 'var(--foreground)' }}>Analyser une offre</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-          Colle le lien d'une offre pour obtenir un score de fit, des angles de lettre de motivation et les points à mettre en avant dans ton CV.
+          Colle le lien d&apos;une offre pour obtenir un score de fit, des angles de lettre de motivation et les points à mettre en avant dans ton CV.
         </p>
       </div>
 
@@ -193,7 +193,7 @@ export default function AnalyzePage() {
         <div className="space-y-4">
           <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(217,119,6,0.08)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.2)' }}>
             <strong>{blocked.domain}</strong> ne permet pas le scraping automatique ({blocked.reason}).<br />
-            Ouvre l'offre dans ton navigateur, sélectionne tout le texte (Ctrl+A → Ctrl+C) et colle-le ci-dessous.
+            Ouvre l&apos;offre dans ton navigateur, sélectionne tout le texte (Ctrl+A → Ctrl+C) et colle-le ci-dessous.
           </div>
           <form onSubmit={handleSubmitManual} className="space-y-3">
             <textarea

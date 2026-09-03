@@ -84,7 +84,7 @@ function SettingsContent() {
       <div className={sectionClass}>
         <h2 className="text-foreground font-semibold">Synchronisation emails</h2>
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className={`w-2 h-2 rounded-full ${gmailConnected ? 'bg-success' : 'bg-muted'}`} />
               <div>
@@ -134,7 +134,7 @@ function SettingsContent() {
           />
           <button
             onClick={saveGroqKey}
-            className="bg-accent hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+            className="bg-accent hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg transition-colors whitespace-nowrap flex-shrink-0 min-h-[40px]"
           >
             {groqSaved ? '✓ Sauvegardé' : 'Sauvegarder'}
           </button>

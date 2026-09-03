@@ -262,6 +262,67 @@ export default function AnalyzePage() {
             </div>
           </div>
 
+          {/* Company info — remonté juste après la score card pour donner le
+              contexte entreprise dès le haut du compte-rendu */}
+          <Section title={`Entreprise : ${result.offer.entreprise || 'inconnue'}`}>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span style={{ color: 'var(--muted)' }}>Secteur</span>
+                <p style={{ color: 'var(--foreground-dim)' }}>{result.company.secteur}</p>
+              </div>
+              <div>
+                <span style={{ color: 'var(--muted)' }}>Taille</span>
+                <p style={{ color: 'var(--foreground-dim)' }}>{result.company.taille}</p>
+              </div>
+            </div>
+            {result.company.culture && !result.company.culture.includes('hypothèse') && (
+              <div className="mt-3">
+                <span className="text-xs" style={{ color: 'var(--muted)' }}>À propos</span>
+                <p className="text-sm mt-0.5" style={{ color: 'var(--foreground-dim)' }}>{result.company.culture}</p>
+              </div>
+            )}
+            {result.company.tech_stack.length > 0 && (
+              <div className="mt-3">
+                <span className="text-xs" style={{ color: 'var(--muted)' }}>Stack tech détectée</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {result.company.tech_stack.map(t => (
+                    <span key={t} className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {result.company.actualites.length > 0 && (
+              <div className="mt-3">
+                <span className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>Actualités récentes</span>
+                <ul className="space-y-1">
+                  {result.company.actualites.map((n, i) => (
+                    <li key={i} className="text-xs" style={{ color: 'var(--foreground-dim)' }}>
+                      {n.source_url ? <a href={n.source_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>{n.titre}</a> : n.titre}
+                      {n.date && <span style={{ color: 'var(--muted)' }}> · {n.date}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {result.company.sources.length > 0 && (
+              <div className="mt-3">
+                <span className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>Sources</span>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {result.company.sources.map((s, i) => (
+                    <a key={i} href={s} target="_blank" rel="noopener noreferrer" className="text-xs truncate max-w-[220px]" style={{ color: 'var(--accent)' }}>
+                      {(() => { try { return new URL(s).hostname.replace('www.', '') } catch { return s } })()}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            {result.company.incertitudes.length > 0 && (
+              <div className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>
+                ⚠️ {result.company.incertitudes.join(' · ')}
+              </div>
+            )}
+          </Section>
+
           {/* Score detail */}
           <Section title="Détail du score">
             <div className="space-y-2">
@@ -308,6 +369,19 @@ export default function AnalyzePage() {
           {/* CV */}
           <Section title="CV — formulations à privilégier">
             <List items={fit.cv_adapter} />
+            {(fit.mots_cles_ats.length > 0 || fit.conseils_ats.length > 0) && (
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                <h4 className="text-xs font-semibold mb-2" style={{ color: 'var(--foreground)' }}>Pour passer les filtres ATS/IA</h4>
+                {fit.mots_cles_ats.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {fit.mots_cles_ats.map(kw => (
+                      <span key={kw} className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>{kw}</span>
+                    ))}
+                  </div>
+                )}
+                <List items={fit.conseils_ats} />
+              </div>
+            )}
           </Section>
 
           {/* Pièges */}
@@ -321,48 +395,6 @@ export default function AnalyzePage() {
               <List items={fit.si_match_faible} />
             </Section>
           )}
-
-          {/* Company info */}
-          <Section title={`Entreprise : ${result.offer.entreprise || 'inconnue'}`}>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <span style={{ color: 'var(--muted)' }}>Secteur</span>
-                <p style={{ color: 'var(--foreground-dim)' }}>{result.company.secteur}</p>
-              </div>
-              <div>
-                <span style={{ color: 'var(--muted)' }}>Taille</span>
-                <p style={{ color: 'var(--foreground-dim)' }}>{result.company.taille}</p>
-              </div>
-            </div>
-            {result.company.tech_stack.length > 0 && (
-              <div className="mt-3">
-                <span className="text-xs" style={{ color: 'var(--muted)' }}>Stack tech détectée</span>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {result.company.tech_stack.map(t => (
-                    <span key={t} className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {result.company.actualites.length > 0 && (
-              <div className="mt-3">
-                <span className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>Actualités récentes</span>
-                <ul className="space-y-1">
-                  {result.company.actualites.map((n, i) => (
-                    <li key={i} className="text-xs" style={{ color: 'var(--foreground-dim)' }}>
-                      {n.source_url ? <a href={n.source_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>{n.titre}</a> : n.titre}
-                      {n.date && <span style={{ color: 'var(--muted)' }}> · {n.date}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {result.company.incertitudes.length > 0 && (
-              <div className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>
-                ⚠️ {result.company.incertitudes.join(' · ')}
-              </div>
-            )}
-          </Section>
 
           {/* Skills extracted */}
           {result.offer.competences_extraites.length > 0 && (

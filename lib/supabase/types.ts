@@ -55,6 +55,7 @@ export interface EmailImport {
 export interface SearchLocation {
   ville: string
   rayon_km: number
+  pays?: string // ISO2 country code, e.g. 'fr', 'de', 'gb'. Missing/undefined means 'fr' (pre-existing rows).
 }
 
 export interface SearchProfile {

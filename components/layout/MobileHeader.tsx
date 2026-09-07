@@ -31,14 +31,19 @@ export function MobileHeader() {
 
   return (
     <>
-      {/* Fixed top bar */}
+      {/* Fixed top bar — glass effect */}
       <header
         className="lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center px-4 z-40"
-        style={{ background: 'var(--card)', borderBottom: '1px solid var(--border)' }}
+        style={{
+          background: 'rgba(255, 255, 255, 0.88)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          borderBottom: '1px solid var(--border)',
+        }}
       >
         <button
           onClick={() => setOpen(true)}
-          className="p-2 rounded-lg transition-colors"
+          className="w-10 h-10 -ml-1.5 flex items-center justify-center rounded-lg transition-colors active:scale-95"
           style={{ color: 'var(--muted)' }}
           aria-label="Ouvrir le menu"
         >

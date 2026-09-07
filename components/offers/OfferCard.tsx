@@ -25,7 +25,7 @@ export function OfferCard({ offer, onAction }: Props) {
   return (
     <>
       <div
-        className="rounded-xl p-4 transition-all hover:-translate-y-0.5 cursor-pointer"
+        className="rounded-xl p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] active:translate-y-0"
         style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',
@@ -72,20 +72,20 @@ export function OfferCard({ offer, onAction }: Props) {
         >
           <button
             onClick={() => onAction(offer.id, 'postule')}
-            className="flex-1 text-white text-xs font-medium py-1.5 rounded-lg transition-colors btn-accent"
+            className="flex-1 text-white text-xs font-medium py-2 rounded-lg transition-colors btn-accent min-h-[36px]"
           >
             Postuler
           </button>
           <button
             onClick={() => onAction(offer.id, 'sauvegarde')}
-            className="flex-1 text-xs py-1.5 rounded-lg transition-colors border"
+            className="flex-1 text-xs py-2 rounded-lg transition-colors border min-h-[36px] hover:border-accent/40"
             style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
           >
             Sauvegarder
           </button>
           <button
             onClick={() => setConfirmIgnore(true)}
-            className="px-3 text-xs py-1.5 rounded-lg transition-colors"
+            className="px-3 text-xs py-2 rounded-lg transition-colors min-h-[36px] hover:text-foreground"
             style={{ color: 'var(--muted-light)' }}
           >
             Ignorer

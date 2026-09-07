@@ -3,7 +3,7 @@ export interface EuropeCountry {
   label: string
 }
 
-// EU/EEA + UK + Switzerland — matches JSearch's and EURES's country coverage.
+// EU/EEA + UK + Switzerland + Norway — matches JSearch's and EURES's country coverage.
 export const EUROPE_COUNTRIES: EuropeCountry[] = [
   { code: 'FR', label: 'France' },
   { code: 'DE', label: 'Allemagne' },

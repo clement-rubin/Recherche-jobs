@@ -39,7 +39,7 @@ export function WizardModal({ profile, onSave, onClose }: WizardModalProps) {
     nom: profile?.nom ?? '',
     domaineKey: initialDomaineKey,
     domaineAutre: initialDomaineAutre,
-    localisations: profile?.localisations?.length ? profile.localisations : [{ ville: 'Lille', rayon_km: 30 } as SearchLocation],
+    localisations: profile?.localisations?.length ? profile.localisations : [{ ville: 'Lille', rayon_km: 30, pays: 'FR' } as SearchLocation],
     mots_cles: profile?.mots_cles ?? ['emploi'],
     mots_cles_exclus: profile?.mots_cles_exclus ?? [] as string[],
     qualifications: profile?.qualifications ?? [] as string[],

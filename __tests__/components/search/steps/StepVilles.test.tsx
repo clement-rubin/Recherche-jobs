@@ -22,7 +22,7 @@ describe('StepVilles', () => {
     await userEvent.click(screen.getByText('+ Ajouter une ville'))
     expect(onChange).toHaveBeenCalledWith([
       { ville: 'Lille', rayon_km: 30 },
-      { ville: '', rayon_km: 30 },
+      { ville: '', rayon_km: 30, pays: 'FR' },
     ])
   })
 
@@ -43,5 +43,27 @@ describe('StepVilles', () => {
     render(<StepVilles value={[{ ville: 'Lille', rayon_km: 30 }]} onChange={onChange} />)
     await userEvent.type(screen.getByDisplayValue('Lille'), 'e')
     expect(onChange).toHaveBeenCalledWith([{ ville: 'Lillee', rayon_km: 30 }])
+  })
+
+  it('renders the country select for each row, defaulting to France', () => {
+    render(<StepVilles value={[{ ville: 'Lille', rayon_km: 30 }]} onChange={() => {}} />)
+    expect(screen.getByDisplayValue('France')).toBeInTheDocument()
+  })
+
+  it('updates pays when the country select changes', async () => {
+    const onChange = jest.fn()
+    render(<StepVilles value={[{ ville: 'Berlin', rayon_km: 30, pays: 'de' }]} onChange={onChange} />)
+    await userEvent.selectOptions(screen.getByDisplayValue('Allemagne'), 'FR')
+    expect(onChange).toHaveBeenCalledWith([{ ville: 'Berlin', rayon_km: 30, pays: 'FR' }])
+  })
+
+  it('adds a new row defaulting to France', async () => {
+    const onChange = jest.fn()
+    render(<StepVilles value={[{ ville: 'Lille', rayon_km: 30, pays: 'FR' }]} onChange={onChange} />)
+    await userEvent.click(screen.getByText('+ Ajouter une ville'))
+    expect(onChange).toHaveBeenCalledWith([
+      { ville: 'Lille', rayon_km: 30, pays: 'FR' },
+      { ville: '', rayon_km: 30, pays: 'FR' },
+    ])
   })
 })

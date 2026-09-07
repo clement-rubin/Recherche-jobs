@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { SearchLocation } from '@/lib/supabase/types'
 import { inputClass } from '../wizardStyles'
+import { EUROPE_COUNTRIES } from '../countries'
 
 interface StepVillesProps {
   value: SearchLocation[]
@@ -22,7 +23,7 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
   }
 
   const addRow = () => {
-    onChange([...value, { ville: '', rayon_km: 30 }])
+    onChange([...value, { ville: '', rayon_km: 30, pays: 'FR' }])
     setIds(prev => [...prev, crypto.randomUUID()])
   }
 
@@ -30,7 +31,7 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
     <div className="space-y-3">
       <label className="block text-xs font-medium" style={{ color: 'var(--muted)' }}>Villes recherchées</label>
       {value.map((row, index) => (
-        <div key={ids[index] ?? index} className="grid grid-cols-[1fr_auto_auto] gap-2 items-end">
+        <div key={ids[index] ?? index} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
           <div>
             <label className="block text-xs mb-1" style={{ color: 'var(--muted-light)' }}>Ville</label>
             <input
@@ -39,6 +40,18 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
               placeholder="Lille"
               className={inputClass}
             />
+          </div>
+          <div>
+            <label className="block text-xs mb-1" style={{ color: 'var(--muted-light)' }}>Pays</label>
+            <select
+              value={(row.pays ?? 'FR').toUpperCase()}
+              onChange={e => updateRow(index, { pays: e.target.value })}
+              className={`${inputClass} w-40`}
+            >
+              {EUROPE_COUNTRIES.map(c => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs mb-1" style={{ color: 'var(--muted-light)' }}>Rayon (km)</label>
@@ -68,6 +81,9 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
       >
         + Ajouter une ville
       </button>
+      <p className="text-xs" style={{ color: 'var(--muted-light)' }}>
+        Le rayon ne s&apos;applique qu&apos;aux offres françaises (APEC, France Travail, HelloWork) ; pour les autres pays, la recherche couvre tout le pays via JSearch et EURES.
+      </p>
     </div>
   )
 }

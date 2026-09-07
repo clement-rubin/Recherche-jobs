@@ -55,6 +55,7 @@ export interface EmailImport {
 export interface SearchLocation {
   ville: string
   rayon_km: number
+  pays?: string // ISO2 country code, e.g. 'FR', 'DE', 'GB' (uppercase). Missing/undefined means 'FR'; legacy rows may hold lowercase, normalize case defensively when reading.
 }
 
 export interface SearchProfile {

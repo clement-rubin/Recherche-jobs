@@ -3,6 +3,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { fetchJSearch } from '@/lib/scrapers/jsearch'
+import { fetchEures } from '@/lib/scrapers/eures'
 import { fetchAPEC } from '@/lib/scrapers/apec'
 import { fetchHelloWork } from '@/lib/scrapers/hellowork'
 import { fetchFranceTravail } from '@/lib/scrapers/france-travail'
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
   for (const profile of profiles as SearchProfile[]) {
     const keywordsList = profile.mots_cles ?? ['emploi']
     const exclusions = (profile.mots_cles_exclus ?? []).map(k => k.toLowerCase())
-    const locations = profile.localisations?.length ? profile.localisations : [{ ville: 'Lille', rayon_km: 30 }]
+    const locations = profile.localisations?.length ? profile.localisations : [{ ville: 'Lille', rayon_km: 30, pays: 'fr' }]
     const typeContrats = profile.type_contrat ?? []
 
     // Detect work-time preference from exclusions → passed to FT API as tempsPlein filter
@@ -87,20 +88,33 @@ export async function POST(req: NextRequest) {
     const withTimeout = <T>(p: Promise<T>, ms = 7000): Promise<T> =>
       Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))])
 
-    // All sources: one call per city × keyword combination (OR behavior across keywords)
+    // JSearch + EURES fire for every location (multi-country); APEC/HelloWork/France Travail
+    // are French-market-only APIs and only fire when the location's country is France.
     // Qualifications are profile metadata only — not appended to queries
-    const allPromises = locations.flatMap(loc => keywordsList.flatMap(kw => [
-      withTimeout(fetchJSearch(kw, loc.ville), 15000),
-      withTimeout(fetchAPEC(kw, loc.ville), 7000),
-      withTimeout(fetchHelloWork(kw, loc.ville, typeContrats), 7000),
-      withTimeout(fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter), 7000),
-    ]))
+    const taggedPromises = locations.flatMap(loc => {
+      const country = (loc.pays ?? 'fr').toLowerCase()
+      const isFrance = country === 'fr'
+      return keywordsList.flatMap(kw => {
+        const entries: [string, Promise<ScrapedJob[]>][] = [
+          ['jsearch', withTimeout(fetchJSearch(kw, loc.ville, [], country), 15000)],
+          ['eures', withTimeout(fetchEures(kw, country), 10000)],
+        ]
+        if (isFrance) {
+          entries.push(
+            ['apec', withTimeout(fetchAPEC(kw, loc.ville), 7000)],
+            ['hellowork', withTimeout(fetchHelloWork(kw, loc.ville, typeContrats), 7000)],
+            ['france_travail', withTimeout(fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter), 7000)],
+          )
+        }
+        return entries
+      })
+    })
 
-    const settled = await Promise.allSettled(allPromises)
+    const settled = await Promise.allSettled(taggedPromises.map(([, p]) => p))
 
     const allJobs: ScrapedJob[] = settled.flatMap((r, i) => {
       if (r.status === 'fulfilled') return r.value
-      const source = ['jsearch', 'apec', 'hellowork', 'france_travail'][i % 4]
+      const [source] = taggedPromises[i]
       if ((r as PromiseRejectedResult).reason) {
         results.errors.push(`${source}: ${(r as PromiseRejectedResult).reason}`)
       }

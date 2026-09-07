@@ -50,36 +50,70 @@ jest.mock('@/lib/supabase/server', () => ({
 }))
 
 jest.mock('@/lib/scrapers/jsearch', () => ({ fetchJSearch: jest.fn().mockResolvedValue([]) }))
+jest.mock('@/lib/scrapers/eures', () => ({ fetchEures: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/lib/scrapers/apec', () => ({ fetchAPEC: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/lib/scrapers/hellowork', () => ({ fetchHelloWork: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/lib/scrapers/france-travail', () => ({ fetchFranceTravail: jest.fn().mockResolvedValue([]) }))
 
 import { POST } from '@/app/api/jobs/fetch/route'
 import { fetchJSearch } from '@/lib/scrapers/jsearch'
+import { fetchEures } from '@/lib/scrapers/eures'
 import { fetchAPEC } from '@/lib/scrapers/apec'
 import { fetchHelloWork } from '@/lib/scrapers/hellowork'
 import { fetchFranceTravail } from '@/lib/scrapers/france-travail'
 
 describe('POST /api/jobs/fetch — multi-city loop', () => {
   beforeEach(() => {
+    jest.clearAllMocks()
     mockSupabase.from
       .mockReset()
       .mockReturnValueOnce(rateLimitChainOnce)
       .mockReturnValueOnce(profilesChainOnce)
   })
 
-  it('calls each scraper once per city × keyword combination', async () => {
+  it('calls all 5 sources once per city × keyword combination for French locations', async () => {
     const req = new NextRequest('http://localhost/api/jobs/fetch', { method: 'POST' })
     await POST(req)
 
     expect(fetchJSearch).toHaveBeenCalledTimes(4)
+    expect(fetchEures).toHaveBeenCalledTimes(4)
     expect(fetchAPEC).toHaveBeenCalledTimes(4)
     expect(fetchHelloWork).toHaveBeenCalledTimes(4)
     expect(fetchFranceTravail).toHaveBeenCalledTimes(4)
 
-    expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Lille')
-    expect(fetchJSearch).toHaveBeenNthCalledWith(2, 'data engineer', 'Lille')
-    expect(fetchJSearch).toHaveBeenNthCalledWith(3, 'data scientist', 'Paris')
-    expect(fetchJSearch).toHaveBeenNthCalledWith(4, 'data engineer', 'Paris')
+    expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Lille', [], 'fr')
+    expect(fetchJSearch).toHaveBeenNthCalledWith(2, 'data engineer', 'Lille', [], 'fr')
+    expect(fetchJSearch).toHaveBeenNthCalledWith(3, 'data scientist', 'Paris', [], 'fr')
+    expect(fetchJSearch).toHaveBeenNthCalledWith(4, 'data engineer', 'Paris', [], 'fr')
+
+    expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'fr')
+  })
+
+  it('only calls JSearch and EURES for a non-French location, skipping APEC/HelloWork/France Travail', async () => {
+    const deProfile = {
+      ...mockProfile,
+      localisations: [{ ville: 'Berlin', rayon_km: 30, pays: 'de' }],
+    }
+    mockSupabase.from
+      .mockReset()
+      .mockReturnValueOnce(rateLimitChainOnce)
+      .mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        then: (resolve: (v: { data: typeof deProfile[]; error: null }) => void) =>
+          resolve({ data: [deProfile], error: null }),
+      })
+
+    const req = new NextRequest('http://localhost/api/jobs/fetch', { method: 'POST' })
+    await POST(req)
+
+    expect(fetchJSearch).toHaveBeenCalledTimes(2) // 2 keywords × 1 city
+    expect(fetchEures).toHaveBeenCalledTimes(2)
+    expect(fetchAPEC).not.toHaveBeenCalled()
+    expect(fetchHelloWork).not.toHaveBeenCalled()
+    expect(fetchFranceTravail).not.toHaveBeenCalled()
+
+    expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Berlin', [], 'de')
+    expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'de')
   })
 })

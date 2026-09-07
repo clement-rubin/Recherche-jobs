@@ -72,4 +72,37 @@ describe('fetchEures', () => {
     const jobs = await fetchEures('stage', 'fr')
     expect(jobs).toEqual([])
   })
+
+  it('maps entreprise to null when employer is missing', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        numberRecords: 1,
+        jvs: [
+          {
+            title: 'Sales Trainee (m/w/d)',
+            id: 'MTIyNjUtNTE1MjYwX0pCNTIzNTA5Ny1TIDE',
+            locationMap: { DE: ['DE300'] },
+            positionOfferingCode: 'internship',
+            employer: null,
+            availableLanguages: ['de'],
+          },
+        ],
+      }),
+    })
+
+    const jobs = await fetchEures('praktikum', 'de')
+
+    expect(jobs).toHaveLength(1)
+    expect(jobs[0].entreprise).toBeNull()
+  })
+
+  it('returns [] when res.json() rejects', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.reject(new Error('bad json')),
+    })
+    const jobs = await fetchEures('stage', 'fr')
+    expect(jobs).toEqual([])
+  })
 })

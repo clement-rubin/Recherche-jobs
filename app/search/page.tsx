@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { SearchProfile } from '@/lib/supabase/types'
 import { WizardModal } from '@/components/search/WizardModal'
 import { DOMAIN_LABELS } from '@/components/search/domainSuggestions'
+import { EUROPE_COUNTRIES } from '@/components/search/countries'
 import { AsyncButton } from '@/components/ui/AsyncButton'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
 
@@ -128,7 +129,11 @@ export default function SearchPage() {
                   )}
                 </div>
                 <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
-                  {(profile.localisations ?? []).map(l => `${l.ville} (${l.rayon_km}km)`).join(', ')}
+                  {(profile.localisations ?? []).map(l => {
+                    if (!l.pays || l.pays.toUpperCase() === 'FR') return `${l.ville} (${l.rayon_km}km)`
+                    const country = EUROPE_COUNTRIES.find(c => c.code.toUpperCase() === l.pays!.toUpperCase())
+                    return country ? `${l.ville}, ${country.label}` : `${l.ville}, ${l.pays}`
+                  }).join(', ')}
                 </p>
                 {(profile.mots_cles ?? []).length > 0 && (
                   <p className="text-xs mt-1" style={{ color: 'var(--muted-light)' }}>

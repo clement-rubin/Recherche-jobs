@@ -116,4 +116,38 @@ describe('POST /api/jobs/fetch — multi-city loop', () => {
     expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Berlin', [], 'de')
     expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'de')
   })
+
+  it('scopes French-only sources per-location in a mixed-country profile', async () => {
+    const mixedProfile = {
+      ...mockProfile,
+      mots_cles: ['data scientist'],
+      localisations: [
+        { ville: 'Paris', rayon_km: 30, pays: 'fr' },
+        { ville: 'Berlin', rayon_km: 30, pays: 'de' },
+      ],
+    }
+    mockSupabase.from
+      .mockReset()
+      .mockReturnValueOnce(rateLimitChainOnce)
+      .mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        then: (resolve: (v: { data: typeof mixedProfile[]; error: null }) => void) =>
+          resolve({ data: [mixedProfile], error: null }),
+      })
+
+    const req = new NextRequest('http://localhost/api/jobs/fetch', { method: 'POST' })
+    await POST(req)
+
+    expect(fetchJSearch).toHaveBeenCalledTimes(2) // 1 keyword × 2 locations
+    expect(fetchEures).toHaveBeenCalledTimes(2)
+    expect(fetchAPEC).toHaveBeenCalledTimes(1) // only Paris (French location)
+    expect(fetchHelloWork).toHaveBeenCalledTimes(1)
+    expect(fetchFranceTravail).toHaveBeenCalledTimes(1)
+
+    expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Paris', [], 'fr')
+    expect(fetchJSearch).toHaveBeenNthCalledWith(2, 'data scientist', 'Berlin', [], 'de')
+    expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'fr')
+    expect(fetchEures).toHaveBeenNthCalledWith(2, 'data scientist', 'de')
+  })
 })

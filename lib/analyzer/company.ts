@@ -43,7 +43,81 @@ async function safeFetch(url: string): Promise<string> {
   } catch { return '' }
 }
 
-async function findOfficialSite(company: string): Promise<string | null> {
+async function safeFetchJson<T>(url: string): Promise<T | null> {
+  try {
+    const resp = await fetch(url, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(6000) })
+    if (!resp.ok) return null
+    return await resp.json() as T
+  } catch { return null }
+}
+
+// ---------------------------------------------------------------------------
+// Source reconnue n°1 : Wikipedia / Wikidata (API dédiée, usage automatisé
+// explicitement prévu — bien plus fiable et légitime que scraper une page
+// de résultats Google).
+// ---------------------------------------------------------------------------
+
+interface WikiSummary {
+  extract?: string
+  description?: string
+  type?: string
+  content_urls?: { desktop?: { page?: string } }
+}
+
+interface WikiSearchResult {
+  query?: { search?: Array<{ title: string }> }
+}
+
+interface WikiPagePropsResult {
+  query?: { pages?: Record<string, { pageprops?: { wikibase_item?: string } }> }
+}
+
+interface WikidataEntityResult {
+  entities?: Record<string, {
+    claims?: Record<string, Array<{ mainsnak?: { datavalue?: { value?: unknown } } }>>
+  }>
+}
+
+async function fetchWikipediaSummary(company: string, lang: 'fr' | 'en'): Promise<{
+  extract: string
+  pageUrl: string
+  pageTitle: string
+} | null> {
+  const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(company)}&format=json&origin=*`
+  const searchData = await safeFetchJson<WikiSearchResult>(searchUrl)
+  const title = searchData?.query?.search?.[0]?.title
+  if (!title) return null
+
+  const summaryUrl = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
+  const summary = await safeFetchJson<WikiSummary>(summaryUrl)
+  if (!summary?.extract) return null
+
+  return {
+    extract: summary.extract,
+    pageUrl: summary.content_urls?.desktop?.page || `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`,
+    pageTitle: title,
+  }
+}
+
+async function fetchWikidataOfficialSite(pageTitle: string, lang: 'fr' | 'en'): Promise<string | null> {
+  const propsUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=pageprops&titles=${encodeURIComponent(pageTitle)}&format=json&origin=*`
+  const propsData = await safeFetchJson<WikiPagePropsResult>(propsUrl)
+  const pages = propsData?.query?.pages
+  const qid = pages ? Object.values(pages)[0]?.pageprops?.wikibase_item : undefined
+  if (!qid) return null
+
+  const entityUrl = `https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`
+  const entityData = await safeFetchJson<WikidataEntityResult>(entityUrl)
+  const website = entityData?.entities?.[qid]?.claims?.P856?.[0]?.mainsnak?.datavalue?.value
+  return typeof website === 'string' ? website : null
+}
+
+// ---------------------------------------------------------------------------
+// Repli : recherche du site officiel via Google Search (comportement
+// pré-existant, conservé uniquement quand Wikipedia n'a rien trouvé).
+// ---------------------------------------------------------------------------
+
+async function findOfficialSiteViaGoogle(company: string): Promise<string | null> {
   const q = encodeURIComponent(`${company} site officiel`)
   const html = await safeFetch(`https://www.google.com/search?q=${q}&hl=fr`)
   if (!html) return null
@@ -78,23 +152,41 @@ function extractTechFromText(text: string): string[] {
   return TECH_LIST.filter(t => lower.includes(t))
 }
 
+// ---------------------------------------------------------------------------
+// Actualités : flux RSS Google News (format prévu pour la consommation
+// automatisée — bien plus stable qu'un scraping de la page HTML de résultats).
+// ---------------------------------------------------------------------------
+
 async function fetchNewsHeadlines(company: string): Promise<NewsItem[]> {
-  const q = encodeURIComponent(`${company} actualités`)
-  const html = await safeFetch(`https://www.google.com/search?q=${q}&tbm=nws&hl=fr`)
-  if (!html) return []
+  const q = encodeURIComponent(company)
+  const xml = await safeFetch(`https://news.google.com/rss/search?q=${q}&hl=fr&gl=FR&ceid=FR:fr`)
+  if (!xml) return []
 
-  const $ = cheerio.load(html)
-  const results: NewsItem[] = []
-
-  $('div.SoaBEf, div[data-hveid], .g').slice(0, 5).each((_, el) => {
-    const titre = $(el).find('div.n0jPhd, .mCBkyc, h3').first().text().trim()
-    const date = $(el).find('.OSrXXb, .LfVVr, span').filter((_, s) => /\d{4}/.test($(s).text())).first().text().trim()
-    const href = $(el).find('a').attr('href') || ''
-    if (titre) results.push({ titre, date, source_url: href })
-  })
-
-  return results.slice(0, 3)
+  try {
+    const $ = cheerio.load(xml, { xmlMode: true })
+    const results: NewsItem[] = []
+    $('item').each((_, el) => {
+      const rawTitle = $(el).find('title').first().text().trim()
+      const link = $(el).find('link').first().text().trim()
+      const pubDate = $(el).find('pubDate').first().text().trim()
+      if (!rawTitle) return
+      // Google News formate les titres "Titre - Source" : on garde le titre tel quel
+      let date = pubDate
+      const parsed = pubDate ? new Date(pubDate) : null
+      if (parsed && !isNaN(parsed.getTime())) {
+        date = parsed.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      }
+      results.push({ titre: rawTitle, date, source_url: link })
+    })
+    return results.slice(0, 5)
+  } catch {
+    return []
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Orchestration
+// ---------------------------------------------------------------------------
 
 export async function researchCompany(company: string): Promise<CompanyData> {
   const result: CompanyData = {
@@ -107,8 +199,30 @@ export async function researchCompany(company: string): Promise<CompanyData> {
     return result
   }
 
-  const officialSite = await findOfficialSite(company)
+  // --- Étape 1 : Wikipedia en priorité (source reconnue et légale) ---
+  let officialSite: string | null = null
+  let usedWikipedia = false
 
+  for (const lang of ['fr', 'en'] as const) {
+    const wiki = await fetchWikipediaSummary(company, lang)
+    if (wiki) {
+      result.culture = wiki.extract
+      result.secteur = wiki.extract
+      result.sources.push(wiki.pageUrl)
+      usedWikipedia = true
+
+      const website = await fetchWikidataOfficialSite(wiki.pageTitle, lang)
+      if (website) officialSite = website
+      break
+    }
+  }
+
+  // --- Étape 2 : repli Google Search si Wikipedia n'a rien donné ---
+  if (!officialSite) {
+    officialSite = await findOfficialSiteViaGoogle(company)
+  }
+
+  // --- Étape 3 : scraper le site officiel trouvé (peu importe la source) ---
   const pagesToVisit: string[] = []
   if (officialSite) {
     pagesToVisit.push(officialSite)
@@ -120,42 +234,52 @@ export async function researchCompany(company: string): Promise<CompanyData> {
     } catch { /* ignore */ }
   }
 
-  let allText = ''
+  let siteText = ''
   for (const pageUrl of pagesToVisit.slice(0, 3)) {
     const text = await safeFetch(pageUrl)
     if (text) {
       const $ = cheerio.load(text)
       $('script, style').remove()
       const cleaned = $('body').text().replace(/\s+/g, ' ').slice(0, 2000)
-      allText += '\n' + cleaned
+      siteText += '\n' + cleaned
       result.sources.push(pageUrl)
     }
   }
 
-  if (allText) {
-    result.secteur = extractPattern(allText, [
-      /(?:secteur|industry|domaine)\s*[:\-]\s*([^\n.]{5,60})/i,
-      /spécialisé[e]?\s+(?:dans|en)\s+([^\n.]{5,60})/i,
-    ]) || HYPOTHESE
-
-    result.taille = extractPattern(allText, [
-      /(\d[\d\s]+\s*(?:employés?|salariés?|collaborateurs?|employees?))/i,
-      /(\d+[\-–]\d+\s*(?:employés?|employees?))/i,
-    ]) || HYPOTHESE
-
-    result.culture = extractPattern(allText, [
-      /(?:valeurs?|mission|vision)\s*[:\-]\s*([^\n.]{10,120})/i,
-      /(?:notre mission|our mission)\s*:?\s*([^\n.]{10,120})/i,
-    ]) || HYPOTHESE
-
-    result.tech_stack = extractTechFromText(allText)
-  } else {
-    result.secteur = HYPOTHESE
-    result.taille = HYPOTHESE
-    result.culture = HYPOTHESE
-    result.incertitudes.push(`Contenu site inaccessible — ${HYPOTHESE}`)
+  if (siteText) {
+    result.tech_stack = extractTechFromText(siteText)
   }
 
+  // Secteur/taille/culture depuis le site officiel seulement si Wikipedia
+  // n'a rien donné (Wikipedia est prioritaire et déjà plus fiable)
+  if (!usedWikipedia) {
+    if (siteText) {
+      result.secteur = extractPattern(siteText, [
+        /(?:secteur|industry|domaine)\s*[:\-]\s*([^\n.]{5,60})/i,
+        /spécialisé[e]?\s+(?:dans|en)\s+([^\n.]{5,60})/i,
+      ]) || HYPOTHESE
+
+      result.culture = extractPattern(siteText, [
+        /(?:valeurs?|mission|vision)\s*[:\-]\s*([^\n.]{10,120})/i,
+        /(?:notre mission|our mission)\s*:?\s*([^\n.]{10,120})/i,
+      ]) || HYPOTHESE
+    } else {
+      result.secteur = HYPOTHESE
+      result.culture = HYPOTHESE
+      result.incertitudes.push(`Contenu site inaccessible — ${HYPOTHESE}`)
+    }
+  }
+
+  // Taille : ni Wikipedia (l'extrait ne la donne pas de façon fiable) ni le
+  // scraping heuristique du site officiel ne la trouvent systématiquement
+  result.taille = siteText
+    ? extractPattern(siteText, [
+        /(\d[\d\s]+\s*(?:employés?|salariés?|collaborateurs?|employees?))/i,
+        /(\d+[\-–]\d+\s*(?:employés?|employees?))/i,
+      ]) || HYPOTHESE
+    : HYPOTHESE
+
+  // --- Étape 4 : actualités (RSS, dans tous les cas) ---
   result.actualites = await fetchNewsHeadlines(company)
 
   if (result.secteur === HYPOTHESE) result.incertitudes.push(`Secteur — ${HYPOTHESE}`)

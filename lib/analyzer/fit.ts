@@ -11,10 +11,29 @@ export interface FitResult {
   cv_adapter: string[]
   pieges: string[]
   si_match_faible: string[]
+  mots_cles_ats: string[]
+  conseils_ats: string[]
 }
 
 function matchedSkills(text: string): string[] {
   return PROFILE.competences.filter(skill => text.toLowerCase().includes(skill.toLowerCase()))
+}
+
+const ATS_STOPWORDS = new Set([
+  'the', 'and', 'for', 'with', 'that', 'this', 'are', 'was', 'were', 'from', 'have', 'has',
+  'not', 'but', 'you', 'your', 'its', 'all', 'any', 'can', 'will', 'just', 'more', 'than',
+  'de', 'le', 'la', 'les', 'un', 'une', 'des', 'du', 'et', 'en', 'pour', 'dans', 'avec', 'sur',
+  'que', 'qui', 'pas', 'plus', 'par', 'est', 'sont', 'être', 'etre', 'avoir', 'ce', 'cette',
+  'ces', 'notre', 'votre', 'nous', 'vous', 'ils', 'elles', 'il', 'elle', 'stage', 'stagiaire',
+])
+
+// Mots significatifs du titre de poste (hors mots vides) : à reprendre tels
+// quels dans le CV/la lettre pour matcher le titre exact recherché par les
+// filtres ATS/IA.
+function titleKeywords(title: string): string[] {
+  return (title.match(/[a-zA-ZÀ-ÿ0-9+#.]{3,}/g) || [])
+    .map(w => w.trim())
+    .filter(w => w.length >= 3 && !ATS_STOPWORDS.has(w.toLowerCase()))
 }
 
 export function analyzeFit(offer: OfferData, company: CompanyData): FitResult {
@@ -70,6 +89,8 @@ export function analyzeFit(offer: OfferData, company: CompanyData): FitResult {
   if (hasPeriod) points_forts.push('✅ Période compatible avec mi-avril / fin mai 2027')
   if (points_forts.length === 0) points_forts.push('Peu de correspondances détectées — voir les conseils ci-dessous')
 
+  const cultureKnown = Boolean(company.culture) && !company.culture.includes('hypothèse')
+
   const angles_lettre: string[] = []
   if (hasConsulting) {
     angles_lettre.push("Valorise ta capacité à travailler en mode projet client — même en académique (présentations, études de cas, restitutions)")
@@ -77,7 +98,10 @@ export function analyzeFit(offer: OfferData, company: CompanyData): FitResult {
   if (matched.includes('Python') || matched.includes('SQL')) {
     angles_lettre.push('Cite des projets concrets en Python/SQL avec données réelles et résultats mesurables')
   }
-  if (company.secteur && !company.secteur.includes('hypothèse')) {
+  if (cultureKnown) {
+    const snippet = company.culture.length > 160 ? company.culture.slice(0, 157).trimEnd() + '…' : company.culture
+    angles_lettre.push(`Appuie-toi sur ce que fait vraiment l'entreprise (source Wikipedia) pour montrer que tu la connais : « ${snippet} »`)
+  } else if (company.secteur && !company.secteur.includes('hypothèse')) {
     angles_lettre.push(`Montre que tu comprends le secteur "${company.secteur}" et l'enjeu data dans ce contexte`)
   }
   angles_lettre.push("En M1, mets en avant ta curiosité et ta capacité d'apprentissage rapide sur des technos nouvelles")
@@ -92,6 +116,29 @@ export function analyzeFit(offer: OfferData, company: CompanyData): FitResult {
   if (hasConsulting) {
     cv_adapter.push('Inclus une ligne sur les restitutions ou présentations à des non-techniciens')
   }
+
+  // ---------------------------------------------------------------------
+  // Optimisation ATS / filtrage IA : les filtres de recrutement combinent
+  // un matching par mots-clés exacts et un scoring contextuel par IA (NLP)
+  // qui reconnaît les synonymes mais score nettement mieux les termes
+  // repris mot pour mot. Voir sources dans le plan/PR.
+  // ---------------------------------------------------------------------
+  const motsClesSet = new Set<string>(offer.competences_extraites)
+  for (const kw of titleKeywords(offer.titre)) motsClesSet.add(kw)
+  const mots_cles_ats = Array.from(motsClesSet).slice(0, 15)
+
+  const conseils_ats: string[] = []
+  if (mots_cles_ats.length > 0) {
+    conseils_ats.push(
+      `Reprends ces mots-clés tels quels dans le CV et la lettre, sans les paraphraser : ${mots_cles_ats.slice(0, 8).join(', ')} — un match exact score toujours mieux qu'une reformulation`
+    )
+  }
+  conseils_ats.push('Place les mots-clés les plus importants dès le résumé/profil en tête de CV et dans la première ligne de chaque expérience : les filtres pondèrent plus fort ce qui est en tête de section')
+  conseils_ats.push('Écris l\'acronyme ET le terme complet à la première occurrence (ex. "Machine Learning (ML)") pour matcher les deux formes de recherche')
+  conseils_ats.push('CV au format simple : intitulés de section classiques (Expérience, Formation, Compétences), pas de tableaux/colonnes/zones de texte/graphiques que les parseurs ATS ignorent souvent, police standard (Arial/Calibri), export PDF texte (pas une image scannée)')
+  conseils_ats.push('Quantifie chaque réalisation (%, volumes de données, nombre de projets) plutôt que des formulations vagues')
+  conseils_ats.push('Dans la lettre, n\'empile pas les mots-clés en liste brute : intègre-les dans des phrases avec verbe d\'action + résultat chiffré, le scoring contextuel pénalise le bourrage de mots-clés isolés')
+  conseils_ats.push('Adapte ces mots-clés à CHAQUE offre plutôt que de réutiliser un CV générique — le taux de passage chute fortement sinon')
 
   const pieges: string[] = []
   if (hasSenior) pieges.push("⚠️ Titre contient senior/lead — vérifie que le profil étudiant est accepté dans l'offre")
@@ -108,5 +155,8 @@ export function analyzeFit(offer: OfferData, company: CompanyData): FitResult {
     }
   }
 
-  return { score, verdict, detail_scores: details, points_forts, angles_lettre, cv_adapter, pieges, si_match_faible }
+  return {
+    score, verdict, detail_scores: details, points_forts, angles_lettre, cv_adapter, pieges,
+    si_match_faible, mots_cles_ats, conseils_ats,
+  }
 }

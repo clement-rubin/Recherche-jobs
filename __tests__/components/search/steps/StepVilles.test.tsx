@@ -66,4 +66,28 @@ describe('StepVilles', () => {
       { ville: '', rayon_km: 30, pays: 'FR' },
     ])
   })
+
+  it('renders city hub suggestion chips for the row\'s country', () => {
+    render(<StepVilles value={[{ ville: '', rayon_km: 30, pays: 'DE' }]} onChange={() => {}} />)
+    expect(screen.getByText('Berlin')).toBeInTheDocument()
+    expect(screen.getByText('Munich')).toBeInTheDocument()
+  })
+
+  it('fills the row\'s ville when a city hub chip is clicked', async () => {
+    const onChange = jest.fn()
+    render(<StepVilles value={[{ ville: '', rayon_km: 30, pays: 'DE' }]} onChange={onChange} />)
+    await userEvent.click(screen.getByText('Berlin'))
+    expect(onChange).toHaveBeenCalledWith([{ ville: 'Berlin', rayon_km: 30, pays: 'DE' }])
+  })
+
+  it('shows different city chips after the row\'s country changes', () => {
+    const { rerender } = render(
+      <StepVilles value={[{ ville: '', rayon_km: 30, pays: 'FR' }]} onChange={() => {}} />
+    )
+    expect(screen.getByText('Paris')).toBeInTheDocument()
+
+    rerender(<StepVilles value={[{ ville: '', rayon_km: 30, pays: 'DE' }]} onChange={() => {}} />)
+    expect(screen.getByText('Berlin')).toBeInTheDocument()
+    expect(screen.queryByText('Paris')).not.toBeInTheDocument()
+  })
 })

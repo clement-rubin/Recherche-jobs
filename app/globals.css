@@ -1,24 +1,62 @@
 @import "tailwindcss";
 
 :root {
+  /* Surfaces */
   --background: #f4f4f5;
   --surface:    #fafafa;
   --card:       #ffffff;
   --card-hover: #f9f9f9;
+  --card-gradient: linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%);
   --border:     #e4e4e7;
   --border-light: #d4d4d8;
-  --accent:     #6366f1;
+
+  /* Brand */
+  --accent:       #6366f1;
   --accent-light: #818cf8;
-  --accent-dim: rgba(99, 102, 241, 0.1);
-  --accent-glow: 0 0 20px rgba(99, 102, 241, 0.15);
-  --foreground: #18181b;
+  --accent-hover: #4f46e5;
+
+  /* Text */
+  --foreground:     #18181b;
   --foreground-dim: #52525b;
-  --muted:      #71717a;
-  --muted-light: #a1a1aa;
-  --success:    #16a34a;
-  --warning:    #d97706;
-  --danger:     #ef4444;
-  --radius: 10px;
+  --muted:          #71717a;
+  --muted-light:    #a1a1aa;
+
+  /* Semantic — text values clear 4.5:1 on white and on their own surface tint */
+  --success:         #16a34a;
+  --success-text:    #15803d;
+  --success-surface: rgba(22, 163, 74, 0.08);
+  --success-border:  rgba(22, 163, 74, 0.22);
+
+  --warning:         #d97706;
+  --warning-text:    #b45309;
+  --warning-surface: rgba(217, 119, 6, 0.08);
+  --warning-border:  rgba(217, 119, 6, 0.22);
+
+  --danger:         #ef4444;
+  --danger-text:    #b91c1c;
+  --danger-surface: rgba(239, 68, 68, 0.08);
+  --danger-border:  rgba(239, 68, 68, 0.22);
+
+  --accent-text:    #4f46e5;
+  --accent-surface: rgba(99, 102, 241, 0.08);
+  --accent-border:  rgba(99, 102, 241, 0.22);
+
+  /* Elevation — two-layer, zinc-tinted so it reads warm rather than sooty */
+  --shadow-xs: 0 1px 2px rgba(24, 24, 27, 0.04), 0 1px 1px rgba(24, 24, 27, 0.03);
+  --shadow-sm: 0 1px 3px rgba(24, 24, 27, 0.05), 0 2px 6px rgba(24, 24, 27, 0.04);
+  --shadow-md: 0 2px 6px rgba(24, 24, 27, 0.06), 0 6px 16px rgba(24, 24, 27, 0.05);
+  --shadow-lg: 0 4px 12px rgba(24, 24, 27, 0.07), 0 12px 32px rgba(24, 24, 27, 0.06);
+  --shadow-xl: 0 8px 24px rgba(24, 24, 27, 0.08), 0 24px 56px rgba(24, 24, 27, 0.08);
+  --shadow-accent: 0 4px 16px rgba(99, 102, 241, 0.24);
+
+  /* Radius */
+  --r-sm:  6px;
+  --r-md:  8px;
+  --r-lg:  12px;
+  --r-xl:  16px;
+  --r-2xl: 20px;
+
+  /* Motion */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out: cubic-bezier(0.0, 0, 0.2, 1);
 }
@@ -73,8 +111,8 @@ button, a, [role="button"], select, input, textarea, label {
   100% { background-position: 200% center; }
 }
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
-  50%       { box-shadow: 0 0 20px 4px rgba(124, 58, 237, 0.2); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50%      { box-shadow: 0 0 20px 4px rgba(99, 102, 241, 0.2); }
 }
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-8px); }
@@ -97,14 +135,6 @@ button, a, [role="button"], select, input, textarea, label {
 .delay-4 { animation-delay: 0.16s; }
 .delay-5 { animation-delay: 0.20s; }
 
-/* ─── Glass card ────────────────────────────────────── */
-.glass {
-  background: rgba(16, 18, 32, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-}
-
 /* ─── Glow button ───────────────────────────────────── */
 .btn-accent {
   background: var(--accent);
@@ -112,8 +142,8 @@ button, a, [role="button"], select, input, textarea, label {
   transition: box-shadow 0.2s, transform 0.18s var(--ease-spring), background 0.15s;
 }
 .btn-accent:hover {
-  background: #4f46e5;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-accent);
   transform: translateY(-1px);
 }
 .btn-accent:active {
@@ -130,7 +160,7 @@ button, a, [role="button"], select, input, textarea, label {
 }
 .stat-card:hover {
   border-color: var(--border-light);
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-md);
   transform: translateY(-3px);
 }
 .stat-card:active {
@@ -167,7 +197,7 @@ button, a, [role="button"], select, input, textarea, label {
   font-family: var(--font-mono), monospace;
 }
 .gradient-text {
-  background: linear-gradient(135deg, #a78bfa, #e879f9);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -189,7 +219,7 @@ textarea {
 }
 input:focus, select:focus, textarea:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+  box-shadow: 0 0 0 3px var(--accent-surface) !important;
   outline: none !important;
 }
 

@@ -52,7 +52,7 @@ describe('fetchEures', () => {
     const body = JSON.parse(init.body)
     expect(body.locationCodes).toEqual(['DE'])
     expect(body.positionOfferingCodes).toEqual(['internship'])
-    expect(body.keywords).toEqual([{ keyword: 'praktikum', specificSearchCode: 'EVERYWHERE' }])
+    expect(body.keywords).toEqual([{ keyword: 'praktikum', specificSearchCode: 'TITLE' }])
   })
 
   it('returns [] on a non-2xx response instead of throwing', async () => {

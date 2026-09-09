@@ -25,7 +25,11 @@ export async function fetchEures(keywords: string, country: string): Promise<Scr
         resultsPerPage: 25,
         page: 1,
         sortSearch: 'MOST_RECENT',
-        keywords: [{ keyword: keywords, specificSearchCode: 'EVERYWHERE' }],
+        // 'EVERYWHERE' barely filters by keyword — an empty string and legitimate
+        // keywords both return near-identical, mostly unrelated result sets (verified
+        // live: 'Data' and 'Data analyst' returned the same 5 irrelevant titles).
+        // 'TITLE' is precise; 'DESCRIPTION'/'EVERYWHERE' are effectively noise.
+        keywords: [{ keyword: keywords, specificSearchCode: 'TITLE' }],
         publicationPeriod: null,
         occupationUris: [],
         skillUris: [],

@@ -173,7 +173,7 @@ button, a, [role="button"], select, input, textarea, label {
   transition: background 0.15s var(--ease-spring), color 0.15s, transform 0.12s;
 }
 .nav-item:hover {
-  background: var(--accent-dim);
+  background: var(--accent-surface);
   color: var(--foreground);
 }
 .nav-item:active {

@@ -118,7 +118,7 @@ export default function SearchPage() {
                     {profile.nom || 'Profil sans nom'}
                   </h3>
                   {profile.domaine && (
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-surface)', color: 'var(--accent)' }}>
                       {DOMAIN_LABELS[profile.domaine] ?? profile.domaine}
                     </span>
                   )}
@@ -151,7 +151,7 @@ export default function SearchPage() {
                       <span
                         key={ct}
                         className="text-xs px-2 py-0.5 rounded capitalize"
-                        style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
+                        style={{ background: 'var(--accent-surface)', color: 'var(--accent)' }}
                       >
                         {ct}
                       </span>

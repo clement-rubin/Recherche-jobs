@@ -57,7 +57,7 @@ export function OfferCard({ offer, onAction }: Props) {
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             <span
               className="text-xs px-2 py-0.5 rounded border"
-              style={{ background: 'var(--accent-dim)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}
+              style={{ background: 'var(--accent-surface)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}
             >
               {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
             </span>

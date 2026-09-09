@@ -113,7 +113,7 @@ export function OfferDetailModal({ offer, onAction, onClose }: Props) {
             </span>
           )}
           {raw.remote === true && (
-            <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'rgba(99,102,241,0.3)', color: 'var(--accent)', background: 'var(--accent-dim)' }}>
+            <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'rgba(99,102,241,0.3)', color: 'var(--accent)', background: 'var(--accent-surface)' }}>
               Télétravail
             </span>
           )}
@@ -122,7 +122,7 @@ export function OfferDetailModal({ offer, onAction, onClose }: Props) {
               {expYears === 0 ? 'Débutant accepté' : `${expYears} ans d'expérience`}
             </span>
           )}
-          <span className="text-xs px-2.5 py-1 rounded-full border ml-auto" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}>
+          <span className="text-xs px-2.5 py-1 rounded-full border ml-auto" style={{ background: 'var(--accent-surface)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}>
             {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
           </span>
           {raw.posted && (

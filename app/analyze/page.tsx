@@ -254,7 +254,7 @@ export default function AnalyzePage() {
               {result.offer.entreprise && <div className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{result.offer.entreprise}</div>}
               {result.offer.localisation && <div className="text-xs mb-2" style={{ color: 'var(--muted)' }}>📍 {result.offer.localisation}</div>}
               {result.offer.type_contrat && (
-                <span className="inline-block px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                <span className="inline-block px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-surface)', color: 'var(--accent)' }}>
                   {result.offer.type_contrat}
                 </span>
               )}
@@ -339,7 +339,7 @@ export default function AnalyzePage() {
                 <span className="text-xs" style={{ color: 'var(--muted)' }}>Stack tech détectée</span>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {result.company.tech_stack.map(t => (
-                    <span key={t} className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>{t}</span>
+                    <span key={t} className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-surface)', color: 'var(--accent)' }}>{t}</span>
                   ))}
                 </div>
               </div>

@@ -218,7 +218,7 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
           </p>
           <div className="flex items-center gap-2 mt-3">
             {offer.type_contrat && (
-              <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+              <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--accent-surface)', color: 'var(--accent)' }}>
                 {offer.type_contrat}
               </span>
             )}

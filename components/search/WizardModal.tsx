@@ -144,7 +144,7 @@ export function WizardModal({ profile, onSave, onClose }: WizardModalProps) {
               aria-label={`Étape ${i + 1} : ${label}`}
               aria-current={i === step ? 'step' : undefined}
               className="flex-1 h-1.5 rounded-full transition-colors disabled:cursor-not-allowed"
-              style={{ background: i === step ? 'var(--accent)' : visited.has(i) ? 'var(--accent-dim)' : 'var(--border)' }}
+              style={{ background: i === step ? 'var(--accent)' : visited.has(i) ? 'var(--accent-surface)' : 'var(--border)' }}
             />
           ))}
         </div>

@@ -8,6 +8,7 @@ export const SOURCE_LABELS: Record<string, string> = {
 }
 
 export function sourceLabel(source: string | null | undefined): string {
+  // Empty string counts as missing too — a labeled "Inconnu" badge beats a blank one.
   if (!source) return 'Inconnu'
   return SOURCE_LABELS[source] ?? source
 }

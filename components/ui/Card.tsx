@@ -6,30 +6,33 @@ interface CardProps {
   onClick?: () => void
 }
 
-const BASE = 'rounded-[var(--r-xl)] border transition-shadow duration-200'
+const BASE =
+  'rounded-[var(--r-xl)] border transition-shadow duration-200 bg-[image:var(--card-gradient)] border-[color:var(--border)] shadow-[var(--shadow-sm)]'
 
 export function Card({ children, className = '', onClick }: CardProps) {
-  const style = {
-    background: 'var(--card-gradient)',
-    borderColor: 'var(--border)',
-    boxShadow: 'var(--shadow-sm)',
-  }
-
   if (onClick) {
     return (
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onClick}
-        className={`${BASE} text-left w-full hover:shadow-[var(--shadow-md)] ${className}`}
-        style={style}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            if (event.key === ' ') {
+              event.preventDefault()
+            }
+            onClick()
+          }
+        }}
+        className={`${BASE} hover:shadow-[var(--shadow-md)] ${className}`}
       >
         {children}
-      </button>
+      </div>
     )
   }
 
   return (
-    <div className={`${BASE} ${className}`} style={style}>
+    <div className={`${BASE} ${className}`}>
       {children}
     </div>
   )

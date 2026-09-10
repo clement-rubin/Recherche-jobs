@@ -46,4 +46,22 @@ describe('AsyncButton', () => {
     act(() => { jest.advanceTimersByTime(3000) })
     expect(screen.getByText('Lancer')).toBeInTheDocument()
   })
+
+  it('uses the accent token for the primary variant, not hardcoded indigo', () => {
+    render(<AsyncButton onClick={async () => {}}>Lancer</AsyncButton>)
+    const btn = screen.getByRole('button')
+    expect(btn.className).not.toMatch(/bg-indigo-/)
+    expect(btn.getAttribute('style')).toContain('var(--accent)')
+  })
+
+  it('renders a danger variant on the danger token', () => {
+    render(<AsyncButton onClick={async () => {}} variant="danger">Supprimer</AsyncButton>)
+    expect(screen.getByRole('button').getAttribute('style')).toContain('var(--danger')
+  })
+
+  it('renders a ghost variant with no background fill', () => {
+    render(<AsyncButton onClick={async () => {}} variant="ghost">Annuler</AsyncButton>)
+    const style = screen.getByRole('button').getAttribute('style') ?? ''
+    expect(style).not.toContain('var(--accent)')
+  })
 })

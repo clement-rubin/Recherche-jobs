@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface ModalProps {
   title: string
@@ -12,6 +12,9 @@ interface ModalProps {
   className?: string
 }
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
 export function Modal({
   title,
   onClose,
@@ -20,13 +23,50 @@ export function Modal({
   sheetOnMobile = true,
   className = '',
 }: ModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = 'modal-title-' + title.replace(/\s+/g, '-').toLowerCase()
+
+  // Escape closes, Tab/Shift+Tab is trapped inside the dialog.
+  // Assumes a single Modal is open at a time — this component doesn't stack.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab' || !dialogRef.current) return
+
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
+
+  // Initial focus + restore focus to the trigger element on close.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+    ;(focusable?.[0] ?? dialogRef.current)?.focus()
+    return () => previouslyFocused?.focus()
+  }, [])
+
+  // Lock background scroll while the modal is open.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [])
 
   const shape = sheetOnMobile
     ? 'rounded-t-[var(--r-2xl)] sm:rounded-[var(--r-2xl)] self-end sm:self-center'
@@ -39,9 +79,11 @@ export function Modal({
       className="fixed inset-0 z-50 flex justify-center bg-black/40 p-0 sm:p-4"
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className={`w-full sm:max-w-lg flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden ${shape} ${className}`}
         style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xl)' }}
       >
@@ -49,7 +91,7 @@ export function Modal({
           className="flex items-center justify-between px-5 sm:px-6 py-4 flex-shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
-          <h2 className="font-semibold text-base" style={{ color: 'var(--foreground)' }}>{title}</h2>
+          <h2 id={titleId} className="font-semibold text-base" style={{ color: 'var(--foreground)' }}>{title}</h2>
           <button
             onClick={onClose}
             aria-label="Fermer"

@@ -40,4 +40,43 @@ describe('Modal', () => {
     render(<Modal title="Détails" onClose={() => {}} footer={<span>pied</span>}>contenu</Modal>)
     expect(screen.getByText('pied')).toBeInTheDocument()
   })
+
+  it('renders the mobile bottom-sheet shape by default', () => {
+    render(<Modal title="Détails" onClose={() => {}}>contenu</Modal>)
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.className).toContain('rounded-t-[var(--r-2xl)]')
+  })
+
+  it('renders a centered card when sheetOnMobile is false', () => {
+    render(<Modal title="Détails" onClose={() => {}} sheetOnMobile={false}>contenu</Modal>)
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.className).not.toContain('rounded-t-[var(--r-2xl)]')
+    expect(dialog.className).toContain('self-center')
+  })
+
+  it('moves focus into the dialog on mount', () => {
+    render(<Modal title="Détails" onClose={() => {}}>contenu</Modal>)
+    expect(document.activeElement).toBe(screen.getByLabelText('Fermer'))
+  })
+
+  it('restores focus to the previously focused element on unmount', () => {
+    const trigger = document.createElement('button')
+    trigger.textContent = 'ouvrir'
+    document.body.appendChild(trigger)
+    trigger.focus()
+
+    const { unmount } = render(<Modal title="Détails" onClose={() => {}}>contenu</Modal>)
+    expect(document.activeElement).not.toBe(trigger)
+    unmount()
+    expect(document.activeElement).toBe(trigger)
+
+    document.body.removeChild(trigger)
+  })
+
+  it('locks and restores body scroll', () => {
+    const { unmount } = render(<Modal title="Détails" onClose={() => {}}>contenu</Modal>)
+    expect(document.body.style.overflow).toBe('hidden')
+    unmount()
+    expect(document.body.style.overflow).toBe('')
+  })
 })

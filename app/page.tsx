@@ -90,9 +90,9 @@ export default async function DashboardPage() {
             className="w-1.5 h-5 rounded-full"
             style={{ background: 'var(--accent)' }}
           />
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>Dashboard</h1>
         </div>
-        <p className="text-muted text-sm ml-3.5">Vue d&apos;ensemble de votre recherche d&apos;emploi</p>
+        <p className="text-sm ml-3.5" style={{ color: 'var(--muted)' }}>Vue d&apos;ensemble de votre recherche d&apos;emploi</p>
       </div>
 
       {/* Stat cards */}
@@ -126,10 +126,10 @@ export default async function DashboardPage() {
       {/* Progress bar */}
       {stats.total > 0 && (
         <div
-          className="animate-fade-up delay-3 p-4 rounded-[var(--r-xl)] border border-border"
-          style={{ background: 'var(--card)', boxShadow: 'var(--shadow-sm)' }}
+          className="animate-fade-up delay-3 p-4 rounded-[var(--r-xl)] border"
+          style={{ background: 'var(--card)', boxShadow: 'var(--shadow-sm)', borderColor: 'var(--border)' }}
         >
-          <p className="text-xs text-muted uppercase tracking-wider mb-3">Progression</p>
+          <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>Progression</p>
           <div className="flex gap-1 h-2 rounded-full overflow-hidden">
             {stats.en_cours > 0 && (
               <div
@@ -167,7 +167,7 @@ export default async function DashboardPage() {
             ].map(({ label, color, val }) => val > 0 && (
               <div key={label} className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                <span className="text-xs text-muted">{label}</span>
+                <span className="text-xs" style={{ color: 'var(--muted)' }}>{label}</span>
               </div>
             ))}
           </div>
@@ -187,8 +187,8 @@ export default async function DashboardPage() {
         </Link>
         <Link
           href="/offers"
-          className="text-sm font-medium px-5 py-2.5 rounded-lg border border-border text-foreground-dim hover:border-border-light hover:text-foreground transition-all inline-flex items-center gap-2 min-h-[42px]"
-          style={{ background: 'var(--card)' }}
+          className="text-sm font-medium px-5 py-2.5 rounded-lg border hover:border-[color:var(--border-light)] hover:text-[color:var(--foreground)] transition-all inline-flex items-center gap-2 min-h-[42px]"
+          style={{ background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--foreground-dim)' }}
         >
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -199,19 +199,20 @@ export default async function DashboardPage() {
 
       {/* Recent activity */}
       <div
-        className="animate-fade-up delay-5 rounded-[var(--r-xl)] border border-border overflow-hidden"
-        style={{ background: 'var(--card)', boxShadow: 'var(--shadow-sm)' }}
+        className="animate-fade-up delay-5 rounded-[var(--r-xl)] border overflow-hidden"
+        style={{ background: 'var(--card)', boxShadow: 'var(--shadow-sm)', borderColor: 'var(--border)' }}
       >
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" strokeWidth={2}>
               <path d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            <h2 className="text-foreground font-semibold text-sm">Activité récente</h2>
+            <h2 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>Activité récente</h2>
           </div>
           <Link
             href="/applications"
-            className="text-xs font-medium px-3 py-1 rounded-full border border-border text-muted hover:text-foreground hover:border-border-light transition-all"
+            className="text-xs font-medium px-3 py-1 rounded-full border border-[color:var(--border)] hover:border-[color:var(--border-light)] hover:text-[color:var(--foreground)] transition-all"
+            style={{ color: 'var(--muted)' }}
           >
             Voir tout →
           </Link>
@@ -227,8 +228,8 @@ export default async function DashboardPage() {
                 <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <p className="text-foreground font-medium text-sm mb-1">Aucune candidature</p>
-            <p className="text-muted text-xs mb-4">Commencez par ajouter votre première candidature</p>
+            <p className="font-medium text-sm mb-1" style={{ color: 'var(--foreground)' }}>Aucune candidature</p>
+            <p className="text-xs mb-4" style={{ color: 'var(--muted)' }}>Commencez par ajouter votre première candidature</p>
             <Link
               href="/applications"
               className="btn-accent text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5"
@@ -259,13 +260,13 @@ export default async function DashboardPage() {
                     {app.entreprise?.charAt(0)?.toUpperCase() ?? '?'}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-foreground text-sm font-medium leading-none truncate">{app.entreprise}</p>
-                    <p className="text-muted text-xs mt-1 truncate">{app.poste}</p>
+                    <p className="text-sm font-medium leading-none truncate" style={{ color: 'var(--foreground)' }}>{app.entreprise}</p>
+                    <p className="text-xs mt-1 truncate" style={{ color: 'var(--muted)' }}>{app.poste}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge status={app.statut} />
-                  <span className="text-muted text-xs font-mono hidden sm:block">
+                  <span className="text-xs font-mono hidden sm:block" style={{ color: 'var(--muted)' }}>
                     {app.date_postulation
                       ? new Date(app.date_postulation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
                       : '—'}

@@ -30,4 +30,12 @@ describe('Badge', () => {
       unmount()
     }
   })
+
+  it('gives accepte and sauvegarde visually distinct tones', () => {
+    const { container: c1 } = render(<Badge status="accepte" />)
+    const { container: c2 } = render(<Badge status="sauvegarde" />)
+    const style1 = (c1.firstElementChild as HTMLElement).getAttribute('style')
+    const style2 = (c2.firstElementChild as HTMLElement).getAttribute('style')
+    expect(style1).not.toEqual(style2)
+  })
 })

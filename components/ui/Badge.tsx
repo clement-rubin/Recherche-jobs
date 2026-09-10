@@ -10,7 +10,7 @@ const statusConfig: Record<string, { label: string; tone: Tone }> = {
   non_traite:   { label: 'À traiter',    tone: 'accent' },
   ignore:       { label: 'Ignoré',       tone: 'neutral' },
   postule:      { label: 'Postulé',      tone: 'accent' },
-  sauvegarde:   { label: 'Sauvegardé',   tone: 'success' },
+  sauvegarde:   { label: 'Sauvegardé',   tone: 'accent' },
 }
 
 const toneStyle: Record<Tone, React.CSSProperties> = {

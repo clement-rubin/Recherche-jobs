@@ -1,6 +1,7 @@
 import { createServerSupabase } from '@/lib/supabase/server'
 import type { Application } from '@/lib/supabase/types'
 import { Badge } from '@/components/ui/Badge'
+import { Card } from '@/components/ui/Card'
 import Link from 'next/link'
 
 async function getStats() {
@@ -41,9 +42,7 @@ export default async function DashboardPage() {
     {
       label: 'Total',
       value: stats.total,
-      accent: '#a78bfa',
-      bg: 'rgba(124, 58, 237, 0.08)',
-      border: 'rgba(124, 58, 237, 0.2)',
+      tone: 'accent' as const,
       icon: (
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
           <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -53,9 +52,7 @@ export default async function DashboardPage() {
     {
       label: 'En cours',
       value: stats.en_cours,
-      accent: '#60a5fa',
-      bg: 'rgba(96, 165, 250, 0.08)',
-      border: 'rgba(96, 165, 250, 0.2)',
+      tone: 'accent' as const,
       icon: (
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
           <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -65,9 +62,7 @@ export default async function DashboardPage() {
     {
       label: 'Relances',
       value: stats.relance,
-      accent: '#fbbf24',
-      bg: 'rgba(251, 191, 36, 0.08)',
-      border: 'rgba(251, 191, 36, 0.2)',
+      tone: 'warning' as const,
       icon: (
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
           <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -77,9 +72,7 @@ export default async function DashboardPage() {
     {
       label: 'Terminées',
       value: stats.termine,
-      accent: '#34d399',
-      bg: 'rgba(52, 211, 153, 0.08)',
-      border: 'rgba(52, 211, 153, 0.2)',
+      tone: 'success' as const,
       icon: (
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
           <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -95,7 +88,7 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-2 mb-1">
           <div
             className="w-1.5 h-5 rounded-full"
-            style={{ background: 'linear-gradient(to bottom, #a78bfa, #7c3aed)' }}
+            style={{ background: 'var(--accent)' }}
           />
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
         </div>
@@ -104,34 +97,38 @@ export default async function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        {statCards.map(({ label, value, accent, bg, border, icon }, i) => (
-          <div
+        {statCards.map(({ label, value, tone, icon }, i) => (
+          <Card
             key={label}
-            className={`stat-card rounded-xl p-5 animate-fade-up delay-${i + 1}`}
-            style={{
-              background: bg,
-              border: `1px solid ${border}`,
-            }}
+            className={`stat-card relative overflow-hidden p-5 animate-fade-up delay-${i + 1}`}
           >
+            <span
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-0.5"
+              style={{ background: `var(--${tone}-text)` }}
+            />
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium uppercase tracking-widest" style={{ color: accent, opacity: 0.8 }}>
+              <p className="text-xs font-medium" style={{ color: 'var(--muted)' }}>
                 {label}
               </p>
-              <span style={{ color: accent, opacity: 0.6 }}>{icon}</span>
+              <span style={{ color: `var(--${tone}-text)` }}>{icon}</span>
             </div>
             <p
               className="text-4xl font-bold font-mono tracking-tight"
-              style={{ color: accent }}
+              style={{ color: 'var(--foreground)' }}
             >
               {value}
             </p>
-          </div>
+          </Card>
         ))}
       </div>
 
       {/* Progress bar */}
       {stats.total > 0 && (
-        <div className="animate-fade-up delay-3 p-4 rounded-xl border border-border bg-card">
+        <div
+          className="animate-fade-up delay-3 p-4 rounded-[var(--r-xl)] border border-border"
+          style={{ background: 'var(--card)', boxShadow: 'var(--shadow-sm)' }}
+        >
           <p className="text-xs text-muted uppercase tracking-wider mb-3">Progression</p>
           <div className="flex gap-1 h-2 rounded-full overflow-hidden">
             {stats.en_cours > 0 && (
@@ -139,7 +136,7 @@ export default async function DashboardPage() {
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${(stats.en_cours / stats.total) * 100}%`,
-                  background: '#60a5fa',
+                  background: 'var(--accent-text)',
                 }}
               />
             )}
@@ -148,7 +145,7 @@ export default async function DashboardPage() {
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${(stats.relance / stats.total) * 100}%`,
-                  background: '#fbbf24',
+                  background: 'var(--warning-text)',
                 }}
               />
             )}
@@ -157,16 +154,16 @@ export default async function DashboardPage() {
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${(stats.termine / stats.total) * 100}%`,
-                  background: '#34d399',
+                  background: 'var(--success-text)',
                 }}
               />
             )}
           </div>
           <div className="flex gap-4 mt-2">
             {[
-              { label: 'En cours', color: '#60a5fa', val: stats.en_cours },
-              { label: 'Relances', color: '#fbbf24', val: stats.relance },
-              { label: 'Terminées', color: '#34d399', val: stats.termine },
+              { label: 'En cours', color: 'var(--accent-text)', val: stats.en_cours },
+              { label: 'Relances', color: 'var(--warning-text)', val: stats.relance },
+              { label: 'Terminées', color: 'var(--success-text)', val: stats.termine },
             ].map(({ label, color, val }) => val > 0 && (
               <div key={label} className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full" style={{ background: color }} />
@@ -201,10 +198,13 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent activity */}
-      <div className="animate-fade-up delay-5 rounded-xl border border-border overflow-hidden" style={{ background: 'var(--card)' }}>
+      <div
+        className="animate-fade-up delay-5 rounded-[var(--r-xl)] border border-border overflow-hidden"
+        style={{ background: 'var(--card)', boxShadow: 'var(--shadow-sm)' }}
+      >
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#7c3aed" strokeWidth={2}>
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" strokeWidth={2}>
               <path d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             <h2 className="text-foreground font-semibold text-sm">Activité récente</h2>
@@ -221,9 +221,9 @@ export default async function DashboardPage() {
           <div className="py-16 text-center">
             <div
               className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-              style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.2)' }}
+              style={{ background: 'var(--accent-surface)', border: '1px solid var(--accent-border)' }}
             >
-              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#7c3aed" strokeWidth={1.5}>
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" strokeWidth={1.5}>
                 <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
@@ -251,9 +251,9 @@ export default async function DashboardPage() {
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
                     style={{
-                      background: 'rgba(124, 58, 237, 0.1)',
-                      color: '#a78bfa',
-                      border: '1px solid rgba(124, 58, 237, 0.15)',
+                      background: 'var(--accent-surface)',
+                      color: 'var(--accent-text)',
+                      border: '1px solid var(--accent-border)',
                     }}
                   >
                     {app.entreprise?.charAt(0)?.toUpperCase() ?? '?'}

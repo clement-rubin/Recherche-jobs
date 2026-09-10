@@ -64,4 +64,15 @@ describe('AsyncButton', () => {
     const style = screen.getByRole('button').getAttribute('style') ?? ''
     expect(style).not.toContain('var(--accent)')
   })
+
+  it('lets state override the variant color on success, even for a non-primary variant', async () => {
+    render(
+      <AsyncButton onClick={async () => {}} variant="ghost">
+        Annuler
+      </AsyncButton>
+    )
+    await act(async () => { fireEvent.click(screen.getByRole('button')) })
+    const style = screen.getByRole('button').getAttribute('style') ?? ''
+    expect(style).toContain('var(--success')
+  })
 })

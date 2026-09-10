@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 type BtnState = 'idle' | 'loading' | 'success' | 'error'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 interface AsyncButtonProps {
   onClick: () => Promise<void>
@@ -12,7 +13,7 @@ interface AsyncButtonProps {
   errorLabel?: string
   className?: string
   disabled?: boolean
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: Variant
 }
 
 export function AsyncButton({
@@ -43,13 +44,16 @@ export function AsyncButton({
   const baseClass =
     'font-semibold rounded-[var(--r-lg)] px-4 py-2 text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed min-h-[40px]'
 
-  const variantStyle: Record<string, React.CSSProperties> = {
+  const variantStyle: Record<Variant, React.CSSProperties> = {
     primary:   { background: 'var(--accent)', color: '#fff', border: '1px solid transparent' },
     secondary: { background: 'var(--card)', color: 'var(--foreground-dim)', border: '1px solid var(--border)' },
     ghost:     { background: 'transparent', color: 'var(--muted)', border: '1px solid transparent' },
     danger:    { background: 'var(--danger-surface)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' },
   }
 
+  // State feedback (loading/success/error) always overrides the variant's own
+  // color — transient status should read the same regardless of the button's
+  // semantic type, the same way `loading`'s dimming already applies uniformly.
   const stateStyle: Partial<Record<BtnState, React.CSSProperties>> = {
     loading: { opacity: 0.75 },
     success: { background: 'var(--success-surface)', color: 'var(--success-text)', border: '1px solid var(--success-border)' },

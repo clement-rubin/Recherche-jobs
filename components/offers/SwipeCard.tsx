@@ -3,16 +3,13 @@
 import { useRef, useCallback, useEffect } from 'react'
 import gsap from 'gsap'
 import type { Offer } from '@/lib/supabase/types'
+import { sourceLabel } from '@/lib/offers/sources'
 
 const SOURCE_BADGE: Record<string, { bg: string; text: string; border: string }> = {
   jsearch:       { bg: 'bg-indigo-50',  text: 'text-indigo-600',  border: 'border-indigo-200' },
   france_travail:{ bg: 'bg-blue-50',    text: 'text-blue-600',    border: 'border-blue-200'   },
   hellowork:     { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200'},
   email:         { bg: 'bg-amber-50',   text: 'text-amber-600',   border: 'border-amber-200'  },
-}
-const SOURCE_LABELS: Record<string, string> = {
-  jsearch: 'JSearch', apec: 'APEC', hellowork: 'HelloWork',
-  france_travail: 'France Travail', email: 'Email',
 }
 
 const THRESHOLD = 120
@@ -174,7 +171,7 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
   const duration    = getDuration(offer)
   const description = getDescription(offer)
   const badge       = SOURCE_BADGE[offer.source ?? ''] ?? { bg: 'bg-zinc-50', text: 'text-zinc-500', border: 'border-zinc-200' }
-  const sourceLabel = SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'
+  const resolvedSourceLabel = sourceLabel(offer.source)
 
   return (
     <div
@@ -204,7 +201,7 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
         {/* Source badge */}
         <div style={{ position: 'absolute', top: 16, right: 16 }}>
           <span className={`text-xs px-2 py-0.5 rounded border ${badge.bg} ${badge.text} ${badge.border}`}>
-            {sourceLabel}
+            {resolvedSourceLabel}
           </span>
         </div>
 

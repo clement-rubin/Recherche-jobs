@@ -5,14 +5,7 @@ import gsap from 'gsap'
 import type { Offer } from '@/lib/supabase/types'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
 import { useState } from 'react'
-
-const SOURCE_LABELS: Record<string, string> = {
-  jsearch: 'JSearch',
-  apec: 'APEC',
-  hellowork: 'HelloWork',
-  france_travail: 'France Travail',
-  email: 'Email',
-}
+import { sourceLabel } from '@/lib/offers/sources'
 
 interface Props {
   offer: Offer
@@ -123,7 +116,7 @@ export function OfferDetailModal({ offer, onAction, onClose }: Props) {
             </span>
           )}
           <span className="text-xs px-2.5 py-1 rounded-full border ml-auto" style={{ background: 'var(--accent-surface)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}>
-            {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
+            {sourceLabel(offer.source)}
           </span>
           {raw.posted && (
             <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'var(--border)', color: 'var(--muted-light)', background: 'var(--background)' }}>

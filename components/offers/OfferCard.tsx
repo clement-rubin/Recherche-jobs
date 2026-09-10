@@ -4,14 +4,7 @@ import { useState } from 'react'
 import type { Offer } from '@/lib/supabase/types'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
 import { OfferDetailModal } from './OfferDetailModal'
-
-const SOURCE_LABELS: Record<string, string> = {
-  jsearch: 'JSearch',
-  apec: 'APEC',
-  hellowork: 'HelloWork',
-  france_travail: 'France Travail',
-  email: 'Email',
-}
+import { sourceLabel } from '@/lib/offers/sources'
 
 interface Props {
   offer: Offer
@@ -59,7 +52,7 @@ export function OfferCard({ offer, onAction }: Props) {
               className="text-xs px-2 py-0.5 rounded border"
               style={{ background: 'var(--accent-surface)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}
             >
-              {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
+              {sourceLabel(offer.source)}
             </span>
             <span className="text-xs" style={{ color: 'var(--muted-light)' }}>Voir détails →</span>
           </div>

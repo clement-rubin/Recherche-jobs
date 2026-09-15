@@ -1,1 +1,1 @@
-export const inputClass = 'w-full border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10'
+export const inputClass = 'w-full border border-[color:var(--border)] rounded-[var(--r-md)] px-3 py-2 text-sm text-[color:var(--foreground)] focus:outline-none focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]'

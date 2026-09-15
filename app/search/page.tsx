@@ -62,7 +62,7 @@ export default function SearchPage() {
     setFetchResult(`✓ ${data.fetched?.inserted ?? 0} offres ajoutées`)
   }
 
-  if (loading) return <div className="h-64 bg-card rounded-xl animate-pulse" />
+  if (loading) return <div className="h-64 animate-pulse rounded-[var(--r-xl)]" style={{ background: 'var(--card)' }} />
 
   return (
     <div className="space-y-6">
@@ -80,27 +80,33 @@ export default function SearchPage() {
             successLabel="✓ Terminé"
             errorLabel="✕ Échec"
           >
-            <span className="sm:hidden">↻</span>
-            <span className="hidden sm:inline">↻ Lancer maintenant</span>
+            <span className="sm:hidden">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14.9-3M4 15a8 8 0 0014.9 3"/></svg>
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14.9-3M4 15a8 8 0 0014.9 3"/></svg>
+              Lancer maintenant
+            </span>
           </AsyncButton>
           <button
             onClick={() => setShowModal(true)}
-            className="btn-accent text-white text-sm font-medium px-4 py-2 rounded-lg"
+            className="btn-accent text-white text-sm font-medium px-4 py-2 rounded-lg inline-flex items-center gap-1.5"
           >
-            + Nouveau profil
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 4v16m8-8H4"/></svg>
+            Nouveau profil
           </button>
         </div>
       </div>
 
       {fetchResult && (
-        <div className="rounded-lg px-4 py-2.5 text-sm border bg-green-50 border-green-200 text-green-700">
+        <div className="rounded-lg px-4 py-2.5 text-sm border" style={{ background: 'var(--success-surface)', borderColor: 'var(--success-border)', color: 'var(--success-text)' }}>
           {fetchResult}
         </div>
       )}
 
       {/* Empty state */}
       {profiles.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
+        <div className="border rounded-[var(--r-xl)] p-12 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
           <p className="font-medium mb-1" style={{ color: 'var(--foreground)' }}>Aucun profil de recherche</p>
           <p className="text-sm" style={{ color: 'var(--muted)' }}>Créez un profil pour commencer à scraper des offres.</p>
         </div>
@@ -109,7 +115,8 @@ export default function SearchPage() {
           {profiles.map(profile => (
             <div
               key={profile.id}
-              className="bg-card border border-border rounded-xl p-4 space-y-3 transition-shadow duration-200 hover:shadow-md"
+              className="border rounded-[var(--r-xl)] p-4 space-y-3 transition-shadow duration-200 hover:shadow-md"
+              style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
             >
               {/* Info — full width */}
               <div className="flex-1 min-w-0">
@@ -123,7 +130,7 @@ export default function SearchPage() {
                     </span>
                   )}
                   {profile.actif && (
-                    <span className="text-xs bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
+                    <span className="text-xs border px-2 py-0.5 rounded-full" style={{ background: 'var(--success-surface)', borderColor: 'var(--success-border)', color: 'var(--success-text)' }}>
                       Actif
                     </span>
                   )}
@@ -161,7 +168,7 @@ export default function SearchPage() {
               </div>
 
               {/* Action buttons — 36px touch targets */}
-              <div className="flex items-center gap-2 border-t border-border pt-1">
+              <div className="flex items-center gap-2 border-t pt-1" style={{ borderColor: 'var(--border)' }}>
                 <button
                   onClick={() => handleActivate(profile.id, profile.actif)}
                   className="flex-1 text-xs px-3 py-2.5 rounded-lg border transition-colors min-h-[36px]"
@@ -175,17 +182,21 @@ export default function SearchPage() {
                 </button>
                 <button
                   onClick={() => setEditProfile(profile)}
-                  className="text-xs px-3 py-2.5 rounded-lg transition-colors hover:bg-zinc-100 min-h-[36px]"
+                  className="text-xs px-3 py-2.5 rounded-lg min-h-[36px]"
                   style={{ color: 'var(--muted)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '' }}
                 >
                   Éditer
                 </button>
                 <button
                   onClick={() => setDeleteConfirmId(profile.id)}
-                  className="text-xs px-3 py-2.5 rounded-lg transition-colors hover:bg-red-50 hover:text-red-500 min-h-[36px]"
+                  className="text-xs px-3 py-2.5 rounded-lg min-h-[36px] flex items-center justify-center"
                   style={{ color: 'var(--muted)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-surface)'; e.currentTarget.style.color = 'var(--danger)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--muted)' }}
                 >
-                  ✕
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
 

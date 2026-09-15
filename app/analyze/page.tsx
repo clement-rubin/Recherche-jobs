@@ -4,6 +4,7 @@ import { useState, type ReactNode, type FormEvent } from 'react'
 import type { OfferData } from '@/lib/analyzer/scraper'
 import type { CompanyData } from '@/lib/analyzer/company'
 import type { FitResult } from '@/lib/analyzer/fit'
+import { Card } from '@/components/ui/Card'
 
 interface AnalysisResult {
   offer: OfferData
@@ -44,10 +45,10 @@ function ScoreGauge({ score }: { score: number }) {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl p-5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+    <Card className="p-5">
       <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--foreground)' }}>{title}</h3>
       {children}
-    </div>
+    </Card>
   )
 }
 
@@ -176,14 +177,14 @@ export default function AnalyzePage() {
             className="px-3 py-2.5 rounded-lg text-sm"
             style={{ border: '1px solid var(--border)', color: 'var(--muted)' }}
           >
-            ✕
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         )}
       </form>
 
       {/* Error */}
       {error && (
-        <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
+        <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'var(--danger-surface)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' }}>
           {error}
         </div>
       )}
@@ -191,7 +192,7 @@ export default function AnalyzePage() {
       {/* Blocked → manual paste */}
       {step === 'manual' && blocked && (
         <div className="space-y-4">
-          <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(217,119,6,0.08)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.2)' }}>
+          <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'var(--warning-surface)', color: 'var(--warning-text)', border: '1px solid var(--warning-border)' }}>
             <strong>{blocked.domain}</strong> ne permet pas le scraping automatique ({blocked.reason}).<br />
             Ouvre l&apos;offre dans ton navigateur, sélectionne tout le texte (Ctrl+A → Ctrl+C) et colle-le ci-dessous.
           </div>
@@ -219,7 +220,7 @@ export default function AnalyzePage() {
       {/* Unknown domain → ask confirmation */}
       {step === 'confirm' && needsConfirmation && (
         <div className="space-y-4">
-          <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--accent)', border: '1px solid rgba(99,102,241,0.2)' }}>
+          <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'var(--accent-surface)', color: 'var(--accent-text)', border: '1px solid var(--accent-border)' }}>
             <strong>{needsConfirmation.domain}</strong> — impossible de vérifier les CGU ({needsConfirmation.reason}).<br />
             Veux-tu tenter le scraping quand même ?
           </div>
@@ -252,7 +253,7 @@ export default function AnalyzePage() {
             <div className="flex-1">
               <div className="text-sm font-semibold mb-1" style={{ color: 'var(--foreground)' }}>{result.offer.titre || 'Offre analysée'}</div>
               {result.offer.entreprise && <div className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{result.offer.entreprise}</div>}
-              {result.offer.localisation && <div className="text-xs mb-2" style={{ color: 'var(--muted)' }}>📍 {result.offer.localisation}</div>}
+              {result.offer.localisation && <div className="text-xs mb-2 flex items-center gap-1" style={{ color: 'var(--muted)' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg> {result.offer.localisation}</div>}
               {result.offer.type_contrat && (
                 <span className="inline-block px-2 py-0.5 rounded text-xs" style={{ background: 'var(--accent-surface)', color: 'var(--accent)' }}>
                   {result.offer.type_contrat}
@@ -358,8 +359,8 @@ export default function AnalyzePage() {
               </div>
             )}
             {result.company.incertitudes.length > 0 && (
-              <div className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>
-                ⚠️ {result.company.incertitudes.join(' · ')}
+              <div className="mt-3 text-xs flex items-center gap-1" style={{ color: 'var(--muted)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> {result.company.incertitudes.join(' · ')}
               </div>
             )}
           </Section>

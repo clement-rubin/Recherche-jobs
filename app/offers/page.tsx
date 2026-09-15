@@ -117,7 +117,7 @@ export default function OffersPage() {
     return (
       <div className="space-y-4">
         <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--card)' }} />
-        {[1, 2, 3].map(i => <div key={i} className="h-36 rounded-xl animate-pulse" style={{ background: 'var(--card)' }} />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-36 rounded-[var(--r-xl)] animate-pulse" style={{ background: 'var(--card)' }} />)}
       </div>
     )
   }
@@ -134,7 +134,7 @@ export default function OffersPage() {
           {offers.length > 0 && viewMode === 'list' && (
             <button
               onClick={() => setConfirmClear(true)}
-              className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+              className="text-xs px-3 py-1.5 rounded-[var(--r-lg)] border transition-colors"
               style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
             >
               Tout ignorer
@@ -162,8 +162,8 @@ export default function OffersPage() {
               className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
               style={
                 filterStatus === f.value
-                  ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
-                  : { borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--card)' }
+                  ? { background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }
+                  : { background: 'var(--card)', color: 'var(--muted)', borderColor: 'var(--border)' }
               }
             >
               {f.label}
@@ -178,8 +178,8 @@ export default function OffersPage() {
               className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
               style={
                 filterSource === f.value
-                  ? { background: 'var(--foreground)', borderColor: 'var(--foreground)', color: '#fff' }
-                  : { borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--card)' }
+                  ? { background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }
+                  : { background: 'var(--card)', color: 'var(--muted)', borderColor: 'var(--border)' }
               }
             >
               {f.label}
@@ -189,11 +189,16 @@ export default function OffersPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg px-4 py-3 text-sm border bg-red-50 border-red-200 text-red-700">{error}</div>
+        <div
+          className="rounded-lg px-4 py-3 text-sm border"
+          style={{ background: 'var(--danger-surface)', borderColor: 'var(--danger-border)', color: 'var(--danger-text)' }}
+        >
+          {error}
+        </div>
       )}
 
       {offers.length === 0 && viewMode === 'list' ? (
-        <div className="rounded-xl p-12 text-center" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <div className="rounded-[var(--r-xl)] p-12 text-center" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
           <p className="font-medium mb-1" style={{ color: 'var(--foreground)' }}>Aucune offre</p>
           <p className="text-sm" style={{ color: 'var(--muted)' }}>Les offres apparaîtront ici après synchronisation ou recherche manuelle.</p>
         </div>

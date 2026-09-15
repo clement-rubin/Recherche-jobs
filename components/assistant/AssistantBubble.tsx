@@ -192,15 +192,21 @@ export function AssistantBubble() {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {/* Response tooltip */}
       {(state === 'response' && response) && (
-        <div className="bg-card border border-border rounded-xl p-4 max-w-xs shadow-xl animate-in slide-in-from-bottom-2">
+        <div className="p-4 max-w-xs shadow-xl animate-in slide-in-from-bottom-2" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)' }}>
           <div className="flex items-start justify-between gap-2 mb-2">
             <p className="text-accent text-xs font-semibold uppercase tracking-wide">Alex</p>
-            <button onClick={dismiss} className="text-muted hover:text-foreground text-sm leading-none">×</button>
+            <button
+              onClick={dismiss}
+              className="text-sm leading-none"
+              style={{ color: 'var(--muted)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--foreground)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
+            >×</button>
           </div>
           {transcript && (
-            <p className="text-muted text-xs italic mb-1.5 line-clamp-2">&quot;{transcript}&quot;</p>
+            <p className="text-xs italic mb-1.5 line-clamp-2" style={{ color: 'var(--muted)' }}>&quot;{transcript}&quot;</p>
           )}
-          <p className="text-foreground text-sm">{response.message}</p>
+          <p className="text-sm" style={{ color: 'var(--foreground)' }}>{response.message}</p>
           {response.requires_confirmation && (
             <p className="text-warning text-xs mt-2">⚠ Action en attente de confirmation</p>
           )}
@@ -212,12 +218,18 @@ export function AssistantBubble() {
 
       {/* Error tooltip */}
       {state === 'error' && (
-        <div className="bg-card border border-red-500/30 rounded-xl p-4 max-w-xs shadow-xl">
+        <div className="p-4 max-w-xs shadow-xl" style={{ background: 'var(--card)', border: '1px solid var(--danger-border)', borderRadius: 'var(--r-xl)' }}>
           <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="text-red-400 text-xs font-semibold">Alex</p>
-            <button onClick={dismiss} className="text-muted hover:text-foreground text-sm leading-none">×</button>
+            <p className="text-xs font-semibold" style={{ color: 'var(--danger-text)' }}>Alex</p>
+            <button
+              onClick={dismiss}
+              className="text-sm leading-none"
+              style={{ color: 'var(--muted)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--foreground)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
+            >×</button>
           </div>
-          <p className="text-red-400 text-sm">{errorMsg}</p>
+          <p className="text-sm" style={{ color: 'var(--danger-text)' }}>{errorMsg}</p>
         </div>
       )}
 

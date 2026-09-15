@@ -1,22 +1,33 @@
-import type { ApplicationStatus } from '@/lib/supabase/types'
+type Tone = 'accent' | 'success' | 'warning' | 'danger' | 'neutral'
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  en_cours: { label: 'En cours', className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-  relance: { label: 'Relance', className: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-  termine: { label: 'Terminé', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
-  accepte: { label: 'Accepté', className: 'bg-green-500/20 text-green-300 border-green-500/30' },
-  refus: { label: 'Refus', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
-  sans_reponse: { label: 'Sans réponse', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
-  non_traite: { label: 'À traiter', className: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-  ignore: { label: 'Ignoré', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
-  postule: { label: 'Postulé', className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-  sauvegarde: { label: 'Sauvegardé', className: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+const statusConfig: Record<string, { label: string; tone: Tone }> = {
+  en_cours:     { label: 'En cours',     tone: 'accent' },
+  relance:      { label: 'Relance',      tone: 'warning' },
+  termine:      { label: 'Terminé',      tone: 'neutral' },
+  accepte:      { label: 'Accepté',      tone: 'success' },
+  refus:        { label: 'Refus',        tone: 'danger' },
+  sans_reponse: { label: 'Sans réponse', tone: 'neutral' },
+  non_traite:   { label: 'À traiter',    tone: 'accent' },
+  ignore:       { label: 'Ignoré',       tone: 'neutral' },
+  postule:      { label: 'Postulé',      tone: 'accent' },
+  sauvegarde:   { label: 'Sauvegardé',   tone: 'accent' },
+}
+
+const toneStyle: Record<Tone, React.CSSProperties> = {
+  accent:  { background: 'var(--accent-surface)',  color: 'var(--accent-text)',  borderColor: 'var(--accent-border)' },
+  success: { background: 'var(--success-surface)', color: 'var(--success-text)', borderColor: 'var(--success-border)' },
+  warning: { background: 'var(--warning-surface)', color: 'var(--warning-text)', borderColor: 'var(--warning-border)' },
+  danger:  { background: 'var(--danger-surface)',  color: 'var(--danger-text)',  borderColor: 'var(--danger-border)' },
+  neutral: { background: 'var(--surface)',         color: 'var(--muted)',        borderColor: 'var(--border)' },
 }
 
 export function Badge({ status }: { status: string }) {
-  const config = statusConfig[status] ?? { label: status, className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' }
+  const config = statusConfig[status] ?? { label: status, tone: 'neutral' as Tone }
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${config.className}`}>
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-[var(--r-sm)] text-xs font-medium border"
+      style={toneStyle[config.tone]}
+    >
       {config.label}
     </span>
   )

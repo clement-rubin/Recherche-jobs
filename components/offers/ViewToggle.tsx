@@ -10,7 +10,7 @@ interface Props {
 export function ViewToggle({ mode, onChange }: Props) {
   return (
     <div
-      className="flex rounded-lg overflow-hidden"
+      className="flex rounded-[var(--r-lg)] overflow-hidden"
       style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
     >
       {(['list', 'swipe'] as ViewMode[]).map((m) => {

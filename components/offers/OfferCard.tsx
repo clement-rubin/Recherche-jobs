@@ -18,13 +18,15 @@ export function OfferCard({ offer, onAction }: Props) {
   return (
     <>
       <div
-        className="rounded-xl p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] active:translate-y-0"
+        className="rounded-[var(--r-xl)] p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0"
         style={{
-          background: 'var(--card)',
+          background: 'var(--card-gradient)',
           border: '1px solid var(--border)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          boxShadow: 'var(--shadow-sm)',
         }}
         onClick={() => setShowDetail(true)}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)' }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)' }}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -50,7 +52,7 @@ export function OfferCard({ offer, onAction }: Props) {
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             <span
               className="text-xs px-2 py-0.5 rounded border"
-              style={{ background: 'var(--accent-surface)', color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.2)' }}
+              style={{ background: 'var(--accent-surface)', color: 'var(--accent)', borderColor: 'var(--accent-border)' }}
             >
               {sourceLabel(offer.source)}
             </span>
@@ -65,21 +67,25 @@ export function OfferCard({ offer, onAction }: Props) {
         >
           <button
             onClick={() => onAction(offer.id, 'postule')}
-            className="flex-1 text-white text-xs font-medium py-2 rounded-lg transition-colors btn-accent min-h-[36px]"
+            className="flex-1 text-white text-xs font-medium py-2 rounded-[var(--r-lg)] transition-colors btn-accent min-h-[36px]"
           >
             Postuler
           </button>
           <button
             onClick={() => onAction(offer.id, 'sauvegarde')}
-            className="flex-1 text-xs py-2 rounded-lg transition-colors border min-h-[36px] hover:border-accent/40"
+            className="flex-1 text-xs py-2 rounded-[var(--r-lg)] transition-colors border min-h-[36px]"
             style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-border)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
           >
             Sauvegarder
           </button>
           <button
             onClick={() => setConfirmIgnore(true)}
-            className="px-3 text-xs py-2 rounded-lg transition-colors min-h-[36px] hover:text-foreground"
+            className="px-3 text-xs py-2 rounded-[var(--r-lg)] transition-colors min-h-[36px]"
             style={{ color: 'var(--muted-light)' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--foreground)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted-light)' }}
           >
             Ignorer
           </button>

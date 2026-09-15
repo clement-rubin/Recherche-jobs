@@ -5,13 +5,6 @@ import gsap from 'gsap'
 import type { Offer } from '@/lib/supabase/types'
 import { sourceLabel } from '@/lib/offers/sources'
 
-const SOURCE_BADGE: Record<string, { bg: string; text: string; border: string }> = {
-  jsearch:       { bg: 'bg-indigo-50',  text: 'text-indigo-600',  border: 'border-indigo-200' },
-  france_travail:{ bg: 'bg-blue-50',    text: 'text-blue-600',    border: 'border-blue-200'   },
-  hellowork:     { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200'},
-  email:         { bg: 'bg-amber-50',   text: 'text-amber-600',   border: 'border-amber-200'  },
-}
-
 const THRESHOLD = 120
 type Action = 'postule' | 'ignore' | 'sauvegarde'
 type SwipeDirection = 'right' | 'left' | 'up' | null
@@ -66,16 +59,16 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
   }, [])
 
   const getOverlayColor = (dir: SwipeDirection) => {
-    if (dir === 'right') return 'rgba(34,197,94,0.25)'
-    if (dir === 'left')  return 'rgba(239,68,68,0.25)'
-    if (dir === 'up')    return 'rgba(250,204,21,0.2)'
+    if (dir === 'right') return 'rgba(22, 163, 74, 0.18)'
+    if (dir === 'left')  return 'rgba(239, 68, 68, 0.18)'
+    if (dir === 'up')    return 'rgba(217, 119, 6, 0.18)'
     return 'transparent'
   }
 
   const getOverlayContent = (dir: SwipeDirection) => {
-    if (dir === 'right') return { icon: '✓', label: 'POSTULER',    color: '#4ade80' }
-    if (dir === 'left')  return { icon: '✕', label: 'IGNORER',     color: '#f87171' }
-    if (dir === 'up')    return { icon: '⭐', label: 'SAUVEGARDER', color: '#fbbf24' }
+    if (dir === 'right') return { icon: '✓', label: 'POSTULER',    color: 'var(--success-text)' }
+    if (dir === 'left')  return { icon: '✕', label: 'IGNORER',     color: 'var(--danger-text)' }
+    if (dir === 'up')    return { icon: '⭐', label: 'SAUVEGARDER', color: 'var(--warning-text)' }
     return null
   }
 
@@ -170,7 +163,6 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
 
   const duration    = getDuration(offer)
   const description = getDescription(offer)
-  const badge       = SOURCE_BADGE[offer.source ?? ''] ?? { bg: 'bg-zinc-50', text: 'text-zinc-500', border: 'border-zinc-200' }
   const resolvedSourceLabel = sourceLabel(offer.source)
 
   return (
@@ -191,16 +183,19 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
         style={{
           background:   'var(--card)',
           border:       '1px solid var(--border)',
-          borderRadius: '16px',
+          borderRadius: 'var(--r-xl)',
           padding:      'clamp(16px, 4vw, 20px)',
-          boxShadow:    isTop ? '0 8px 32px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.1)',
+          boxShadow:    isTop ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
           position:     'relative',
           overflow:     'hidden',
         }}
       >
         {/* Source badge */}
         <div style={{ position: 'absolute', top: 16, right: 16 }}>
-          <span className={`text-xs px-2 py-0.5 rounded border ${badge.bg} ${badge.text} ${badge.border}`}>
+          <span
+            className="text-xs px-2 py-0.5 rounded border"
+            style={{ background: 'var(--accent-surface)', color: 'var(--accent-text)', borderColor: 'var(--accent-border)' }}
+          >
             {resolvedSourceLabel}
           </span>
         </div>
@@ -244,7 +239,7 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
           <div
             ref={overlayRef}
             style={{
-              position: 'absolute', inset: 0, borderRadius: '16px',
+              position: 'absolute', inset: 0, borderRadius: 'var(--r-xl)',
               opacity: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               pointerEvents: 'none',
@@ -254,7 +249,7 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
               data-overlay-inner
               style={{ display: 'none', flexDirection: 'column', alignItems: 'center', gap: 4 }}
             >
-              <span data-icon  style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, textShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
+              <span data-icon  style={{ fontSize: 48, fontWeight: 900, lineHeight: 1 }} />
               <span data-label style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }} />
             </div>
           </div>

@@ -277,8 +277,10 @@ export function SwipeCard({ offer, onAction, isTop }: Props) {
             <button
               aria-label="Ignorer"
               onClick={() => flyOut('left', 'ignore')}
-              className="px-3 text-xs py-2.5 rounded-lg transition-colors hover:bg-red-50 hover:text-red-400"
+              className="px-3 text-xs py-2.5 rounded-lg transition-colors"
               style={{ color: 'var(--muted-light)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-surface)'; e.currentTarget.style.color = 'var(--danger-text)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--muted-light)' }}
             >
               ✕
             </button>

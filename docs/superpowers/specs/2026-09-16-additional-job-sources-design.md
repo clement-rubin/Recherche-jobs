@@ -30,7 +30,7 @@ All three follow the existing scraper contract: return `ScrapedJob[]`, never thr
 
 Adzuna's 1000 calls/month free tier is not actively rationed by the existing fan-out (keyword × location), which can exhaust it quickly. Because the app runs on Netlify (stateless serverless functions), an in-memory counter would not survive between invocations — usage is tracked in Supabase instead, with a hard cutoff below the free limit so no call is ever made once the cap is reached.
 
-**Schema** — new migration `supabase/migrations/006_api_usage_tracking.sql`:
+**Schema** — new migration `supabase/migrations/006_api_usage_tracking.sql`. RLS is enabled on the table with **no policies** (denies all direct PostgREST access); a single `security definer` function is the only way in, so the cap check is a real atomic row-level operation, not a separate read-then-write pair of calls:
 
 ```sql
 create table if not exists api_usage (
@@ -40,30 +40,42 @@ create table if not exists api_usage (
   primary key (source, month_key)
 );
 
-create or replace function increment_api_usage(p_source text, p_month text, p_amount int)
-returns int language sql as $$
+alter table api_usage enable row level security;
+
+create or replace function reserve_api_usage(p_source text, p_month text, p_cap int)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_calls int;
+begin
   insert into api_usage (source, month_key, calls)
-  values (p_source, p_month, p_amount)
-  on conflict (source, month_key)
-  do update set calls = api_usage.calls + p_amount
-  returning calls;
+  values (p_source, p_month, 0)
+  on conflict (source, month_key) do nothing;
+
+  update api_usage
+  set calls = calls + 1
+  where source = p_source and month_key = p_month and calls < p_cap
+  returning calls into v_calls;
+
+  return v_calls is not null;
+end;
 $$;
+
+grant execute on function reserve_api_usage(text, text, int) to anon, authenticated;
 ```
 
-**Behavior in `adzuna.ts`**:
-
-1. Before firing the HTTP request, read `calls` for `source='adzuna'`, `month_key = <current YYYY-MM, UTC>`.
-2. If `calls >= ADZUNA_MONTHLY_CAP` (env var, code default `900` — 100-call safety margin below the 1000 free limit) → `console.warn` + return `[]`. **No HTTP request is sent.**
-3. Otherwise, make the request, and on success call the `increment_api_usage` RPC to atomically bump the counter.
-
-This is an optimistic cap, not exact-to-the-call: calls for different locations within the same `/api/jobs/fetch` run fire concurrently (`Promise.allSettled`), so the read-then-call check isn't atomic across them and can overshoot by up to `locations.length` calls before the next run's read reflects the update. The 900 default leaves enough margin to absorb that. The goal is guaranteeing the app never approaches Adzuna's paid tier — not squeezing out the exact last free call.
+**Behavior**: a new small module `lib/scrapers/quota.ts` exports `checkAndReserveQuota(source: string, cap: number): Promise<boolean>`, which builds a Supabase client via `createServerSupabase()` and calls the `reserve_api_usage` RPC with the current UTC month (`YYYY-MM`). Because the check-and-increment happens in a single `UPDATE ... WHERE calls < cap` statement, Postgres's row lock makes it race-free even when multiple locations fire Adzuna calls concurrently within one `/api/jobs/fetch` run — no overshoot is possible, unlike a separate read-then-write pair. `adzuna.ts` calls this **before** making its HTTP request; if it returns `false` (cap reached, or the RPC itself errored — fail closed on any DB error, never risk an ambiguous state), `console.warn` + return `[]`, **no HTTP request is sent**. The `ADZUNA_MONTHLY_CAP` env var (code default `900`) still leaves a 100-call margin below Adzuna's 1000 free limit, as a buffer against any usage outside the app (e.g. manual testing against the same Adzuna account) — not because the counter itself can drift.
 
 Jooble and Reed do not get this mechanism: neither publishes a call cap or a paid-overage model for their free API keys. If either introduces one later, the same table/RPC/pattern applies to them too.
 
 ## New files
 
-- `lib/scrapers/adzuna.ts` — `fetchAdzuna(keywords: string, location: string, country: string): Promise<ScrapedJob[]>`. GET `https://api.adzuna.com/v1/api/jobs/{slug}/search/1?app_id=&app_key=&what=&where=`. Missing `ADZUNA_APP_ID`/`ADZUNA_APP_KEY` → `console.warn` + return `[]` (pattern: `jsearch.ts:19-22`). Also does the quota-cutoff check/increment described above (reads/writes `api_usage` via Supabase).
-- `supabase/migrations/006_api_usage_tracking.sql` — `api_usage` table + `increment_api_usage` RPC (see Quota handling section). Applied manually via Supabase SQL Editor, same convention as migrations 004/005.
+- `lib/scrapers/quota.ts` — `checkAndReserveQuota(source: string, cap: number): Promise<boolean>` (see Quota handling section).
+- `lib/scrapers/adzuna.ts` — `fetchAdzuna(keywords: string, location: string, country: string): Promise<ScrapedJob[]>`. GET `https://api.adzuna.com/v1/api/jobs/{slug}/search/1?app_id=&app_key=&what=&where=`. Missing `ADZUNA_APP_ID`/`ADZUNA_APP_KEY` → `console.warn` + return `[]` (pattern: `jsearch.ts:19-22`). Calls `checkAndReserveQuota('adzuna', cap)` before firing the request.
+- `supabase/migrations/006_api_usage_tracking.sql` — `api_usage` table (RLS enabled, no policies) + `reserve_api_usage` RPC (see Quota handling section). Applied manually via Supabase SQL Editor, same convention as migrations 004/005.
 - `lib/scrapers/jooble.ts` — `fetchJooble(keywords: string, location: string, country: string): Promise<ScrapedJob[]>`. POST to the regional domain `https://{cc}.jooble.org/api/{key}`. Country → env var lookup map (`uk` → `JOOBLE_API_KEY_UK`, `de` → `JOOBLE_API_KEY_DE`, `es` → `JOOBLE_API_KEY_ES`, `be` → `JOOBLE_API_KEY_BE`). Country not in the map, or its key unset → return `[]` immediately.
 - `lib/scrapers/reed.ts` — `fetchReed(keywords: string, location: string): Promise<ScrapedJob[]>`. GET `https://www.reed.co.uk/api/1.0/search`, Basic Auth with `REED_API_KEY` as username and empty password — the only Basic Auth source in the pipeline, worth a one-line comment in the file since it differs from every other scraper's header style.
 
@@ -96,7 +108,7 @@ Add to the Environment Variables table in `CLAUDE.md`:
 
 ## Testing
 
-No existing unit tests cover the current scrapers (`apec.ts`, `hellowork.ts`, `jsearch.ts`, `france-travail.ts`, `eures.ts` all untested) — the new scrapers follow that same convention and are not unit-tested either, for consistency. Verification is `npx tsc --noEmit` plus a manual `/api/jobs/fetch` run with real keys, checking `results.errors` and the `bySource` breakdown logged at `route.ts:124-127`.
+Correction from an earlier draft of this spec: `jsearch.ts` and `eures.ts` **do** have unit tests (`__tests__/lib/scrapers/jsearch.test.ts`, `eures.test.ts` — mocking `global.fetch`, asserting URL/body construction and `[]`-on-failure behavior), and `__tests__/api/jobs-fetch.test.ts` asserts which sources fire for which country by mocking every scraper module and checking call counts. `apec.ts`/`hellowork.ts`/`france-travail.ts` are the untested ones. The new sources follow the **tested** convention (`jsearch`/`eures`-style), not the untested one: each new scraper gets its own test file mocking `global.fetch`, and `jobs-fetch.test.ts` gets new assertions for the country-gated fan-out rules above. Verification is `npx tsc --noEmit && npx jest --no-coverage`, plus a manual `/api/jobs/fetch` run with real keys checking `results.errors` and the `bySource` breakdown logged at `route.ts:124-127`.
 
 ## Out of scope
 

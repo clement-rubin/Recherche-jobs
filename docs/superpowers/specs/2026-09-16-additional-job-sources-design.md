@@ -4,7 +4,7 @@
 
 Current scraping pipeline (`/api/jobs/fetch`) fans out across 5 sources: `jsearch`, `eures` (multi-country), and `apec`/`hellowork`/`france_travail` (France-only). An audit of legality and relevance found two of the existing sources (`apec`, `hellowork`) rely on unofficial/undocumented endpoints — that risk is out of scope for this spec and left as-is.
 
-This spec adds three **free, officially documented** job-search APIs to broaden coverage into a handful of European markets without touching the existing sources or their risk profile.
+This spec adds three **free, officially documented** job-search APIs to broaden coverage into a handful of European markets. It also **removes** `apec` and `hellowork` entirely: the earlier audit found both rely on unofficial/undocumented endpoints (a scraped internal REST endpoint for APEC, HTML scraping with a spoofed User-Agent for HelloWork), and the user decided — after reviewing the audit — to drop them rather than accept that risk going forward. This is a scope change from the original draft of this spec, which had left that risk untouched; it's folded in here since both changes touch the same fan-out code in `route.ts`.
 
 ## Sources selected
 
@@ -15,6 +15,20 @@ This spec adds three **free, officially documented** job-search APIs to broaden 
 | Reed.co.uk | Official API, UK-only job board | Free key, Basic Auth |
 
 Explicitly excluded: Careerjet (pay-per-result, not free), LinkedIn/Welcome to the Jungle/JobTeaser/ErasmusIntern (no public API — scraping-only or requires manual institutional access, out of scope for this spec).
+
+## Sources removed: apec, hellowork
+
+Deleted entirely, not just unwired — `lib/scrapers/apec.ts` and `lib/scrapers/hellowork.ts` are removed along with every reference to them:
+
+- `app/api/jobs/fetch/route.ts` — imports and fan-out entries removed
+- `__tests__/api/jobs-fetch.test.ts` — mocks and assertions removed
+- `components/offers/OfferCard.tsx`, `components/offers/OfferDetailModal.tsx` — `apec`/`hellowork` entries removed from `SOURCE_LABELS`
+- `components/offers/SwipeCard.tsx` — `apec`/`hellowork` entries removed from `SOURCE_BADGE` and `SOURCE_LABELS`
+- `app/offers/page.tsx` — `apec`/`hellowork` options removed from `SOURCE_FILTERS`
+- `app/about/page.tsx` — marketing copy line naming APEC/HelloWork rewritten to reflect the actual active source list
+- `CLAUDE.md` — scraping-pipeline bullets and the APEC/FT/HW note updated
+
+Existing `offers` rows already in the database with `source = 'apec'` or `source = 'hellowork'` are left as-is (no migration/backfill) — the UI's source-label lookups already fall back to rendering the raw string when a source isn't in the label map, so old rows keep displaying (just without a pretty label) rather than breaking. `lib/analyzer/profile.ts`'s domain list (used for a different purpose — recognizing known job-board URLs, not for firing scrapers) is **not** touched; `apec.fr`/`hellowork.com` staying in that list is unrelated to this removal.
 
 ## Fan-out rules
 

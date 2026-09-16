@@ -59,14 +59,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...intentResult, requires_confirmation: true, executed: false })
   }
 
-  const { executed } = await executeIntent(
-    supabase,
-    user.id,
+  const { executed } = await executeIntent(supabase, {
+    userId: user.id,
     transcription,
     intentResult,
     recentApps,
-    'assistant'
-  )
+    source: 'assistant',
+  })
 
   console.log('[assistant/process] Done', { intent: intentResult.intent, executed, totalMs: Date.now() - t0 })
   return NextResponse.json({ ...intentResult, executed })

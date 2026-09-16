@@ -48,7 +48,13 @@ describe('executeIntent', () => {
       action: { entreprise: 'Amazon', poste: 'Magasinier', type_contrat: 'interim' },
     })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(true)
     expect(supabase.from).toHaveBeenCalledWith('applications')
@@ -66,10 +72,37 @@ describe('executeIntent', () => {
     const supabase = makeSupabaseMock()
     const intent = makeIntent({ intent: 'add_application', action: {} })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(false)
     expect(supabase.insert).toHaveBeenCalledTimes(1) // only assistant_logs
+  })
+
+  it('does not set executed when add_application insert returns a write error', async () => {
+    const supabase = makeSupabaseMock({ insertError: { message: 'RLS violation' } })
+    const intent = makeIntent({
+      intent: 'add_application',
+      action: { entreprise: 'Amazon', poste: 'Magasinier' },
+    })
+
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
+
+    expect(executed).toBe(false)
+    expect(supabase.insert).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+    }))
   })
 
   it('updates statut/resultat for update_application when a fuzzy match is found', async () => {
@@ -79,7 +112,13 @@ describe('executeIntent', () => {
       action: { entreprise: 'capgemini', statut: 'termine', resultat: 'accepte' },
     })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(true)
     expect(supabase.update).toHaveBeenCalledWith(expect.objectContaining({ statut: 'termine', resultat: 'accepte' }))
@@ -94,7 +133,13 @@ describe('executeIntent', () => {
       action: { entreprise: 'Capgemini', note: 'entretien passé' },
     })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(true)
     const updateArg = supabase.update.mock.calls[0][0]
@@ -109,10 +154,35 @@ describe('executeIntent', () => {
       action: { entreprise: 'Inconnu SARL', statut: 'termine' },
     })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(false)
     expect(supabase.update).not.toHaveBeenCalled()
+  })
+
+  it('does not set executed when update_application update returns a write error', async () => {
+    const supabase = makeSupabaseMock({ updateError: { message: 'constraint violation' } })
+    const intent = makeIntent({
+      intent: 'update_application',
+      action: { entreprise: 'Capgemini', statut: 'termine' },
+    })
+
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
+
+    expect(executed).toBe(false)
+    expect(supabase.update).toHaveBeenCalledWith(expect.objectContaining({ statut: 'termine' }))
   })
 
   it('appends a note for add_note when a fuzzy match is found', async () => {
@@ -122,7 +192,13 @@ describe('executeIntent', () => {
       action: { entreprise: 'Capgemini', note: 'a rappelé pour confirmer le poste' },
     })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(true)
     const updateArg = supabase.update.mock.calls[0][0]
@@ -136,7 +212,13 @@ describe('executeIntent', () => {
       action: { entreprise: 'Inconnu SARL', note: 'peu importe' },
     })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'texte',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(false)
     expect(supabase.update).not.toHaveBeenCalled()
@@ -146,7 +228,13 @@ describe('executeIntent', () => {
     const supabase = makeSupabaseMock()
     const intent = makeIntent({ intent: 'unknown', action: {} })
 
-    const { executed } = await executeIntent(supabase as any, 'user-1', 'blabla', intent, recentApps, 'telegram')
+    const { executed } = await executeIntent(supabase as any, {
+      userId: 'user-1',
+      transcription: 'blabla',
+      intentResult: intent,
+      recentApps,
+      source: 'telegram',
+    })
 
     expect(executed).toBe(false)
     expect(supabase.from).toHaveBeenCalledWith('assistant_logs')
@@ -167,7 +255,13 @@ describe('executeIntent', () => {
     })
 
     await expect(
-      executeIntent(supabase as any, 'user-1', 'texte', intent, recentApps, 'telegram')
+      executeIntent(supabase as any, {
+        userId: 'user-1',
+        transcription: 'texte',
+        intentResult: intent,
+        recentApps,
+        source: 'telegram',
+      })
     ).resolves.toEqual({ executed: false })
   })
 })

@@ -16,18 +16,23 @@ function appendTimestampedNote(existingNotes: string | null, note: string): stri
     : `[${timestamp}] ${note}`
 }
 
+export interface ExecuteIntentParams {
+  userId: string
+  transcription: string
+  intentResult: AssistantIntent
+  recentApps: RecentApp[]
+  source: string
+}
+
 // supabase is typed loosely (matches the rest of the codebase's pragmatic
 // `as any` usage around Insert/Update — see lib/supabase/types.ts, whose
 // hand-written Omit/Partial types don't conform cleanly to the generated
 // PostgrestClient generics).
 export async function executeIntent(
   supabase: any,
-  userId: string,
-  transcription: string,
-  intentResult: AssistantIntent,
-  recentApps: RecentApp[],
-  source: string
+  params: ExecuteIntentParams
 ): Promise<{ executed: boolean }> {
+  const { userId, transcription, intentResult, recentApps, source } = params
   const { intent, action } = intentResult
   let executed = false
 
@@ -47,27 +52,39 @@ export async function executeIntent(
         }
 
         if (Object.keys(update).length > 0) {
-          await supabase.from('applications').update(update).eq('id', match.id).eq('user_id', userId)
-          executed = true
+          const { error } = await supabase.from('applications').update(update).eq('id', match.id).eq('user_id', userId)
+          if (!error) {
+            executed = true
+          } else {
+            console.error('[executeIntent] update_application write failed', error)
+          }
         }
       }
     } else if (intent === 'add_application' && action.entreprise) {
-      await supabase.from('applications').insert({
+      const { error } = await supabase.from('applications').insert({
         user_id: userId,
         entreprise: action.entreprise as string,
         poste: (action.poste as string) ?? 'Poste à préciser',
         type_contrat: (action.type_contrat as any) ?? 'interim',
         source,
       })
-      executed = true
+      if (!error) {
+        executed = true
+      } else {
+        console.error('[executeIntent] add_application write failed', error)
+      }
     } else if (intent === 'add_note' && action.entreprise && action.note) {
       const match = findFuzzyMatch(recentApps, action.entreprise as string)
 
       if (match) {
         const { data: current } = await supabase.from('applications').select('notes').eq('id', match.id).single()
         const notes = appendTimestampedNote((current as { notes: string | null } | null)?.notes ?? null, action.note as string)
-        await supabase.from('applications').update({ notes }).eq('id', match.id).eq('user_id', userId)
-        executed = true
+        const { error } = await supabase.from('applications').update({ notes }).eq('id', match.id).eq('user_id', userId)
+        if (!error) {
+          executed = true
+        } else {
+          console.error('[executeIntent] add_note write failed', error)
+        }
       }
     }
 

@@ -74,6 +74,15 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 | `FRANCE_TRAVAIL_CLIENT_SECRET` | france-travail.ts scraper |
 | `CRON_SECRET` | /api/jobs/fetch (Bearer auth for cron calls) |
 | `GROQ_API_KEY` | assistant/groq.ts (voice assistant) |
+| `ADZUNA_APP_ID` | adzuna.ts |
+| `ADZUNA_APP_KEY` | adzuna.ts |
+| `ADZUNA_MONTHLY_CAP` | adzuna.ts (default `900` if unset) |
+| `JOOBLE_API_KEY_UK` | jooble.ts |
+| `JOOBLE_API_KEY_DE` | jooble.ts |
+| `JOOBLE_API_KEY_ES` | jooble.ts |
+| `JOOBLE_API_KEY_BE` | jooble.ts |
+| `REED_API_KEY` | reed.ts |
+| `SUPABASE_SERVICE_ROLE_KEY` | lib/supabase/admin.ts (server-only — calls `reserve_api_usage`, never expose to the browser) |
 
 ### Testing
 

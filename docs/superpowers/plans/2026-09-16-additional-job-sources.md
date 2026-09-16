@@ -66,8 +66,11 @@ begin
 end;
 $$;
 
-grant execute on function reserve_api_usage(text, text, int) to anon, authenticated;
+revoke all on function reserve_api_usage(text, text, int) from public;
+grant execute on function reserve_api_usage(text, text, int) to service_role;
 ```
+
+**Security note (added after the Task 1 code review caught this):** do NOT grant `EXECUTE` to `anon`/`authenticated`. `createServerSupabase()` always authenticates with the public `NEXT_PUBLIC_SUPABASE_ANON_KEY`, so granting those roles would let anyone call `reserve_api_usage` directly over PostgREST with an attacker-chosen `p_cap` — either forcing artificial success or griefing the counter to make the app's real calls see `false` prematurely. Restricting `EXECUTE` to `service_role` (tied to the server-only `SUPABASE_SERVICE_ROLE_KEY` secret) closes this; `security definer` alone only bypasses RLS on the table, it does not restrict who can invoke the function.
 
 - [ ] **Step 2: Apply the migration manually**
 
@@ -96,13 +99,34 @@ git commit -m "feat: add api_usage table and reserve_api_usage RPC for quota cut
 
 ---
 
-### Task 2: `lib/scrapers/quota.ts` — quota check wrapper
+### Task 2: `lib/supabase/admin.ts` + `lib/scrapers/quota.ts` — quota check wrapper
 
 **Files:**
+- Create: `lib/supabase/admin.ts`
 - Create: `lib/scrapers/quota.ts`
 - Test: `__tests__/lib/scrapers/quota.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+`reserve_api_usage` is now restricted to `service_role` only (Task 1's migration was corrected during code review — see the security note there). That means `quota.ts` cannot use `createServerSupabase()` (`lib/supabase/server.ts`), which always authenticates with the public anon key. It needs a small dedicated admin client using `SUPABASE_SERVICE_ROLE_KEY` instead — a plain `@supabase/supabase-js` client, not `@supabase/ssr`, since there's no user session or cookies involved, just a server-to-server call. `@supabase/supabase-js` is already a project dependency (see `package.json`).
+
+- [ ] **Step 1: Write `lib/supabase/admin.ts`** (no test — it's a 6-line factory function with nothing to unit-test beyond what TypeScript already checks; its behavior is exercised through `quota.ts`'s tests, which mock it)
+
+```typescript
+// lib/supabase/admin.ts
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from './types'
+
+// Service-role client: bypasses RLS, must only ever be used server-side for
+// operations that can't go through the public anon-key client — currently
+// just the quota RPC in lib/scrapers/quota.ts. Never import this from
+// client-side ('use client') code.
+export const createAdminSupabase = () =>
+  createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+```
+
+- [ ] **Step 2: Write the failing test for `quota.ts`**
 
 ```typescript
 /**
@@ -112,8 +136,8 @@ git commit -m "feat: add api_usage table and reserve_api_usage RPC for quota cut
 const mockRpc = jest.fn()
 const mockSupabase = { rpc: mockRpc }
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerSupabase: jest.fn().mockResolvedValue(mockSupabase),
+jest.mock('@/lib/supabase/admin', () => ({
+  createAdminSupabase: jest.fn().mockReturnValue(mockSupabase),
 }))
 
 import { checkAndReserveQuota } from '@/lib/scrapers/quota'
@@ -154,19 +178,19 @@ describe('checkAndReserveQuota', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 3: Run test to verify it fails**
 
 Run: `npx jest --no-coverage __tests__/lib/scrapers/quota.test.ts`
 Expected: FAIL — `Cannot find module '@/lib/scrapers/quota'`
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 4: Write the implementation**
 
 ```typescript
 // lib/scrapers/quota.ts
-import { createServerSupabase } from '@/lib/supabase/server'
+import { createAdminSupabase } from '@/lib/supabase/admin'
 
 export async function checkAndReserveQuota(source: string, cap: number): Promise<boolean> {
-  const supabase = await createServerSupabase()
+  const supabase = createAdminSupabase()
   const monthKey = new Date().toISOString().slice(0, 7) // YYYY-MM, UTC
 
   const { data, error } = await supabase.rpc('reserve_api_usage', {
@@ -184,15 +208,17 @@ export async function checkAndReserveQuota(source: string, cap: number): Promise
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+Note `createAdminSupabase()` is synchronous (unlike `createServerSupabase()`, which is `async` because it awaits `cookies()`) — no `await` before it.
+
+- [ ] **Step 5: Run test to verify it passes**
 
 Run: `npx jest --no-coverage __tests__/lib/scrapers/quota.test.ts`
 Expected: PASS — 3 tests
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add lib/scrapers/quota.ts __tests__/lib/scrapers/quota.test.ts
+git add lib/supabase/admin.ts lib/scrapers/quota.ts __tests__/lib/scrapers/quota.test.ts
 git commit -m "feat: add checkAndReserveQuota wrapper around reserve_api_usage RPC"
 ```
 
@@ -1217,6 +1243,7 @@ In `CLAUDE.md`, extend the Environment Variables table:
 | `JOOBLE_API_KEY_ES` | jooble.ts |
 | `JOOBLE_API_KEY_BE` | jooble.ts |
 | `REED_API_KEY` | reed.ts |
+| `SUPABASE_SERVICE_ROLE_KEY` | lib/supabase/admin.ts (server-only — calls `reserve_api_usage`, never expose to the browser) |
 ```
 
 - [ ] **Step 2: Commit**
@@ -1236,4 +1263,5 @@ These require the user's own accounts/keys — not part of any task's automated 
 2. Register on `uk.jooble.org/api/about`, `de.jooble.org/api/about`, `es.jooble.org/api/about`, `be.jooble.org/api/about` (one form per domain) → set the 4 `JOOBLE_API_KEY_*` vars.
 3. Register at `reed.co.uk/developers` → set `REED_API_KEY`.
 4. Apply `006_api_usage_tracking.sql` in the Supabase SQL Editor (Task 1, Step 2) before deploying — without it, `checkAndReserveQuota` fails closed and Adzuna silently never fires (safe, but not useful).
-5. Trigger `/api/jobs/fetch` once with real keys and check `results.errors` / the `bySource` log line for each new source.
+5. Get the service role key from Supabase project settings (API → `service_role` secret) → set `SUPABASE_SERVICE_ROLE_KEY` in Netlify env vars. **Never** prefix this one with `NEXT_PUBLIC_` or reference it from client-side code — it bypasses RLS entirely.
+6. Trigger `/api/jobs/fetch` once with real keys and check `results.errors` / the `bySource` log line for each new source.

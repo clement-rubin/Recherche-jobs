@@ -4,9 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { fetchJSearch } from '@/lib/scrapers/jsearch'
 import { fetchEures } from '@/lib/scrapers/eures'
-import { fetchAPEC } from '@/lib/scrapers/apec'
-import { fetchHelloWork } from '@/lib/scrapers/hellowork'
 import { fetchFranceTravail } from '@/lib/scrapers/france-travail'
+import { fetchAdzuna } from '@/lib/scrapers/adzuna'
+import { fetchJooble } from '@/lib/scrapers/jooble'
+import { fetchReed } from '@/lib/scrapers/reed'
 import type { ScrapedJob } from '@/lib/scrapers/jsearch'
 import type { SearchProfile } from '@/lib/supabase/types'
 
@@ -88,8 +89,13 @@ export async function POST(req: NextRequest) {
     const withTimeout = <T>(p: Promise<T>, ms = 7000): Promise<T> =>
       Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))])
 
-    // JSearch + EURES fire for every location (multi-country); APEC/HelloWork/France Travail
-    // are French-market-only APIs and only fire when the location's country is France.
+    const JOOBLE_COUNTRIES = ['uk', 'de', 'es', 'be']
+
+    // JSearch, EURES, and Adzuna fire for every location (multi-country);
+    // France Travail is a French-market-only API and only fires when the
+    // location's country is France. Jooble fires only for its 4 supported
+    // non-French countries (separate API key per country). Reed fires only
+    // for uk (UK-only job board).
     // Qualifications are profile metadata only — not appended to queries
     const taggedPromises = locations.flatMap(loc => {
       const country = (loc.pays ?? 'fr').toLowerCase()
@@ -98,13 +104,18 @@ export async function POST(req: NextRequest) {
         const entries: [string, Promise<ScrapedJob[]>][] = [
           ['jsearch', withTimeout(fetchJSearch(kw, loc.ville, [], country), 15000)],
           ['eures', withTimeout(fetchEures(kw, country), 10000)],
+          ['adzuna', withTimeout(fetchAdzuna(kw, loc.ville, country), 7000)],
         ]
         if (isFrance) {
           entries.push(
-            ['apec', withTimeout(fetchAPEC(kw, loc.ville), 7000)],
-            ['hellowork', withTimeout(fetchHelloWork(kw, loc.ville, typeContrats), 7000)],
             ['france_travail', withTimeout(fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter), 7000)],
           )
+        }
+        if (JOOBLE_COUNTRIES.includes(country)) {
+          entries.push(['jooble', withTimeout(fetchJooble(kw, loc.ville, country), 7000)])
+        }
+        if (country === 'uk') {
+          entries.push(['reed', withTimeout(fetchReed(kw, loc.ville), 7000)])
         }
         return entries
       })

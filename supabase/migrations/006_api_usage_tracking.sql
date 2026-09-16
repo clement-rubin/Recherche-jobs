@@ -41,4 +41,11 @@ begin
 end;
 $$;
 
-grant execute on function reserve_api_usage(text, text, int) to anon, authenticated;
+-- service_role only: anon/authenticated must never call this directly (the
+-- anon key ships in the browser bundle), or a caller could force artificial
+-- success or grief the shared counter with an attacker-chosen p_cap. Postgres
+-- grants EXECUTE to PUBLIC by default, so the revoke is required — a bare
+-- grant to service_role alone would still leave anon/authenticated able to
+-- call it via their PUBLIC-inherited privilege.
+revoke all on function reserve_api_usage(text, text, int) from public;
+grant execute on function reserve_api_usage(text, text, int) to service_role;

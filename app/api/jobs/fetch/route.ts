@@ -7,6 +7,7 @@ import { fetchEures } from '@/lib/scrapers/eures'
 import { fetchAPEC } from '@/lib/scrapers/apec'
 import { fetchHelloWork } from '@/lib/scrapers/hellowork'
 import { fetchFranceTravail } from '@/lib/scrapers/france-travail'
+import { filterMatchingProfile } from '@/lib/scrapers/filters'
 import type { ScrapedJob } from '@/lib/scrapers/jsearch'
 import type { SearchProfile } from '@/lib/supabase/types'
 
@@ -141,9 +142,13 @@ export async function POST(req: NextRequest) {
         })
       : allJobs
 
+    // Drop jobs that don't match profile (contract type, salary floor) or are
+    // expired/stale (posting date too old or past its expiration)
+    const matched = filterMatchingProfile(excluded, profile)
+
     // Deduplicate by lien (URL)
     const seenLinks = new Set<string>()
-    const uniqueJobs = excluded.filter(job => {
+    const uniqueJobs = matched.filter(job => {
       if (!job.lien) return true
       if (seenLinks.has(job.lien)) return false
       seenLinks.add(job.lien)

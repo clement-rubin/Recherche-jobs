@@ -1,9 +1,10 @@
 export const SOURCE_LABELS: Record<string, string> = {
   jsearch: 'JSearch',
-  apec: 'APEC',
-  hellowork: 'HelloWork',
   france_travail: 'France Travail',
   eures: 'EURES',
+  adzuna: 'Adzuna',
+  jooble: 'Jooble',
+  reed: 'Reed',
   email: 'Email',
 }
 

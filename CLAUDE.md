@@ -38,12 +38,14 @@ lib/supabase/types.ts  → all DB types (Application, Offer, SearchProfile, etc.
 Called from UI "Lancer maintenant" or via cron. For each active `search_profile`:
 - Iterates **per city** (`localisations[]`) **then per keyword** (OR behavior on both axes) across 4 sources in parallel
 - `lib/scrapers/jsearch.ts` — JSearch RapidAPI (requires `RAPIDAPI_KEY`)
-- `lib/scrapers/apec.ts` — APEC REST API (cadre jobs, often 0 for manual work)
-- `lib/scrapers/hellowork.ts` — cheerio HTML scraping
 - `lib/scrapers/france-travail.ts` — France Travail OAuth2 API (requires `FRANCE_TRAVAIL_CLIENT_ID` + `FRANCE_TRAVAIL_CLIENT_SECRET`)
+- `lib/scrapers/eures.ts` — EURES public API (EU-wide, internships)
+- `lib/scrapers/adzuna.ts` — Adzuna REST API (requires `ADZUNA_APP_ID` + `ADZUNA_APP_KEY`, quota-capped via `lib/scrapers/quota.ts`)
+- `lib/scrapers/jooble.ts` — Jooble REST API, uk/de/es/be only (one API key per country)
+- `lib/scrapers/reed.ts` — Reed.co.uk REST API, UK only (requires `REED_API_KEY`)
 - Deduplicates by `lien` URL, inserts into `offers` table
 
-**Critical**: qualifications from profile are NOT appended to search queries — they are metadata only. Keywords must be searched one at a time (spaces = AND on APEC/FT/HW).
+**Critical**: qualifications from profile are NOT appended to search queries — they are metadata only. Keywords must be searched one at a time (spaces = AND on France Travail).
 
 ### Key Design Decisions
 

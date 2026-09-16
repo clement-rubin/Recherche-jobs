@@ -3,10 +3,11 @@ import { SOURCE_LABELS, sourceLabel } from '@/lib/offers/sources'
 describe('sourceLabel', () => {
   it('maps every known scraper source to a display label', () => {
     expect(SOURCE_LABELS.jsearch).toBe('JSearch')
-    expect(SOURCE_LABELS.apec).toBe('APEC')
-    expect(SOURCE_LABELS.hellowork).toBe('HelloWork')
     expect(SOURCE_LABELS.france_travail).toBe('France Travail')
     expect(SOURCE_LABELS.eures).toBe('EURES')
+    expect(SOURCE_LABELS.adzuna).toBe('Adzuna')
+    expect(SOURCE_LABELS.jooble).toBe('Jooble')
+    expect(SOURCE_LABELS.reed).toBe('Reed')
     expect(SOURCE_LABELS.email).toBe('Email')
   })
 

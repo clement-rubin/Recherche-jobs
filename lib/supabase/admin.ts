@@ -5,8 +5,11 @@ import type { Database } from './types'
 // operations that can't go through the public anon-key client — currently
 // just the quota RPC in lib/scrapers/quota.ts. Never import this from
 // client-side ('use client') code.
-export const createAdminSupabase = () =>
-  createClient<Database>(
+export const createAdminSupabase = () => {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY)
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY
   )
+}

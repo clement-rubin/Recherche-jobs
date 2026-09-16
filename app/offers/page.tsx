@@ -18,9 +18,11 @@ const STATUS_FILTERS: { value: OfferStatus | ''; label: string }[] = [
 const SOURCE_FILTERS = [
   { value: '', label: 'Toutes sources' },
   { value: 'jsearch', label: 'JSearch' },
-  { value: 'apec', label: 'APEC' },
-  { value: 'hellowork', label: 'HelloWork' },
   { value: 'france_travail', label: 'France Travail' },
+  { value: 'eures', label: 'EURES' },
+  { value: 'adzuna', label: 'Adzuna' },
+  { value: 'jooble', label: 'Jooble' },
+  { value: 'reed', label: 'Reed' },
   { value: 'email', label: 'Email' },
 ]
 

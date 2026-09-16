@@ -51,16 +51,18 @@ jest.mock('@/lib/supabase/server', () => ({
 
 jest.mock('@/lib/scrapers/jsearch', () => ({ fetchJSearch: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/lib/scrapers/eures', () => ({ fetchEures: jest.fn().mockResolvedValue([]) }))
-jest.mock('@/lib/scrapers/apec', () => ({ fetchAPEC: jest.fn().mockResolvedValue([]) }))
-jest.mock('@/lib/scrapers/hellowork', () => ({ fetchHelloWork: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/lib/scrapers/france-travail', () => ({ fetchFranceTravail: jest.fn().mockResolvedValue([]) }))
+jest.mock('@/lib/scrapers/adzuna', () => ({ fetchAdzuna: jest.fn().mockResolvedValue([]) }))
+jest.mock('@/lib/scrapers/jooble', () => ({ fetchJooble: jest.fn().mockResolvedValue([]) }))
+jest.mock('@/lib/scrapers/reed', () => ({ fetchReed: jest.fn().mockResolvedValue([]) }))
 
 import { POST } from '@/app/api/jobs/fetch/route'
 import { fetchJSearch } from '@/lib/scrapers/jsearch'
 import { fetchEures } from '@/lib/scrapers/eures'
-import { fetchAPEC } from '@/lib/scrapers/apec'
-import { fetchHelloWork } from '@/lib/scrapers/hellowork'
 import { fetchFranceTravail } from '@/lib/scrapers/france-travail'
+import { fetchAdzuna } from '@/lib/scrapers/adzuna'
+import { fetchJooble } from '@/lib/scrapers/jooble'
+import { fetchReed } from '@/lib/scrapers/reed'
 
 describe('POST /api/jobs/fetch — multi-city loop', () => {
   beforeEach(() => {
@@ -71,25 +73,23 @@ describe('POST /api/jobs/fetch — multi-city loop', () => {
       .mockReturnValueOnce(profilesChainOnce)
   })
 
-  it('calls all 5 sources once per city × keyword combination for French locations', async () => {
+  it('calls jsearch/eures/adzuna/france-travail once per city × keyword for French locations, skipping jooble/reed', async () => {
     const req = new NextRequest('http://localhost/api/jobs/fetch', { method: 'POST' })
     await POST(req)
 
     expect(fetchJSearch).toHaveBeenCalledTimes(4)
     expect(fetchEures).toHaveBeenCalledTimes(4)
-    expect(fetchAPEC).toHaveBeenCalledTimes(4)
-    expect(fetchHelloWork).toHaveBeenCalledTimes(4)
+    expect(fetchAdzuna).toHaveBeenCalledTimes(4)
     expect(fetchFranceTravail).toHaveBeenCalledTimes(4)
+    expect(fetchJooble).not.toHaveBeenCalled()
+    expect(fetchReed).not.toHaveBeenCalled()
 
     expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Lille', [], 'fr')
-    expect(fetchJSearch).toHaveBeenNthCalledWith(2, 'data engineer', 'Lille', [], 'fr')
-    expect(fetchJSearch).toHaveBeenNthCalledWith(3, 'data scientist', 'Paris', [], 'fr')
-    expect(fetchJSearch).toHaveBeenNthCalledWith(4, 'data engineer', 'Paris', [], 'fr')
-
+    expect(fetchAdzuna).toHaveBeenNthCalledWith(1, 'data scientist', 'Lille', 'fr')
     expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'fr')
   })
 
-  it('only calls JSearch and EURES for a non-French location, skipping APEC/HelloWork/France Travail', async () => {
+  it('for a German location, calls JSearch/EURES/Adzuna/Jooble but skips France Travail/Reed', async () => {
     const deProfile = {
       ...mockProfile,
       localisations: [{ ville: 'Berlin', rayon_km: 30, pays: 'de' }],
@@ -109,15 +109,43 @@ describe('POST /api/jobs/fetch — multi-city loop', () => {
 
     expect(fetchJSearch).toHaveBeenCalledTimes(2) // 2 keywords × 1 city
     expect(fetchEures).toHaveBeenCalledTimes(2)
-    expect(fetchAPEC).not.toHaveBeenCalled()
-    expect(fetchHelloWork).not.toHaveBeenCalled()
+    expect(fetchAdzuna).toHaveBeenCalledTimes(2)
+    expect(fetchJooble).toHaveBeenCalledTimes(2)
     expect(fetchFranceTravail).not.toHaveBeenCalled()
+    expect(fetchReed).not.toHaveBeenCalled()
 
     expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Berlin', [], 'de')
-    expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'de')
+    expect(fetchJooble).toHaveBeenNthCalledWith(1, 'data scientist', 'Berlin', 'de')
   })
 
-  it('scopes French-only sources per-location in a mixed-country profile', async () => {
+  it('for a UK location, calls JSearch/EURES/Adzuna/Jooble/Reed but skips France Travail', async () => {
+    const ukProfile = {
+      ...mockProfile,
+      mots_cles: ['software engineering intern'],
+      localisations: [{ ville: 'London', rayon_km: 30, pays: 'uk' }],
+    }
+    mockSupabase.from
+      .mockReset()
+      .mockReturnValueOnce(rateLimitChainOnce)
+      .mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        then: (resolve: (v: { data: typeof ukProfile[]; error: null }) => void) =>
+          resolve({ data: [ukProfile], error: null }),
+      })
+
+    const req = new NextRequest('http://localhost/api/jobs/fetch', { method: 'POST' })
+    await POST(req)
+
+    expect(fetchAdzuna).toHaveBeenCalledTimes(1)
+    expect(fetchJooble).toHaveBeenCalledTimes(1)
+    expect(fetchReed).toHaveBeenCalledTimes(1)
+    expect(fetchFranceTravail).not.toHaveBeenCalled()
+
+    expect(fetchReed).toHaveBeenNthCalledWith(1, 'software engineering intern', 'London')
+  })
+
+  it('scopes country-gated sources per-location in a mixed French/German profile', async () => {
     const mixedProfile = {
       ...mockProfile,
       mots_cles: ['data scientist'],
@@ -141,13 +169,13 @@ describe('POST /api/jobs/fetch — multi-city loop', () => {
 
     expect(fetchJSearch).toHaveBeenCalledTimes(2) // 1 keyword × 2 locations
     expect(fetchEures).toHaveBeenCalledTimes(2)
-    expect(fetchAPEC).toHaveBeenCalledTimes(1) // only Paris (French location)
-    expect(fetchHelloWork).toHaveBeenCalledTimes(1)
-    expect(fetchFranceTravail).toHaveBeenCalledTimes(1)
+    expect(fetchAdzuna).toHaveBeenCalledTimes(2) // fires for both fr and de
+    expect(fetchFranceTravail).toHaveBeenCalledTimes(1) // only Paris (French location)
+    expect(fetchJooble).toHaveBeenCalledTimes(1) // only Berlin (de is jooble-gated)
+    expect(fetchReed).not.toHaveBeenCalled() // no uk location
 
     expect(fetchJSearch).toHaveBeenNthCalledWith(1, 'data scientist', 'Paris', [], 'fr')
     expect(fetchJSearch).toHaveBeenNthCalledWith(2, 'data scientist', 'Berlin', [], 'de')
-    expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'fr')
-    expect(fetchEures).toHaveBeenNthCalledWith(2, 'data scientist', 'de')
+    expect(fetchJooble).toHaveBeenNthCalledWith(1, 'data scientist', 'Berlin', 'de')
   })
 })

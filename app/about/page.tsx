@@ -16,7 +16,7 @@ const FEATURES: { icon: LucideIcon; title: string; desc: string }[] = [
   {
     icon: Search,
     title: 'Scraping automatique',
-    desc: "Recherche quotidienne sur JSearch, APEC, France Travail et HelloWork selon vos profils.",
+    desc: "Recherche quotidienne sur JSearch, EURES, Adzuna, France Travail, Jooble et Reed selon vos profils.",
   },
   {
     icon: ClipboardList,

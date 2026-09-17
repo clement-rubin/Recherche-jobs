@@ -59,6 +59,12 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 - **Fonts**: `Outfit` (body) + `JetBrains Mono` (numbers) loaded via `next/font/google` in `layout.tsx`, exposed as CSS vars `--font-outfit` / `--font-mono`.
 - **Theme**: light zinc — CSS vars defined in `globals.css` `:root`. Never use hardcoded dark hex colors like `#101220` or `#1a1d32`.
 - **GSAP**: used for nav stagger, modal scale-in, mobile drawer slide. Guard against missing `requestAnimationFrame` in tests — TagInput does this already.
+- **Telegram inbound bot** (`app/api/telegram/webhook/route.ts`): single-user only — no chat-to-account linking. Free-text French messages are parsed by the same Groq `processIntent` the voice assistant uses (`lib/assistant/groq.ts`), and executed through the shared `lib/assistant/executeIntent.ts` helper (also used by `app/api/assistant/process/route.ts`). Requires registering the webhook once after deploy:
+  ```bash
+  curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+    -d url="https://YOUR-APP.netlify.app/api/telegram/webhook" \
+    -d secret_token="$TELEGRAM_WEBHOOK_SECRET"
+  ```
 
 ### Environment Variables
 
@@ -71,6 +77,10 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 | `FRANCE_TRAVAIL_CLIENT_SECRET` | france-travail.ts scraper |
 | `CRON_SECRET` | /api/jobs/fetch (Bearer auth for cron calls) |
 | `GROQ_API_KEY` | assistant/groq.ts (voice assistant) |
+| `TELEGRAM_BOT_TOKEN` | telegram.ts / telegram webhook |
+| `TELEGRAM_CHAT_ID` | telegram.ts / telegram webhook (sender allowlist) |
+| `TELEGRAM_WEBHOOK_SECRET` | telegram webhook (validates calls are really from Telegram) |
+| `TELEGRAM_OWNER_USER_ID` | telegram webhook (Supabase user UUID every insert/update is scoped to) |
 
 ### Testing
 

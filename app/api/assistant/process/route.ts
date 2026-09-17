@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { processIntent } from '@/lib/assistant/groq'
+import { executeIntent } from '@/lib/assistant/executeIntent'
 import type { Application } from '@/lib/supabase/types'
 
 export async function POST(req: NextRequest) {
@@ -58,72 +59,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...intentResult, requires_confirmation: true, executed: false })
   }
 
-  // Execute the action
-  let executed = false
-  const { intent, action } = intentResult
+  const { executed } = await executeIntent(supabase, {
+    userId: user.id,
+    transcription,
+    intentResult,
+    recentApps,
+    source: 'assistant',
+  })
 
-  try {
-    console.log('[assistant/process] Executing action', { intent, action })
-    if (intent === 'update_application' && action.entreprise) {
-      // Find matching application
-      const match = recentApps.find(
-        a => a.entreprise.toLowerCase().includes((action.entreprise as string).toLowerCase()) ||
-          (action.entreprise as string).toLowerCase().includes(a.entreprise.toLowerCase())
-      )
-
-      if (match) {
-        const VALID_STATUTS = ['en_cours', 'relance', 'termine'] as const
-        const VALID_RESULTATS = ['accepte', 'refus'] as const
-        const update: Record<string, unknown> = {}
-        if (action.statut && VALID_STATUTS.includes(action.statut as any)) update.statut = action.statut
-        if (action.resultat && VALID_RESULTATS.includes(action.resultat as any)) update.resultat = action.resultat
-        if (action.note) {
-          // Append note to existing notes
-          const { data: current } = await (supabase as any)
-            .from('applications')
-            .select('notes')
-            .eq('id', match.id)
-            .single()
-
-          const existingNotes = (current as { notes: string | null } | null)?.notes ?? ''
-          const timestamp = new Date().toLocaleDateString('fr-FR')
-          update.notes = existingNotes
-            ? `${existingNotes}\n[${timestamp}] ${action.note}`
-            : `[${timestamp}] ${action.note}`
-        }
-
-        if (Object.keys(update).length > 0) {
-          await (supabase as any)
-            .from('applications')
-            .update(update)
-            .eq('id', match.id)
-            .eq('user_id', user.id)
-          executed = true
-        }
-      }
-    } else if (intent === 'add_application' && action.entreprise) {
-      await supabase.from('applications').insert({
-        user_id: user.id,
-        entreprise: action.entreprise as string,
-        poste: (action.poste as string) ?? 'Poste à préciser',
-        type_contrat: (action.type_contrat as any) ?? 'interim',
-        source: 'assistant',
-      } as any)
-      executed = true
-    }
-
-    // Log the interaction
-    await supabase.from('assistant_logs').insert({
-      user_id: user.id,
-      transcription,
-      intent,
-      action_taken: JSON.stringify(action),
-      success: executed,
-    } as any)
-  } catch (err) {
-    console.error('[assistant/process] Action execution failed', err)
-  }
-
-  console.log('[assistant/process] Done', { intent, executed, totalMs: Date.now() - t0 })
+  console.log('[assistant/process] Done', { intent: intentResult.intent, executed, totalMs: Date.now() - t0 })
   return NextResponse.json({ ...intentResult, executed })
 }

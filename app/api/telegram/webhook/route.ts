@@ -46,12 +46,18 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminSupabase()
-  const { data: applications } = await supabase
+  const { data: applications, error: appsError } = await supabase
     .from('applications')
     .select('id, entreprise, poste, statut')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
     .limit(10)
+
+  if (appsError) {
+    console.error('[telegram/webhook] Failed to fetch recent applications', appsError)
+    await safeSend('❌ Assistant indisponible, réessaie dans quelques secondes')
+    return NextResponse.json({ ok: true })
+  }
 
   const recentApps = ((applications ?? []) as Partial<Application>[]).map(a => ({
     id: a.id ?? '',

@@ -154,4 +154,35 @@ describe('POST /api/telegram/webhook', () => {
     expect(mockProcessIntent).not.toHaveBeenCalled()
     expect(mockSendTelegramMessage).toHaveBeenCalledWith('❌ Assistant indisponible, réessaie dans quelques secondes')
   })
+
+  it('still returns 200 even if sending the Telegram reply fails', async () => {
+    mockProcessIntent.mockResolvedValue({
+      intent: 'add_application',
+      confidence: 0.9,
+      action: { entreprise: 'Amazon', poste: 'Magasinier', type_contrat: 'interim' },
+      message: '',
+      requires_confirmation: false,
+    })
+    mockExecuteIntent.mockResolvedValue({ executed: true })
+    mockSendTelegramMessage.mockRejectedValueOnce(new Error('telegram api down'))
+
+    const res = await POST(makeRequest(textUpdate('Entretien Amazon magasinier interim')))
+
+    expect(res.status).toBe(200)
+  })
+
+  it('replies with an unavailable message when the recent-applications fetch fails', async () => {
+    const limit = jest.fn().mockResolvedValue({ data: null, error: { message: 'db unavailable' } })
+    const order = jest.fn().mockReturnValue({ limit })
+    const eq = jest.fn().mockReturnValue({ order })
+    const select = jest.fn().mockReturnValue({ eq })
+    const from = jest.fn().mockReturnValue({ select })
+    mockCreateAdminSupabase.mockReturnValue({ from })
+
+    const res = await POST(makeRequest(textUpdate('salut')))
+
+    expect(res.status).toBe(200)
+    expect(mockProcessIntent).not.toHaveBeenCalled()
+    expect(mockSendTelegramMessage).toHaveBeenCalledWith('❌ Assistant indisponible, réessaie dans quelques secondes')
+  })
 })

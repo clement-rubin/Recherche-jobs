@@ -105,6 +105,13 @@ export type Database = {
       assistant_logs: { Row: AssistantLog; Insert: Omit<AssistantLog, 'id' | 'created_at'>; Update: Partial<Omit<AssistantLog, 'id' | 'user_id'>>; Relationships: [] }
     }
     Views: Record<never, never>
-    Functions: Record<never, never>
+    Functions: {
+      // supabase/migrations/006_api_usage_tracking.sql — service_role only,
+      // called from lib/scrapers/quota.ts via lib/supabase/admin.ts.
+      reserve_api_usage: {
+        Args: { p_source: string; p_month: string; p_cap: number }
+        Returns: boolean
+      }
+    }
   }
 }

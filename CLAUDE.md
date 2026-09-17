@@ -38,12 +38,14 @@ lib/supabase/types.ts  → all DB types (Application, Offer, SearchProfile, etc.
 Called from UI "Lancer maintenant" or via cron. For each active `search_profile`:
 - Iterates **per city** (`localisations[]`) **then per keyword** (OR behavior on both axes) across 4 sources in parallel
 - `lib/scrapers/jsearch.ts` — JSearch RapidAPI (requires `RAPIDAPI_KEY`)
-- `lib/scrapers/apec.ts` — APEC REST API (cadre jobs, often 0 for manual work)
-- `lib/scrapers/hellowork.ts` — cheerio HTML scraping
 - `lib/scrapers/france-travail.ts` — France Travail OAuth2 API (requires `FRANCE_TRAVAIL_CLIENT_ID` + `FRANCE_TRAVAIL_CLIENT_SECRET`)
+- `lib/scrapers/eures.ts` — EURES public API (EU-wide, internships)
+- `lib/scrapers/adzuna.ts` — Adzuna REST API (requires `ADZUNA_APP_ID` + `ADZUNA_APP_KEY`, quota-capped via `lib/scrapers/quota.ts`)
+- `lib/scrapers/jooble.ts` — Jooble REST API, uk/de/es/be only (one API key per country)
+- `lib/scrapers/reed.ts` — Reed.co.uk REST API, UK only (requires `REED_API_KEY`)
 - Deduplicates by `lien` URL, inserts into `offers` table
 
-**Critical**: qualifications from profile are NOT appended to search queries — they are metadata only. Keywords must be searched one at a time (spaces = AND on APEC/FT/HW).
+**Critical**: qualifications from profile are NOT appended to search queries — they are metadata only. Keywords must be searched one at a time (spaces = AND on France Travail).
 
 ### Key Design Decisions
 
@@ -56,6 +58,7 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
     ADD COLUMN IF NOT EXISTS duree_contrat text DEFAULT 'peu_importe';
   ```
 - **`SearchProfile.domaine`/`localisations`**: added by `supabase/migrations/004_search_profile_wizard.sql` (adds `domaine text`, `localisations jsonb`, backfills old `localisation`/`rayon_km` into `localisations`) then `005_drop_old_location_columns.sql` (drops the old columns). Apply manually via the Supabase SQL Editor, **004 first**, verify the backfill (`select domaine, localisations from search_profiles limit 5;`), then **005**. The old `localisation`/`rayon_km` scalar columns/fields no longer exist anywhere in the codebase after this — a project not yet migrated will 500 on every search-profile save.
+- **`api_usage` table** (migration `006_api_usage_tracking.sql`): tracks monthly call counts per external API source (currently only `adzuna`) via the `reserve_api_usage(source, month, cap)` RPC — a single atomic `UPDATE ... WHERE calls < cap` that both checks and increments, so concurrent calls can't race past the cap. RLS is enabled with no policies; the function is `security definer` and is the only access path. Apply manually via the Supabase SQL Editor like migrations 004/005.
 - **Fonts**: `Outfit` (body) + `JetBrains Mono` (numbers) loaded via `next/font/google` in `layout.tsx`, exposed as CSS vars `--font-outfit` / `--font-mono`.
 - **Theme**: light zinc — CSS vars defined in `globals.css` `:root`. Never use hardcoded dark hex colors like `#101220` or `#1a1d32`.
 - **GSAP**: used for nav stagger, modal scale-in, mobile drawer slide. Guard against missing `requestAnimationFrame` in tests — TagInput does this already.
@@ -77,6 +80,15 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 | `FRANCE_TRAVAIL_CLIENT_SECRET` | france-travail.ts scraper |
 | `CRON_SECRET` | /api/jobs/fetch (Bearer auth for cron calls) |
 | `GROQ_API_KEY` | assistant/groq.ts (voice assistant) |
+| `ADZUNA_APP_ID` | adzuna.ts |
+| `ADZUNA_APP_KEY` | adzuna.ts |
+| `ADZUNA_MONTHLY_CAP` | adzuna.ts (default `900` if unset) |
+| `JOOBLE_API_KEY_UK` | jooble.ts |
+| `JOOBLE_API_KEY_DE` | jooble.ts |
+| `JOOBLE_API_KEY_ES` | jooble.ts |
+| `JOOBLE_API_KEY_BE` | jooble.ts |
+| `REED_API_KEY` | reed.ts |
+| `SUPABASE_SERVICE_ROLE_KEY` | lib/supabase/admin.ts (server-only — calls `reserve_api_usage` and backs the Telegram webhook, never expose to the browser) |
 | `TELEGRAM_BOT_TOKEN` | telegram.ts / telegram webhook |
 | `TELEGRAM_CHAT_ID` | telegram.ts / telegram webhook (sender allowlist) |
 | `TELEGRAM_WEBHOOK_SECRET` | telegram webhook (validates calls are really from Telegram) |

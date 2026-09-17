@@ -88,13 +88,14 @@ export async function executeIntent(
       }
     }
 
-    await supabase.from('assistant_logs').insert({
+    const { error: logError } = await supabase.from('assistant_logs').insert({
       user_id: userId,
       transcription,
       intent,
       action_taken: JSON.stringify(action),
       success: executed,
     })
+    if (logError) console.error('[executeIntent] assistant_logs write failed', logError)
   } catch (err) {
     console.error('[executeIntent] Action execution failed', err)
   }

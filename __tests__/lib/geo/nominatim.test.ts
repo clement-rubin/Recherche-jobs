@@ -23,6 +23,46 @@ describe('reverseGeocode', () => {
     await expect(reverseGeocode(1, 2)).resolves.toMatchObject({ ville: 'Bondues' })
   })
 
+  it('asks for French names with name details', async () => {
+    mockFetch.mockResolvedValue(ok({ lat: '1', lon: '2', address: { city: 'Lille', country_code: 'fr' } }))
+    await reverseGeocode(1, 2)
+    const url = String(mockFetch.mock.calls[0][0])
+    expect(url).toContain('accept-language=fr')
+    expect(url).toContain('namedetails=1')
+  })
+
+  it('keeps the French address name for French cities', async () => {
+    mockFetch.mockResolvedValue(ok({
+      lat: '51.03', lon: '2.37',
+      namedetails: { name: 'Dunkerque', 'name:en': 'Dunkirk' },
+      address: { city: 'Dunkerque', country_code: 'fr' },
+    }))
+    await expect(reverseGeocode(51.03, 2.37)).resolves.toMatchObject({ ville: 'Dunkerque', pays: 'FR' })
+  })
+
+  it('uses the English name for cities outside France', async () => {
+    mockFetch.mockResolvedValue(ok({
+      lat: '48.137', lon: '11.575',
+      namedetails: { name: 'München', 'name:en': 'Munich' },
+      address: { city: 'München', country_code: 'de' },
+    }))
+    await expect(reverseGeocode(48.137, 11.575)).resolves.toMatchObject({ ville: 'Munich', pays: 'DE' })
+  })
+
+  it('falls back to the address name outside France when there is no English name', async () => {
+    mockFetch.mockResolvedValue(ok({
+      lat: '1', lon: '2', namedetails: { name: 'Gent' }, address: { city: 'Gent', country_code: 'be' },
+    }))
+    await expect(reverseGeocode(1, 2)).resolves.toMatchObject({ ville: 'Gent', pays: 'BE' })
+  })
+
+  it('returns null when the reverse result has no city/town/village, even with a name', async () => {
+    mockFetch.mockResolvedValue(ok({
+      lat: '1', lon: '2', name: 'Arrondissement de Lille', address: { county: 'Nord', country_code: 'fr' },
+    }))
+    await expect(reverseGeocode(1, 2)).resolves.toBeNull()
+  })
+
   it('returns null on a Nominatim error payload', async () => {
     mockFetch.mockResolvedValue(ok({ error: 'Unable to geocode' }))
     await expect(reverseGeocode(0, 0)).resolves.toBeNull()
@@ -45,6 +85,20 @@ describe('searchCity', () => {
     expect(url).toContain('/search?')
     expect(url).toContain('q=Lyo')
     expect(url).toContain('countrycodes=fr%2Cde')
+  })
+
+  it('falls back to the result name for search results without a settlement address', async () => {
+    mockFetch.mockResolvedValue(ok([{ lat: '45.76', lon: '4.83', name: 'Lyon', address: { country_code: 'fr' } }]))
+    await expect(searchCity('Lyon', ['FR'])).resolves.toEqual([{ ville: 'Lyon', pays: 'FR', lat: 45.76, lng: 4.83 }])
+  })
+
+  it('uses English names for non-French search results', async () => {
+    mockFetch.mockResolvedValue(ok([{
+      lat: '48.21', lon: '16.37', name: 'Wien',
+      namedetails: { name: 'Wien', 'name:en': 'Vienna' },
+      address: { city: 'Wien', country_code: 'at' },
+    }]))
+    await expect(searchCity('Wien', ['AT'])).resolves.toEqual([{ ville: 'Vienna', pays: 'AT', lat: 48.21, lng: 16.37 }])
   })
 
   it('dedupes results with the same city and country', async () => {

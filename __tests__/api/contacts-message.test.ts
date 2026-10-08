@@ -83,9 +83,11 @@ describe('POST /api/contacts/[id]/message', () => {
     expect((await res.json()).error).toContain('GROQ_API_KEY')
   })
 
-  it('502 when the model fails', async () => {
+  it('502 when the model fails, with the cause in the message', async () => {
     withContact(contact)
-    mockCreate.mockRejectedValue(new Error('groq down'))
-    expect((await call()).status).toBe(502)
+    mockCreate.mockRejectedValue(Object.assign(new Error('model not found'), { status: 404 }))
+    const res = await call()
+    expect(res.status).toBe(502)
+    expect((await res.json()).error).toContain('404 model not found')
   })
 })

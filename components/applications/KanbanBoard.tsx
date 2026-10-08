@@ -36,17 +36,25 @@ export function KanbanBoard({ applications, onUpdate }: Props) {
         {COLUMNS.map(col => {
           const colApps = applications.filter(a => a.statut === col.id)
           return (
-            <div key={col.id} className="bg-card border border-border rounded-xl">
-              <div className="p-3 border-b border-border flex items-center justify-between">
+            <div
+              key={col.id}
+              className="rounded-[var(--r-xl)]"
+              style={{ background: 'var(--card-gradient)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}
+            >
+              <div
+                className="p-3 flex items-center justify-between"
+                style={{ borderBottom: '1px solid var(--border)' }}
+              >
                 <Badge status={col.id} />
-                <span className="text-muted text-xs">{colApps.length}</span>
+                <span className="text-[color:var(--muted)] text-xs">{colApps.length}</span>
               </div>
               <Droppable droppableId={col.id}>
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`p-2 min-h-24 space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-accent/5' : ''}`}
+                    className="p-2 min-h-24 space-y-2 transition-colors"
+                    style={{ background: snapshot.isDraggingOver ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : '' }}
                   >
                     {colApps.map((app, index) => (
                       <Draggable key={app.id} draggableId={app.id} index={index}>
@@ -55,12 +63,18 @@ export function KanbanBoard({ applications, onUpdate }: Props) {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`bg-background border rounded-lg p-3 transition-shadow ${snapshot.isDragging ? 'shadow-lg border-accent' : 'border-border'}`}
+                            className="border rounded-[var(--r-lg)] p-3 transition-shadow"
+                            style={{
+                              ...(provided.draggableProps.style),
+                              background: 'var(--background)',
+                              borderColor: snapshot.isDragging ? 'var(--accent)' : 'var(--border)',
+                              boxShadow: snapshot.isDragging ? 'var(--shadow-lg)' : undefined,
+                            }}
                           >
-                            <p className="text-foreground text-sm font-medium">{app.entreprise}</p>
-                            <p className="text-muted text-xs mt-0.5">{app.poste}</p>
+                            <p className="text-[color:var(--foreground)] text-sm font-medium">{app.entreprise}</p>
+                            <p className="text-[color:var(--muted)] text-xs mt-0.5">{app.poste}</p>
                             {app.type_contrat && (
-                              <p className="text-muted text-xs mt-1 capitalize">{app.type_contrat}</p>
+                              <p className="text-[color:var(--muted)] text-xs mt-1 capitalize">{app.type_contrat}</p>
                             )}
                           </div>
                         )}
@@ -68,7 +82,7 @@ export function KanbanBoard({ applications, onUpdate }: Props) {
                     ))}
                     {provided.placeholder}
                     {colApps.length === 0 && !snapshot.isDraggingOver && (
-                      <p className="text-muted text-xs text-center py-4">Aucune candidature</p>
+                      <p className="text-[color:var(--muted)] text-xs text-center py-4">Aucune candidature</p>
                     )}
                   </div>
                 )}

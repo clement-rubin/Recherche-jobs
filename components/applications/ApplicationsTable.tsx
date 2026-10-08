@@ -43,7 +43,7 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onCreate }
     return true
   })
 
-  const selectClass = 'border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-accent'
+  const selectClass = 'border rounded-[var(--r-lg)] px-3 py-1.5 text-sm focus:outline-none focus:border-[color:var(--accent)]'
   const selectStyle = { background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--foreground)' }
 
   return (
@@ -70,14 +70,14 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onCreate }
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="btn-accent text-white text-sm font-medium px-4 py-2.5 rounded-lg min-h-[40px] flex-shrink-0"
+          className="btn-accent text-white text-sm font-medium px-4 py-2.5 rounded-[var(--r-lg)] min-h-[40px] flex-shrink-0"
         >
           + Nouvelle
         </button>
       </div>
 
       {/* Table — horizontal scroll on small screens */}
-      <div className="rounded-xl overflow-hidden overflow-x-auto" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+      <div className="rounded-[var(--r-xl)] overflow-hidden overflow-x-auto" style={{ background: 'var(--card-gradient)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
         <table className="w-full min-w-[560px]">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -126,17 +126,21 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onCreate }
                         </select>
                         <button
                           onClick={() => setEditApp(app)}
-                          className="text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[32px] hover:bg-zinc-100"
+                          className="text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[32px]"
                           style={{ color: 'var(--muted)' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                         >
                           Éditer
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(app.id)}
-                          className="text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[32px] hover:bg-red-50 hover:text-red-500"
+                          className="text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[32px]"
                           style={{ color: 'var(--muted)' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-surface)'; e.currentTarget.style.color = 'var(--danger-text)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted)' }}
                         >
-                          Sup.
+                          Supprimer
                         </button>
                       </div>
                     </td>

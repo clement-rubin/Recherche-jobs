@@ -110,7 +110,7 @@ export function Nav({ onClose }: NavProps) {
         <div className="flex items-center gap-2.5">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--accent)', boxShadow: 'var(--accent-glow)' }}
+            style={{ background: 'var(--accent)', boxShadow: 'var(--shadow-accent)' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5}>
               <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -136,7 +136,7 @@ export function Nav({ onClose }: NavProps) {
               className="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium relative"
               style={{
                 color: active ? 'var(--accent)' : 'var(--muted)',
-                background: active ? 'var(--accent-dim)' : 'transparent',
+                background: active ? 'var(--accent-surface)' : 'transparent',
               }}
             >
               {active && (

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 type BtnState = 'idle' | 'loading' | 'success' | 'error'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 interface AsyncButtonProps {
   onClick: () => Promise<void>
@@ -12,7 +13,7 @@ interface AsyncButtonProps {
   errorLabel?: string
   className?: string
   disabled?: boolean
-  variant?: 'primary' | 'secondary'
+  variant?: Variant
 }
 
 export function AsyncButton({
@@ -40,15 +41,23 @@ export function AsyncButton({
     }
   }
 
-  const baseClass = variant === 'primary'
-    ? 'text-white font-semibold rounded-lg px-4 py-2 text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed'
-    : 'border border-zinc-200 text-zinc-600 rounded-lg px-4 py-2 text-sm transition-all hover:border-zinc-300 hover:text-zinc-900 disabled:opacity-60 disabled:cursor-not-allowed'
+  const baseClass =
+    'font-semibold rounded-[var(--r-lg)] px-4 py-2 text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed min-h-[40px]'
 
-  const stateClass = {
-    idle: variant === 'primary' ? 'bg-indigo-500 hover:bg-indigo-600' : '',
-    loading: variant === 'primary' ? 'bg-indigo-400' : '',
-    success: variant === 'primary' ? 'bg-green-600' : 'text-green-600 border-green-200',
-    error: variant === 'primary' ? 'bg-red-500' : 'text-red-500 border-red-200',
+  const variantStyle: Record<Variant, React.CSSProperties> = {
+    primary:   { background: 'var(--accent)', color: '#fff', border: '1px solid transparent' },
+    secondary: { background: 'var(--card)', color: 'var(--foreground-dim)', border: '1px solid var(--border)' },
+    ghost:     { background: 'transparent', color: 'var(--muted)', border: '1px solid transparent' },
+    danger:    { background: 'var(--danger-surface)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' },
+  }
+
+  // State feedback (loading/success/error) always overrides the variant's own
+  // color — transient status should read the same regardless of the button's
+  // semantic type, the same way `loading`'s dimming already applies uniformly.
+  const stateStyle: Partial<Record<BtnState, React.CSSProperties>> = {
+    loading: { opacity: 0.75 },
+    success: { background: 'var(--success-surface)', color: 'var(--success-text)', border: '1px solid var(--success-border)' },
+    error:   { background: 'var(--danger-surface)',  color: 'var(--danger-text)',  border: '1px solid var(--danger-border)' },
   }
 
   const label: Record<BtnState, React.ReactNode> = {
@@ -67,7 +76,8 @@ export function AsyncButton({
     <button
       onClick={handleClick}
       disabled={disabled || state === 'loading'}
-      className={`${baseClass} ${stateClass[state]} ${className}`}
+      className={`${baseClass} ${className}`}
+      style={{ ...variantStyle[variant], ...(stateStyle[state] ?? {}) }}
     >
       {label[state]}
     </button>

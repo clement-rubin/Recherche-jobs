@@ -78,15 +78,19 @@ begin
 end;
 $$;
 
-grant execute on function reserve_api_usage(text, text, int) to anon, authenticated;
+revoke all on function reserve_api_usage(text, text, int) from public;
+grant execute on function reserve_api_usage(text, text, int) to service_role;
 ```
 
-**Behavior**: a new small module `lib/scrapers/quota.ts` exports `checkAndReserveQuota(source: string, cap: number): Promise<boolean>`, which builds a Supabase client via `createServerSupabase()` and calls the `reserve_api_usage` RPC with the current UTC month (`YYYY-MM`). Because the check-and-increment happens in a single `UPDATE ... WHERE calls < cap` statement, Postgres's row lock makes it race-free even when multiple locations fire Adzuna calls concurrently within one `/api/jobs/fetch` run — no overshoot is possible, unlike a separate read-then-write pair. `adzuna.ts` calls this **before** making its HTTP request; if it returns `false` (cap reached, or the RPC itself errored — fail closed on any DB error, never risk an ambiguous state), `console.warn` + return `[]`, **no HTTP request is sent**. The `ADZUNA_MONTHLY_CAP` env var (code default `900`) still leaves a 100-call margin below Adzuna's 1000 free limit, as a buffer against any usage outside the app (e.g. manual testing against the same Adzuna account) — not because the counter itself can drift.
+**Security correction found during code review of Task 1**: an earlier version of this spec granted `EXECUTE` on `reserve_api_usage` to `anon`/`authenticated`. Since `createServerSupabase()` (`lib/supabase/server.ts`) always authenticates with `NEXT_PUBLIC_SUPABASE_ANON_KEY` — a key that ships in the client bundle and is not secret — that grant meant **anyone** could call the RPC directly over PostgREST (`POST {SUPABASE_URL}/rest/v1/rpc/reserve_api_usage`) with an attacker-chosen `p_cap`, either forcing permanent artificial success (`p_cap: 999999999`) or griefing the shared counter to make the app's own real calls see `false` prematurely — an unauthenticated denial-of-service against the exact mechanism meant to guarantee safety. The fix: revoke `PUBLIC`'s default `EXECUTE` grant entirely and grant only to `service_role` — a Postgres role tied to `SUPABASE_SERVICE_ROLE_KEY`, a server-only secret that never reaches a browser. `security definer` was already correct (it makes the function bypass RLS on the table); the missing piece was restricting *who can invoke the function at all*, not just what the function does once invoked.
+
+**Behavior**: a new small module `lib/scrapers/quota.ts` exports `checkAndReserveQuota(source: string, cap: number): Promise<boolean>`, which builds a Supabase client via a new `createAdminSupabase()` helper (`lib/supabase/admin.ts`, using `SUPABASE_SERVICE_ROLE_KEY` — a plain `@supabase/supabase-js` `createClient`, no cookies needed since this is a server-to-server call, not a user session) and calls the `reserve_api_usage` RPC with the current UTC month (`YYYY-MM`). Because the check-and-increment happens in a single `UPDATE ... WHERE calls < cap` statement, Postgres's row lock makes it race-free even when multiple locations fire Adzuna calls concurrently within one `/api/jobs/fetch` run — no overshoot is possible, unlike a separate read-then-write pair. `adzuna.ts` calls this **before** making its HTTP request; if it returns `false` (cap reached, or the RPC itself errored — fail closed on any DB error, never risk an ambiguous state), `console.warn` + return `[]`, **no HTTP request is sent**. The `ADZUNA_MONTHLY_CAP` env var (code default `900`) still leaves a 100-call margin below Adzuna's 1000 free limit, as a buffer against any usage outside the app (e.g. manual testing against the same Adzuna account) — not because the counter itself can drift.
 
 Jooble and Reed do not get this mechanism: neither publishes a call cap or a paid-overage model for their free API keys. If either introduces one later, the same table/RPC/pattern applies to them too.
 
 ## New files
 
+- `lib/supabase/admin.ts` — `createAdminSupabase()`, a plain `@supabase/supabase-js` client authenticated with `SUPABASE_SERVICE_ROLE_KEY` (server-only secret, never exposed to the browser). Used only by `quota.ts`.
 - `lib/scrapers/quota.ts` — `checkAndReserveQuota(source: string, cap: number): Promise<boolean>` (see Quota handling section).
 - `lib/scrapers/adzuna.ts` — `fetchAdzuna(keywords: string, location: string, country: string): Promise<ScrapedJob[]>`. GET `https://api.adzuna.com/v1/api/jobs/{slug}/search/1?app_id=&app_key=&what=&where=`. Missing `ADZUNA_APP_ID`/`ADZUNA_APP_KEY` → `console.warn` + return `[]` (pattern: `jsearch.ts:19-22`). Calls `checkAndReserveQuota('adzuna', cap)` before firing the request.
 - `supabase/migrations/006_api_usage_tracking.sql` — `api_usage` table (RLS enabled, no policies) + `reserve_api_usage` RPC (see Quota handling section). Applied manually via Supabase SQL Editor, same convention as migrations 004/005.
@@ -119,6 +123,7 @@ Add to the Environment Variables table in `CLAUDE.md`:
 | `JOOBLE_API_KEY_ES` | jooble.ts |
 | `JOOBLE_API_KEY_BE` | jooble.ts |
 | `REED_API_KEY` | reed.ts |
+| `SUPABASE_SERVICE_ROLE_KEY` | lib/supabase/admin.ts (server-only, calls `reserve_api_usage` — never expose to the browser) |
 
 ## Testing
 

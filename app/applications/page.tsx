@@ -67,8 +67,8 @@ export default function ApplicationsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 bg-card rounded animate-pulse" />
-        <div className="h-64 bg-card rounded-xl animate-pulse" />
+        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--card)' }} />
+        <div className="h-64 rounded-[var(--r-xl)] animate-pulse" style={{ background: 'var(--card)' }} />
       </div>
     )
   }
@@ -77,19 +77,25 @@ export default function ApplicationsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Candidatures</h1>
-          <p className="text-muted text-sm mt-1">{applications.length} candidature{applications.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Candidatures</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{applications.length} candidature{applications.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-1 flex-shrink-0">
+        <div className="flex items-center gap-2 rounded-[var(--r-lg)] p-1 flex-shrink-0" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
           <button
             onClick={() => setView('table')}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors min-h-[34px] ${view === 'table' ? 'bg-accent text-white' : 'text-muted hover:text-foreground'}`}
+            className="px-3 py-1.5 rounded-md text-sm transition-colors min-h-[34px]"
+            style={view === 'table' ? { background: 'var(--accent)', color: 'white' } : { color: 'var(--muted)' }}
+            onMouseEnter={view !== 'table' ? e => { e.currentTarget.style.color = 'var(--foreground)' } : undefined}
+            onMouseLeave={view !== 'table' ? e => { e.currentTarget.style.color = 'var(--muted)' } : undefined}
           >
             Tableau
           </button>
           <button
             onClick={() => setView('kanban')}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors min-h-[34px] ${view === 'kanban' ? 'bg-accent text-white' : 'text-muted hover:text-foreground'}`}
+            className="px-3 py-1.5 rounded-md text-sm transition-colors min-h-[34px]"
+            style={view === 'kanban' ? { background: 'var(--accent)', color: 'white' } : { color: 'var(--muted)' }}
+            onMouseEnter={view !== 'kanban' ? e => { e.currentTarget.style.color = 'var(--foreground)' } : undefined}
+            onMouseLeave={view !== 'kanban' ? e => { e.currentTarget.style.color = 'var(--muted)' } : undefined}
           >
             Kanban
           </button>
@@ -97,7 +103,7 @@ export default function ApplicationsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">{error}</div>
+        <div className="rounded-[var(--r-lg)] px-4 py-3 text-sm" style={{ background: 'var(--danger-surface)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)' }}>{error}</div>
       )}
 
       {view === 'table' ? (

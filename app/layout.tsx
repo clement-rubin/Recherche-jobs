@@ -31,7 +31,7 @@ export default async function RootLayout({
 
   return (
     <html lang="fr">
-      <body className={`${outfit.variable} ${jetbrainsMono.variable} bg-background text-foreground min-h-screen`}>
+      <body className={`${outfit.variable} ${jetbrainsMono.variable} bg-[var(--background)] text-[color:var(--foreground)] min-h-screen`}>
         <AppShell isAuthenticated={!!session}>
           {children}
         </AppShell>

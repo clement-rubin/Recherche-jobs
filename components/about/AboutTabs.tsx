@@ -29,7 +29,7 @@ export function AboutTabs() {
   return (
     <div
       className="sticky top-0 z-20 flex justify-center gap-1 py-3 px-4"
-      style={{ background: 'rgba(8,9,14,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(124,58,237,0.1)' }}
+      style={{ background: 'var(--background)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)' }}
     >
       {TABS.map(({ id, label }) => (
         <a
@@ -38,9 +38,9 @@ export function AboutTabs() {
           onClick={() => setActive(id)}
           className="px-4 py-1.5 rounded-full text-xs font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
           style={{
-            background: active === id ? 'rgba(124,58,237,0.2)' : 'transparent',
-            color: active === id ? '#a78bfa' : '#4b5175',
-            border: `1px solid ${active === id ? 'rgba(124,58,237,0.4)' : 'transparent'}`,
+            background: active === id ? 'var(--accent-surface)' : 'transparent',
+            color: active === id ? 'var(--accent-text)' : 'var(--muted)',
+            border: `1px solid ${active === id ? 'var(--accent-border)' : 'transparent'}`,
           }}
         >
           {label}

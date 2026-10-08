@@ -37,8 +37,8 @@ export function FaqAccordion() {
       {FAQS.map((faq, i) => (
         <div
           key={faq.q}
-          className="rounded-xl overflow-hidden"
-          style={{ border: '1px solid rgba(124,58,237,0.2)', background: 'rgba(16,18,32,0.6)' }}
+          className="rounded-[var(--r-xl)] overflow-hidden"
+          style={{ border: '1px solid var(--border)', background: 'var(--card-gradient)', boxShadow: 'var(--shadow-sm)' }}
         >
           <button
             className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
@@ -46,11 +46,11 @@ export function FaqAccordion() {
             aria-expanded={open === i}
             aria-controls={`faq-answer-${i}`}
           >
-            <span className="text-sm font-medium" style={{ color: '#e8eaf5' }}>{faq.q}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{faq.q}</span>
             <span
               className="flex-shrink-0 transition-transform duration-200"
               style={{
-                color: '#7c3aed',
+                color: 'var(--accent-text)',
                 transform: open === i ? 'rotate(45deg)' : 'rotate(0deg)',
               }}
             >
@@ -61,7 +61,7 @@ export function FaqAccordion() {
           </button>
           {open === i && (
             <div id={`faq-answer-${i}`} className="px-5 pb-4">
-              <p className="text-sm leading-relaxed" style={{ color: '#8b92b8' }}>{faq.a}</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{faq.a}</p>
             </div>
           )}
         </div>

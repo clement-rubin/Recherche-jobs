@@ -4,6 +4,7 @@ export type ContractType = 'interim' | 'stage' | 'cdi' | 'cdd' | 'alternance'
 export type OfferStatus = 'non_traite' | 'ignore' | 'postule' | 'sauvegarde'
 export type EmailType = 'offre' | 'reponse' | 'relance' | 'autre'
 export type OAuthProvider = 'gmail'
+export type ContactStatus = 'a_contacter' | 'contacte' | 'repondu'
 
 export interface Application {
   id: string
@@ -94,6 +95,20 @@ export interface AssistantLog {
   created_at: string
 }
 
+export interface LinkedInContact {
+  id: string
+  user_id: string
+  nom: string
+  poste: string | null
+  entreprise: string | null
+  linkedin_url: string
+  statut: ContactStatus
+  date_contact: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -102,6 +117,7 @@ export type Database = {
       email_imports: { Row: EmailImport; Insert: Omit<EmailImport, 'id'>; Update: Partial<Omit<EmailImport, 'id' | 'user_id'>>; Relationships: [] }
       search_profiles: { Row: SearchProfile; Insert: Omit<SearchProfile, 'id' | 'created_at'>; Update: Partial<Omit<SearchProfile, 'id' | 'user_id'>>; Relationships: [] }
       oauth_tokens: { Row: OAuthToken; Insert: Omit<OAuthToken, 'id'>; Update: Partial<Omit<OAuthToken, 'id' | 'user_id'>>; Relationships: [] }
+      linkedin_contacts: { Row: LinkedInContact; Insert: Omit<LinkedInContact, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<LinkedInContact, 'id' | 'user_id'>>; Relationships: [] }
       assistant_logs: { Row: AssistantLog; Insert: Omit<AssistantLog, 'id' | 'created_at'>; Update: Partial<Omit<AssistantLog, 'id' | 'user_id'>>; Relationships: [] }
     }
     Views: Record<never, never>

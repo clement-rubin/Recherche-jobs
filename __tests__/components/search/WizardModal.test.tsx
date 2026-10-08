@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WizardModal } from '@/components/search/WizardModal'
 import type { SearchProfile } from '@/lib/supabase/types'
+import { searchCity } from '@/lib/geo/nominatim'
 
 // The Villes step renders a Leaflet map (not runnable in jsdom) and geocodes legacy rows.
 jest.mock('next/dynamic', () => () => function MockLocationMap() { return null })
@@ -23,6 +24,15 @@ describe('WizardModal', () => {
     await userEvent.type(screen.getByPlaceholderText(/Data\/IA Lille/i), 'Mon profil')
     await userEvent.click(screen.getByText('Suivant'))
     expect(screen.getByText('Villes recherchées')).toBeInTheDocument()
+  })
+
+  it('gives the default city coordinates so a new profile triggers no geocoding', async () => {
+    jest.mocked(searchCity).mockClear()
+    render(<WizardModal onSave={jest.fn()} onClose={jest.fn()} />)
+    await userEvent.type(screen.getByPlaceholderText(/Data\/IA Lille/i), 'Mon profil')
+    await userEvent.click(screen.getByText('Suivant'))
+    expect(screen.getByText('Lille')).toBeInTheDocument()
+    expect(searchCity).not.toHaveBeenCalled()
   })
 
   it('does not allow jumping to an unvisited step via the progress bar', async () => {

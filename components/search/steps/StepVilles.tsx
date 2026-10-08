@@ -15,12 +15,19 @@ const LocationMap = dynamic(() => import('../map/LocationMap').then(m => m.Locat
 
 const COUNTRY_CODES = EUROPE_COUNTRIES.map(c => c.code)
 const DEFAULT_RAYON_KM = 30
+const MIN_RAYON_KM = 0
+const MAX_RAYON_KM = 100
+// Nominatim usage policy: max 1 request/second.
+const NOMINATIM_SPACING_MS = 1100
 const MSG_UNSUPPORTED = 'Pays non couvert par la recherche'
 
 type Place = Pick<SearchLocation, 'ville' | 'pays'>
 const countryOf = (l: Place) => (l.pays ?? 'FR').toUpperCase()
 const keyOf = (l: Place) => `${l.ville.toLowerCase()}|${countryOf(l)}`
 const countryLabel = (code: string) => EUROPE_COUNTRIES.find(c => c.code === code)?.label ?? code
+// Legacy rows may hold a radius outside the slider range: clamp for display only.
+const clampRayon = (km: number) => Math.min(MAX_RAYON_KM, Math.max(MIN_RAYON_KM, km))
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
 interface StepVillesProps {
   value: SearchLocation[]
@@ -43,14 +50,17 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
   const cancelSearch = () => { searchSeq.current++ }
 
   // Legacy profiles saved before the map have no coords: geocode them once so
-  // their radius circle can be drawn. Silent on failure.
+  // their radius circle can be drawn. Throttled to Nominatim's 1 req/s; silent on failure.
   useEffect(() => {
     const missing = value.filter(l => l.ville.trim() && (l.lat === undefined || l.lng === undefined))
     if (missing.length === 0) return
     let cancelled = false
     ;(async () => {
       const coords = new Map<string, { lat: number; lng: number }>()
-      for (const l of missing) {
+      for (let i = 0; i < missing.length; i++) {
+        if (i > 0) await sleep(NOMINATIM_SPACING_MS)
+        if (cancelled) return
+        const l = missing[i]
         const [hit] = await searchCity(l.ville, [countryOf(l)])
         if (hit) coords.set(keyOf(l), { lat: hit.lat, lng: hit.lng })
       }
@@ -207,17 +217,17 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
               <div className="flex items-center gap-3 mt-1.5">
                 <input
                   type="range"
-                  min={0}
-                  max={100}
+                  min={MIN_RAYON_KM}
+                  max={MAX_RAYON_KM}
                   step={5}
-                  value={row.rayon_km}
+                  value={clampRayon(row.rayon_km)}
                   onChange={e => updateRow(index, { rayon_km: Number(e.target.value) })}
                   aria-label={`Rayon autour de ${row.ville}`}
                   className="flex-1"
                   style={{ accentColor: 'var(--accent)' }}
                 />
                 <span className="text-xs w-14 text-right" style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-                  {row.rayon_km} km
+                  {clampRayon(row.rayon_km)} km
                 </span>
               </div>
             </li>

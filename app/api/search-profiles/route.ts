@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     mots_cles_exclus: body.mots_cles_exclus ?? [],
     qualifications:   body.qualifications ?? [],
     duree_contrat:    body.duree_contrat ?? 'peu_importe',
-    localisations:    body.localisations ?? [{ ville: 'Lille', rayon_km: 30 }],
+    localisations:    body.localisations ?? [{ ville: 'Lille', rayon_km: 30, pays: 'FR', lat: 50.629, lng: 3.057 }],
     salaire_min:      body.salaire_min ?? null,
   }
   const { data, error } = await supabase

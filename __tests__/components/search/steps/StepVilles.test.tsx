@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StepVilles } from '@/components/search/steps/StepVilles'
 import { reverseGeocode, searchCity } from '@/lib/geo/nominatim'
@@ -164,5 +164,56 @@ describe('StepVilles', () => {
       expect(onChange).toHaveBeenCalledWith([{ ville: 'Lille', rayon_km: 30, lat: 50.63, lng: 3.06 }])
     )
     expect(mockSearch).toHaveBeenCalledWith('Lille', ['FR'])
+  })
+
+  describe('legacy backfill throttling', () => {
+    const legacy = [{ ville: 'Lille', rayon_km: 30 }, { ville: 'Lyon', rayon_km: 20 }]
+
+    beforeEach(() => jest.useFakeTimers())
+    afterEach(() => jest.useRealTimers())
+
+    it('spaces geocoding requests at least 1100 ms apart', async () => {
+      mockSearch
+        .mockResolvedValueOnce([{ ville: 'Lille', pays: 'FR', lat: 50.63, lng: 3.06 }])
+        .mockResolvedValueOnce([{ ville: 'Lyon', pays: 'FR', lat: 45.76, lng: 4.83 }])
+      const onChange = jest.fn()
+      render(<StepVilles value={legacy} onChange={onChange} />)
+      await act(async () => {})
+      expect(mockSearch).toHaveBeenCalledTimes(1)
+      expect(mockSearch).toHaveBeenLastCalledWith('Lille', ['FR'])
+
+      await act(async () => { await jest.advanceTimersByTimeAsync(1099) })
+      expect(mockSearch).toHaveBeenCalledTimes(1)
+
+      await act(async () => { await jest.advanceTimersByTimeAsync(1) })
+      expect(mockSearch).toHaveBeenCalledTimes(2)
+      expect(mockSearch).toHaveBeenLastCalledWith('Lyon', ['FR'])
+      expect(onChange).toHaveBeenCalledWith([
+        { ville: 'Lille', rayon_km: 30, lat: 50.63, lng: 3.06 },
+        { ville: 'Lyon', rayon_km: 20, lat: 45.76, lng: 4.83 },
+      ])
+    })
+
+    it('stops issuing requests once unmounted', async () => {
+      mockSearch.mockResolvedValue([{ ville: 'Lille', pays: 'FR', lat: 50.63, lng: 3.06 }])
+      const onChange = jest.fn()
+      const { unmount } = render(<StepVilles value={legacy} onChange={onChange} />)
+      await act(async () => {})
+      expect(mockSearch).toHaveBeenCalledTimes(1)
+      unmount()
+      await act(async () => { await jest.advanceTimersByTimeAsync(5000) })
+      expect(mockSearch).toHaveBeenCalledTimes(1)
+      expect(onChange).not.toHaveBeenCalled()
+    })
+  })
+
+  it('clamps an out-of-range legacy radius for display without rewriting it', () => {
+    const onChange = jest.fn()
+    render(<StepVilles value={[{ ...lille, rayon_km: 150 }, { ...berlin, rayon_km: -10 }]} onChange={onChange} />)
+    expect(screen.getByLabelText('Rayon autour de Lille')).toHaveValue('100')
+    expect(screen.getByText('100 km')).toBeInTheDocument()
+    expect(screen.getByLabelText('Rayon autour de Berlin')).toHaveValue('0')
+    expect(screen.getByText('0 km')).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
   })
 })

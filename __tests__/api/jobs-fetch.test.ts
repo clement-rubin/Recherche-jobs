@@ -54,6 +54,7 @@ jest.mock('@/lib/scrapers/eures', () => ({ fetchEures: jest.fn().mockResolvedVal
 jest.mock('@/lib/scrapers/apec', () => ({ fetchAPEC: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/lib/scrapers/hellowork', () => ({ fetchHelloWork: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/lib/scrapers/france-travail', () => ({ fetchFranceTravail: jest.fn().mockResolvedValue([]) }))
+jest.mock('@/lib/geo/communes', () => ({ resolveCommuneCode: jest.fn().mockResolvedValue(null) }))
 
 import { POST } from '@/app/api/jobs/fetch/route'
 import { fetchJSearch } from '@/lib/scrapers/jsearch'
@@ -61,6 +62,7 @@ import { fetchEures } from '@/lib/scrapers/eures'
 import { fetchAPEC } from '@/lib/scrapers/apec'
 import { fetchHelloWork } from '@/lib/scrapers/hellowork'
 import { fetchFranceTravail } from '@/lib/scrapers/france-travail'
+import { resolveCommuneCode } from '@/lib/geo/communes'
 
 describe('POST /api/jobs/fetch — multi-city loop', () => {
   beforeEach(() => {
@@ -149,5 +151,42 @@ describe('POST /api/jobs/fetch — multi-city loop', () => {
     expect(fetchJSearch).toHaveBeenNthCalledWith(2, 'data scientist', 'Berlin', [], 'de')
     expect(fetchEures).toHaveBeenNthCalledWith(1, 'data scientist', 'fr')
     expect(fetchEures).toHaveBeenNthCalledWith(2, 'data scientist', 'de')
+  })
+
+  it('resolves the commune once per French location and passes it with the radius to France Travail', async () => {
+    const geoProfile = {
+      ...mockProfile,
+      localisations: [
+        { ville: 'Lille', rayon_km: 25, pays: 'fr', lat: 50.629, lng: 3.057 },
+        { ville: 'Berlin', rayon_km: 30, pays: 'de', lat: 52.52, lng: 13.405 },
+      ],
+    }
+    ;(resolveCommuneCode as jest.Mock).mockResolvedValueOnce('59350')
+    mockSupabase.from
+      .mockReset()
+      .mockReturnValueOnce(rateLimitChainOnce)
+      .mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        then: (resolve: (v: { data: typeof geoProfile[]; error: null }) => void) =>
+          resolve({ data: [geoProfile], error: null }),
+      })
+
+    const req = new NextRequest('http://localhost/api/jobs/fetch', { method: 'POST' })
+    await POST(req)
+
+    expect(resolveCommuneCode).toHaveBeenCalledTimes(1) // Lille only, not per keyword, not Berlin
+    expect(resolveCommuneCode).toHaveBeenCalledWith(geoProfile.localisations[0])
+    expect(fetchFranceTravail).toHaveBeenCalledTimes(2)
+    expect(fetchFranceTravail).toHaveBeenNthCalledWith(1, 'data scientist', 'Lille', [], undefined, { commune: '59350', distanceKm: 25 })
+    expect(fetchFranceTravail).toHaveBeenNthCalledWith(2, 'data engineer', 'Lille', [], undefined, { commune: '59350', distanceKm: 25 })
+  })
+
+  it('passes no area to France Travail when the commune cannot be resolved', async () => {
+    const req = new NextRequest('http://localhost/api/jobs/fetch', { method: 'POST' })
+    await POST(req)
+
+    expect(resolveCommuneCode).toHaveBeenCalledTimes(2) // Lille + Paris
+    expect(fetchFranceTravail).toHaveBeenNthCalledWith(1, 'data scientist', 'Lille', [], undefined, undefined)
   })
 })

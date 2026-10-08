@@ -7,6 +7,7 @@ import { fetchEures } from '@/lib/scrapers/eures'
 import { fetchAPEC } from '@/lib/scrapers/apec'
 import { fetchHelloWork } from '@/lib/scrapers/hellowork'
 import { fetchFranceTravail } from '@/lib/scrapers/france-travail'
+import { resolveCommuneCode } from '@/lib/geo/communes'
 import { filterMatchingProfile } from '@/lib/scrapers/filters'
 import type { ScrapedJob } from '@/lib/scrapers/jsearch'
 import type { SearchProfile } from '@/lib/supabase/types'
@@ -89,12 +90,22 @@ export async function POST(req: NextRequest) {
     const withTimeout = <T>(p: Promise<T>, ms = 7000): Promise<T> =>
       Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))])
 
+    const isFrench = (loc: { pays?: string }) => (loc.pays ?? 'fr').toLowerCase() === 'fr'
+
+    // INSEE commune per French location (once, not per keyword) so France Travail
+    // can apply the radius; null → FT falls back to a departement-wide search
+    const communeCodes = await Promise.all(
+      locations.map(loc => (isFrench(loc) ? resolveCommuneCode(loc) : Promise.resolve(null)))
+    )
+
     // JSearch + EURES fire for every location (multi-country); APEC/HelloWork/France Travail
     // are French-market-only APIs and only fire when the location's country is France.
     // Qualifications are profile metadata only — not appended to queries
-    const taggedPromises = locations.flatMap(loc => {
+    const taggedPromises = locations.flatMap((loc, locIndex) => {
       const country = (loc.pays ?? 'fr').toLowerCase()
-      const isFrance = country === 'fr'
+      const isFrance = isFrench(loc)
+      const commune = communeCodes[locIndex]
+      const ftArea = commune ? { commune, distanceKm: loc.rayon_km } : undefined
       return keywordsList.flatMap(kw => {
         const entries: [string, Promise<ScrapedJob[]>][] = [
           ['jsearch', withTimeout(fetchJSearch(kw, loc.ville, [], country), 15000)],
@@ -104,7 +115,7 @@ export async function POST(req: NextRequest) {
           entries.push(
             ['apec', withTimeout(fetchAPEC(kw, loc.ville), 7000)],
             ['hellowork', withTimeout(fetchHelloWork(kw, loc.ville, typeContrats), 7000)],
-            ['france_travail', withTimeout(fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter), 7000)],
+            ['france_travail', withTimeout(fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter, ftArea), 7000)],
           )
         }
         return entries

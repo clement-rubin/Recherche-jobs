@@ -19,6 +19,7 @@ const ACTION_LABELS = {
 
 export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
   const [copied, setCopied] = useState(false)
+  const [copyFailed, setCopyFailed] = useState(false)
   const present = analysis.exigences.filter(e => e.present)
   const missing = analysis.exigences.filter(e => !e.present)
   const { entreprise_recherche: research, accroche, priorite } = analysis
@@ -26,9 +27,14 @@ export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(accroche.texte)
+      setCopyFailed(false)
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
-    } catch { /* clipboard unavailable */ }
+    } catch {
+      setCopied(false)
+      setCopyFailed(true)
+      setTimeout(() => setCopyFailed(false), 2500)
+    }
   }
 
   return (
@@ -43,7 +49,7 @@ export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
 
       {analysis.avertissements.length > 0 && (
         <ul className="rounded-lg px-3 py-2 text-xs space-y-1" style={{ background: 'rgba(217,119,6,0.08)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.2)' }}>
-          {analysis.avertissements.map(w => <li key={w}>{w}</li>)}
+          {analysis.avertissements.map((w, i) => <li key={`${i}-${w}`}>{w}</li>)}
         </ul>
       )}
 
@@ -58,7 +64,7 @@ export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
             className="mt-2 text-xs px-3 py-1 rounded-lg border"
             style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
           >
-            {copied ? 'Copié' : 'Copier'}
+            {copied ? 'Copié' : copyFailed ? 'Échec de la copie' : 'Copier'}
           </button>
         </Section>
       )}
@@ -66,8 +72,8 @@ export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
       {present.length > 0 && (
         <Section title="Compétences présentes">
           <ul className="space-y-1">
-            {present.map(e => (
-              <li key={e.competence} className="text-sm" style={{ color: 'var(--foreground-dim)' }}>
+            {present.map((e, i) => (
+              <li key={`${i}-${e.competence}`} className="text-sm" style={{ color: 'var(--foreground-dim)' }}>
                 <span className="font-medium" style={{ color: 'var(--success)' }}>{e.competence}</span>
                 {e.preuve_cv && <span style={{ color: 'var(--muted)' }}> — {e.preuve_cv}</span>}
               </li>
@@ -79,8 +85,8 @@ export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
       {missing.length > 0 && (
         <Section title="Compétences manquantes">
           <ul className="space-y-1">
-            {missing.map(e => (
-              <li key={e.competence} className="text-sm" style={{ color: 'var(--foreground-dim)' }}>
+            {missing.map((e, i) => (
+              <li key={`${i}-${e.competence}`} className="text-sm" style={{ color: 'var(--foreground-dim)' }}>
                 <span className="font-medium">{e.competence}</span>
                 <span className="text-xs" style={{ color: e.bloquante ? 'var(--danger)' : 'var(--muted)' }}>
                   {' '}({e.bloquante ? 'bloquante' : e.obligatoire ? 'obligatoire' : 'souhaitée'})
@@ -95,7 +101,7 @@ export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
         <Section title={`Recommandations CV (${analysis.cv_utilise.toUpperCase()})`}>
           <ul className="space-y-2">
             {analysis.recommandations_cv.map((r, i) => (
-              <li key={i} className="text-sm" style={{ color: 'var(--foreground-dim)' }}>
+              <li key={`${i}-${r.section}-${r.action}`} className="text-sm" style={{ color: 'var(--foreground-dim)' }}>
                 <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{ACTION_LABELS[r.action]} · {r.section}</span>
                 {r.texte_actuel && <p className="text-xs italic" style={{ color: 'var(--muted)' }}>« {r.texte_actuel} »</p>}
                 {r.texte_suggere && <p>{r.texte_suggere}</p>}

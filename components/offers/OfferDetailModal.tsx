@@ -52,15 +52,20 @@ export function OfferDetailModal({ offer, onAction, onClose, onAnalyzed }: Props
   const runAnalysis = async (text?: string) => {
     setAnalyzing(true)
     setAnalysisError(null)
+    setNotPersisted(false)
     try {
       const res = await fetch(`/api/offers/${offer.id}/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(text ? { text } : {}),
       })
-      const data = await res.json()
-      if (!res.ok) { setAnalysisError(data.error ?? "Erreur pendant l'analyse"); return }
-      if (data.needsText) { setNeedsText(true); return }
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setAnalysisError(data.error ?? "L'analyse a échoué (délai dépassé ?)"); return }
+      if (data.needsText) {
+        setNeedsText(true)
+        if (text) setAnalysisError("Texte trop court : colle l'offre complète.")
+        return
+      }
       setNeedsText(false)
       setNotPersisted(data.persisted === false)
       setAnalysis(data.analysis)
@@ -184,13 +189,14 @@ export function OfferDetailModal({ offer, onAction, onClose, onAnalyzed }: Props
                 Analyse affichée mais non enregistrée (vérifie que la migration 006 est appliquée).
               </p>
             )}
-            {analysisError && <p className="text-sm" style={{ color: 'var(--danger)' }}>{analysisError}</p>}
+            {analysisError && <p role="alert" className="text-sm" style={{ color: 'var(--danger)' }}>{analysisError}</p>}
             {needsText && (
               <div className="space-y-2">
                 <p className="text-xs" style={{ color: 'var(--muted)' }}>
                   Cette source ne fournit pas la description. Ouvre l&apos;offre, copie son texte et colle-le ici.
                 </p>
                 <textarea
+                  aria-label="Texte de l'offre"
                   value={pastedText}
                   onChange={e => setPastedText(e.target.value)}
                   placeholder="Colle ici le texte complet de l'offre…"

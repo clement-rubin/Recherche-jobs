@@ -23,7 +23,7 @@ describe('OfferDetailModal analysis', () => {
     mockFetch({ analysis: makeAnalysis(), persisted: true })
     const { user, onAnalyzed } = setup()
     await user.click(screen.getByRole('button', { name: 'Analyser' }))
-    expect(await screen.findByLabelText('Priorité Haute')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Priorité Haute, 93')).toBeInTheDocument()
     expect(global.fetch).toHaveBeenCalledWith('/api/offers/o1/analyze', expect.objectContaining({ method: 'POST' }))
     expect(onAnalyzed).toHaveBeenCalledWith('o1', expect.objectContaining({ cv_utilise: 'fr' }))
     expect(screen.getByRole('button', { name: 'Réanalyser' })).toBeInTheDocument()
@@ -32,7 +32,7 @@ describe('OfferDetailModal analysis', () => {
 
   it('shows a stored analysis immediately', () => {
     setup({ ...offer, analysis: makeAnalysis() })
-    expect(screen.getByLabelText('Priorité Haute')).toBeInTheDocument()
+    expect(screen.getByLabelText('Priorité Haute, 93')).toBeInTheDocument()
   })
 
   it('asks for the text when the description is missing, then re-sends it', async () => {
@@ -43,7 +43,7 @@ describe('OfferDetailModal analysis', () => {
     mockFetch({ analysis: makeAnalysis(), persisted: true })
     await user.type(box, 'Texte complet de l offre')
     await user.click(screen.getByRole('button', { name: /analyser ce texte/i }))
-    await waitFor(() => expect(screen.getByLabelText('Priorité Haute')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByLabelText('Priorité Haute, 93')).toBeInTheDocument())
     expect(JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body)).toEqual({ text: 'Texte complet de l offre' })
   })
 
@@ -54,11 +54,41 @@ describe('OfferDetailModal analysis', () => {
     expect(await screen.findByText('Profil candidat non configuré')).toBeInTheDocument()
   })
 
+  it('shows a fallback message when the response is not JSON (e.g. gateway timeout)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      json: async () => { throw new SyntaxError('x') },
+    }) as unknown as typeof fetch
+    const { user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Analyser' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent("L'analyse a échoué (délai dépassé ?)")
+  })
+
+  it('tells the user when the pasted text is still too short', async () => {
+    mockFetch({ needsText: true })
+    const { user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Analyser' }))
+    await user.type(await screen.findByLabelText("Texte de l'offre"), 'court')
+    await user.click(screen.getByRole('button', { name: /analyser ce texte/i }))
+    expect(await screen.findByText("Texte trop court : colle l'offre complète.")).toBeInTheDocument()
+  })
+
+  it('clears the not-persisted warning on the next run', async () => {
+    mockFetch({ analysis: makeAnalysis(), persisted: false })
+    const { user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Analyser' }))
+    expect(await screen.findByText(/non enregistrée/i)).toBeInTheDocument()
+    mockFetch({ error: 'boom' }, false)
+    await user.click(screen.getByRole('button', { name: 'Réanalyser' }))
+    expect(await screen.findByText('boom')).toBeInTheDocument()
+    expect(screen.queryByText(/non enregistrée/i)).not.toBeInTheDocument()
+  })
+
   it('still shows the analysis but warns when it was not persisted', async () => {
     mockFetch({ analysis: makeAnalysis(), persisted: false })
     const { user, onAnalyzed } = setup()
     await user.click(screen.getByRole('button', { name: 'Analyser' }))
-    expect(await screen.findByLabelText('Priorité Haute')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Priorité Haute, 93')).toBeInTheDocument()
     expect(onAnalyzed).toHaveBeenCalledWith('o1', expect.objectContaining({ cv_utilise: 'fr' }))
     expect(
       screen.getByText('Analyse affichée mais non enregistrée (vérifie que la migration 006 est appliquée).')

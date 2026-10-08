@@ -42,10 +42,10 @@ export default function AnalyzePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, ...opts }),
       })
-      const data: ApiResponse = await resp.json()
+      const data: ApiResponse = await resp.json().catch(() => ({ error: '' }))
 
-      if ('error' in data) {
-        setError(data.error)
+      if (!resp.ok || 'error' in data) {
+        setError(('error' in data && data.error) || "L'analyse a échoué (délai dépassé ?)")
       } else if ('blocked' in data) {
         setBlocked({ domain: data.domain, reason: data.reason })
         setStep('manual')
@@ -56,8 +56,8 @@ export default function AnalyzePage() {
         setResult(data)
         setStep('result')
       }
-    } catch (e) {
-      setError(`Erreur réseau : ${e}`)
+    } catch {
+      setError('Erreur réseau')
     } finally {
       setLoading(false)
     }
@@ -111,6 +111,7 @@ export default function AnalyzePage() {
           <button
             type="button"
             onClick={reset}
+            aria-label="Réinitialiser"
             className="px-3 py-2.5 rounded-lg text-sm"
             style={{ border: '1px solid var(--border)', color: 'var(--muted)' }}
           >

@@ -11,7 +11,8 @@ export function PriorityBadge({ niveau, score }: { niveau: Niveau; score: number
   const s = STYLES[niveau]
   return (
     <span
-      aria-label={`Priorité ${s.label}`}
+      role="img"
+      aria-label={niveau === 'expiree' ? `Priorité ${s.label}` : `Priorité ${s.label}, ${score}`}
       className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border"
       style={{ color: s.color, background: s.bg, borderColor: s.color }}
     >

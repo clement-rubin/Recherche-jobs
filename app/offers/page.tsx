@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import type { Offer, OfferStatus } from '@/lib/supabase/types'
 import { OfferCard } from '@/components/offers/OfferCard'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
@@ -123,9 +123,12 @@ export default function OffersPage() {
     ))
   }
 
-  const displayedOffers = sortBy === 'priorite'
-    ? [...offers].sort((a, b) => (b.priority_score ?? -1) - (a.priority_score ?? -1))
-    : offers
+  const displayedOffers = useMemo(
+    () => sortBy === 'priorite'
+      ? [...offers].sort((a, b) => (b.priority_score ?? -1) - (a.priority_score ?? -1))
+      : offers,
+    [offers, sortBy],
+  )
 
   if (loading) {
     return (
@@ -229,6 +232,7 @@ export default function OffersPage() {
         </div>
       ) : viewMode === 'swipe' ? (
         <SwipeDeck
+          key={sortBy}
           offers={displayedOffers}
           onAction={handleAction}
           onNeedMore={fetchOffers}

@@ -4,9 +4,15 @@ import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { makeAnalysis, makeResearch } from '@/test-utils/analysis-fixture'
 
 describe('AnalysisPanel', () => {
+  const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+  afterEach(() => {
+    if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard)
+    else delete (navigator as unknown as Record<string, unknown>).clipboard
+  })
+
   it('shows the priority badge, reason and accroche', () => {
     render(<AnalysisPanel analysis={makeAnalysis()} />)
-    expect(screen.getByLabelText('Priorité Haute')).toHaveTextContent('Haute · 93')
+    expect(screen.getByLabelText('Priorité Haute, 93')).toHaveTextContent('Haute · 93')
     expect(screen.getByText('Python couvert, Spark manquant.')).toBeInTheDocument()
     expect(screen.getByText(/Thales mise sur la confiance/)).toBeInTheDocument()
   })
@@ -34,6 +40,15 @@ describe('AnalysisPanel', () => {
     await user.click(screen.getByRole('button', { name: /copier/i }))
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Thales mise sur'))
     expect(await screen.findByText('Copié')).toBeInTheDocument()
+  })
+
+  it('shows a failure message when the clipboard is unavailable', async () => {
+    const user = userEvent.setup()
+    const writeText = jest.fn().mockRejectedValue(new Error('denied'))
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    render(<AnalysisPanel analysis={makeAnalysis()} />)
+    await user.click(screen.getByRole('button', { name: /copier/i }))
+    expect(await screen.findByText('Échec de la copie')).toBeInTheDocument()
   })
 
   it('renders company sources as links', () => {

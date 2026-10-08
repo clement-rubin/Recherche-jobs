@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 import type { LinkedInContact } from '@/lib/supabase/types'
-import { generateOutreachMessage } from '@/lib/contacts-message'
+import { generateOutreachMessage, OutreachError } from '@/lib/contacts-message'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -32,6 +32,7 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
     })
     return NextResponse.json({ message })
   } catch (err) {
+    if (err instanceof OutreachError) return NextResponse.json({ error: err.message }, { status: err.status })
     console.error('[contacts] message generation failed', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Génération du message impossible' }, { status: 502 })
   }

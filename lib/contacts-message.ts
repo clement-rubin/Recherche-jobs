@@ -1,7 +1,21 @@
 import Groq from 'groq-sdk'
 import { PROFILE } from '@/lib/analyzer/profile'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+/** Error whose message is safe to show to the user. */
+export class OutreachError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
+  }
+}
+
+function toOutreachError(err: unknown): OutreachError {
+  const status = (err as { status?: number })?.status
+  if (status === 401 || status === 403) return new OutreachError('Clé GROQ_API_KEY invalide ou refusée', 502)
+  if (status === 429) return new OutreachError('Limite Groq atteinte, réessaie dans une minute', 429)
+  if (status === 413) return new OutreachError('Profil collé trop long, raccourcis-le', 413)
+  if (err instanceof OutreachError) return err
+  return new OutreachError('Génération du message impossible', 502)
+}
 
 import { MAX_MESSAGE_LENGTH } from '@/lib/contacts-limits'
 
@@ -13,6 +27,18 @@ export interface OutreachInput {
 }
 
 export async function generateOutreachMessage(contact: OutreachInput): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) throw new OutreachError('GROQ_API_KEY non configurée sur le serveur', 500)
+  const groq = new Groq({ apiKey })
+  try {
+    return await run(groq, contact)
+  } catch (err) {
+    console.error('[contacts] groq call failed', { status: (err as { status?: number })?.status, message: err instanceof Error ? err.message : String(err) })
+    throw toOutreachError(err)
+  }
+}
+
+async function run(groq: Groq, contact: OutreachInput): Promise<string> {
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [
@@ -44,13 +70,13 @@ ${contact.profil_texte.slice(0, 12000)}`,
   })
 
   const raw = completion.choices[0].message.content
-  if (!raw) throw new Error('Réponse vide du modèle')
+  if (!raw) throw new OutreachError('Réponse vide du modèle, réessaie', 502)
   let message: unknown
   try {
     message = JSON.parse(raw).message
   } catch {
-    throw new Error('Réponse invalide du modèle')
+    throw new OutreachError('Réponse invalide du modèle, réessaie', 502)
   }
-  if (typeof message !== 'string' || !message.trim()) throw new Error('Réponse invalide du modèle')
+  if (typeof message !== 'string' || !message.trim()) throw new OutreachError('Réponse invalide du modèle, réessaie', 502)
   return message.trim()
 }

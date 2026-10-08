@@ -38,9 +38,9 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
   const valueRef = useRef(value)
   useEffect(() => { valueRef.current = value })
 
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Bumped to invalidate any in-flight search (query edited, result picked).
   const searchSeq = useRef(0)
-  useEffect(() => () => { if (searchTimer.current) clearTimeout(searchTimer.current) }, [])
+  const cancelSearch = () => { searchSeq.current++ }
 
   // Legacy profiles saved before the map have no coords: geocode them once so
   // their radius circle can be drawn. Silent on failure.
@@ -89,22 +89,24 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
 
   const handleQuery = (q: string) => {
     setQuery(q)
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    const trimmed = q.trim()
-    if (trimmed.length < 2) {
-      setResults([])
-      return
-    }
-    searchTimer.current = setTimeout(async () => {
-      const seq = ++searchSeq.current
-      const found = await searchCity(trimmed, COUNTRY_CODES)
-      if (seq !== searchSeq.current) return // a newer search superseded this one
-      setResults(found)
-      setMessage(found.length === 0 ? 'Ville introuvable' : null)
-    }, 400)
+    cancelSearch()
+    setResults([])
+  }
+
+  // Explicit search only (Enter / button): Nominatim's usage policy forbids
+  // search-as-you-type, and it doesn't prefix-match anyway.
+  const runSearch = async () => {
+    const trimmed = query.trim()
+    if (trimmed.length < 2) return
+    const seq = ++searchSeq.current
+    const found = await searchCity(trimmed, COUNTRY_CODES)
+    if (seq !== searchSeq.current) return // query edited or a newer search started
+    setResults(found)
+    setMessage(found.length === 0 ? 'Ville introuvable' : null)
   }
 
   const pickResult = (place: GeoPlace) => {
+    cancelSearch()
     addPlace(place)
     setQuery('')
     setResults([])
@@ -123,12 +125,27 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
       <label className="block text-xs font-medium" style={{ color: 'var(--muted)' }}>Villes recherchées</label>
 
       <div className="relative">
-        <input
-          value={query}
-          onChange={e => handleQuery(e.target.value)}
-          placeholder="Rechercher une ville…"
-          className={inputClass}
-        />
+        <div className="flex gap-2">
+          <input
+            value={query}
+            onChange={e => handleQuery(e.target.value)}
+            onKeyDown={e => {
+              if (e.key !== 'Enter') return
+              e.preventDefault() // never submit a surrounding form
+              void runSearch()
+            }}
+            placeholder="Rechercher une ville…"
+            className={`${inputClass} flex-1 min-w-0`}
+          />
+          <button
+            type="button"
+            onClick={() => void runSearch()}
+            className="shrink-0 px-3 py-2 rounded-lg border text-sm font-medium transition-colors hover:bg-zinc-50"
+            style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+          >
+            Rechercher
+          </button>
+        </div>
         {results.length > 0 && (
           <ul
             className="absolute z-10 mt-1 w-full rounded-lg border shadow-md overflow-hidden"

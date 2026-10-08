@@ -100,14 +100,60 @@ describe('StepVilles', () => {
     expect(screen.getByText('Pays non couvert par la recherche')).toBeInTheDocument()
   })
 
-  it('adds a city from the text search results', async () => {
+  it('adds a city from the text search results (search on Enter)', async () => {
     mockSearch.mockResolvedValue([{ ville: 'Lyon', pays: 'FR', lat: 45.76, lng: 4.83 }])
     const onChange = jest.fn()
     render(<StepVilles value={[]} onChange={onChange} />)
-    await userEvent.type(screen.getByPlaceholderText('Rechercher une ville…'), 'Lyo')
+    await userEvent.type(screen.getByPlaceholderText('Rechercher une ville…'), 'Lyon{Enter}')
     await userEvent.click(await screen.findByRole('button', { name: /Lyon/ }))
-    expect(mockSearch).toHaveBeenCalledWith('Lyo', expect.arrayContaining(['FR', 'DE']))
+    expect(mockSearch).toHaveBeenCalledTimes(1)
+    expect(mockSearch).toHaveBeenCalledWith('Lyon', expect.arrayContaining(['FR', 'DE']))
     expect(onChange).toHaveBeenCalledWith([{ ville: 'Lyon', pays: 'FR', lat: 45.76, lng: 4.83, rayon_km: 30 }])
+  })
+
+  it('does not search while typing, only on explicit request', async () => {
+    render(<StepVilles value={[]} onChange={() => {}} />)
+    await userEvent.type(screen.getByPlaceholderText('Rechercher une ville…'), 'Lyon')
+    expect(mockSearch).not.toHaveBeenCalled()
+  })
+
+  it('does not search for a query shorter than 2 characters', async () => {
+    render(<StepVilles value={[]} onChange={() => {}} />)
+    await userEvent.type(screen.getByPlaceholderText('Rechercher une ville…'), 'L{Enter}')
+    await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+    expect(mockSearch).not.toHaveBeenCalled()
+  })
+
+  it('searches when the "Rechercher" button is clicked', async () => {
+    mockSearch.mockResolvedValue([{ ville: 'Lyon', pays: 'FR', lat: 45.76, lng: 4.83 }])
+    render(<StepVilles value={[]} onChange={() => {}} />)
+    await userEvent.type(screen.getByPlaceholderText('Rechercher une ville…'), 'Lyon')
+    await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+    expect(mockSearch).toHaveBeenCalledWith('Lyon', expect.arrayContaining(['FR', 'DE']))
+    expect(await screen.findByRole('button', { name: /Lyon/ })).toBeInTheDocument()
+  })
+
+  it('clears the results when the query changes after a search', async () => {
+    mockSearch.mockResolvedValue([{ ville: 'Lyon', pays: 'FR', lat: 45.76, lng: 4.83 }])
+    render(<StepVilles value={[]} onChange={() => {}} />)
+    const input = screen.getByPlaceholderText('Rechercher une ville…')
+    await userEvent.type(input, 'Lyon{Enter}')
+    expect(await screen.findByRole('button', { name: /Lyon/ })).toBeInTheDocument()
+    await userEvent.type(input, 's')
+    expect(screen.queryByRole('button', { name: /Lyon/ })).not.toBeInTheDocument()
+  })
+
+  it('drops results of a search that was in flight when the query changed', async () => {
+    let resolve!: (places: Awaited<ReturnType<typeof searchCity>>) => void
+    mockSearch.mockReturnValue(new Promise(r => { resolve = r }))
+    render(<StepVilles value={[]} onChange={() => {}} />)
+    const input = screen.getByPlaceholderText('Rechercher une ville…')
+    await userEvent.type(input, 'Lyon{Enter}')
+    await userEvent.type(input, 's')
+    resolve([{ ville: 'Lyon', pays: 'FR', lat: 45.76, lng: 4.83 }])
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1))
+    await new Promise(r => setTimeout(r, 0))
+    expect(screen.queryByRole('button', { name: /Lyon/ })).not.toBeInTheDocument()
   })
 
   it('backfills coordinates for legacy locations without lat/lng', async () => {

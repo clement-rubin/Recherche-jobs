@@ -22,6 +22,11 @@ describe('offerToText', () => {
     expect(r.description).toContain('Mission de stage data.')
   })
 
+  it('drops a malformed expiration date', () => {
+    const r = offerToText(makeOffer({ job_description: LONG, job_offer_expiration_datetime_utc: '2026-02-31T00:00:00Z' }))
+    expect(r.text).not.toContain('Date limite')
+  })
+
   it('reads France Travail description', () => {
     const r = offerToText(makeOffer({ description: LONG }, { source: 'france_travail' }))
     expect(r.sufficient).toBe(true)

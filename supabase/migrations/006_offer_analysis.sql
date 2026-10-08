@@ -7,7 +7,7 @@ create table candidate_profile (
   cv_fr text,
   cv_en text,
   projet_pro text,
-  updated_at timestamptz default now()
+  updated_at timestamptz not null default now()
 );
 
 create table company_research (

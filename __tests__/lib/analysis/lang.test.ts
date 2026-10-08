@@ -8,6 +8,10 @@ describe('detectLang', () => {
     expect(detectLang("Nous recherchons un stagiaire pour rejoindre notre équipe data. Vous travaillerez avec les équipes de la direction et vous participerez à des projets dans un environnement exigeant.")).toBe('fr')
   })
 
+  it('detects French written with curly apostrophes', () => {
+    expect(detectLang('Vous rejoindrez l’équipe d’analyse pour un stage de six mois dans notre direction et avec nos clients.')).toBe('fr')
+  })
+
   it('detects English', () => {
     expect(detectLang('We are looking for an intern to join our team. You will work with the data team and support the analysis of customer projects in a fast environment.')).toBe('en')
   })

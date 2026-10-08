@@ -1,6 +1,11 @@
 import Groq from 'groq-sdk'
 
-export const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+let _groq: Groq | null = null
+
+export function getGroq(): Groq {
+  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  return _groq
+}
 
 export async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -26,7 +31,7 @@ export async function groqJson(opts: {
   maxTokens: number
   temperature?: number
 }): Promise<string> {
-  const completion = await callWithRetry(() => groq.chat.completions.create({
+  const completion = await callWithRetry(() => getGroq().chat.completions.create({
     model: opts.model,
     messages: [
       { role: 'system', content: opts.system },

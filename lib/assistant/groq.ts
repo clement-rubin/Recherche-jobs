@@ -1,4 +1,4 @@
-import { groq, callWithRetry } from '@/lib/analysis/groq'
+import { getGroq, callWithRetry } from '@/lib/analysis/groq'
 
 export interface AssistantIntent {
   intent: 'update_application' | 'add_application' | 'add_note' | 'query' | 'unknown'
@@ -14,7 +14,7 @@ export async function processIntent(
 ): Promise<AssistantIntent> {
   console.log('[groq] processIntent start', { transcription: transcription.slice(0, 80), appsCount: recentApplications.length })
   const t0 = Date.now()
-  const completion = await callWithRetry(() => groq.chat.completions.create({
+  const completion = await callWithRetry(() => getGroq().chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [
       {

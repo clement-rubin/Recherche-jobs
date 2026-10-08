@@ -4,7 +4,7 @@ const FR = new Set(['le', 'la', 'les', 'des', 'du', 'de', 'et', 'un', 'une', 'po
 const EN = new Set(['the', 'and', 'for', 'you', 'with', 'are', 'our', 'your', 'will', 'to', 'of', 'in', 'is', 'we', 'as', 'an', 'team', 'role', 'experience'])
 
 export function detectLang(text: string): Lang {
-  const words = text.toLowerCase().match(/[a-zà-ÿ']+/g) ?? []
+  const words = text.toLowerCase().replace(/[’']/g, ' ').match(/[a-zà-ÿ]+/g) ?? []
   let fr = 0
   let en = 0
   for (const w of words) {

@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import {
-  computeMatchScore, computeUrgency, computePriority, daysBetween,
+  computeMatchScore, computeUrgency, computePriority, daysBetween, isValidIsoDate,
 } from '@/lib/analysis/priority'
 import type { Requirement } from '@/lib/analysis/types'
 
@@ -80,5 +80,31 @@ describe('computePriority', () => {
     [78, 70, 'haute'],
   ])('with no deadline, match %i -> score %i (%s)', (match, score, niveau) => {
     expect(computePriority(match, null, TODAY)).toEqual({ niveau, score, urgence: 50 })
+  })
+})
+
+describe('isValidIsoDate', () => {
+  it('accepts real calendar dates', () => {
+    expect(isValidIsoDate('2026-10-08')).toBe(true)
+    expect(isValidIsoDate('2028-02-29')).toBe(true)
+  })
+
+  it('rejects impossible or malformed dates', () => {
+    expect(isValidIsoDate('2026-02-31')).toBe(false)
+    expect(isValidIsoDate('2026-13-01')).toBe(false)
+    expect(isValidIsoDate('2027-02-29')).toBe(false)
+    expect(isValidIsoDate('2026-1-01')).toBe(false)
+    expect(isValidIsoDate('not a date')).toBe(false)
+  })
+})
+
+describe('impossible dates', () => {
+  it('computeUrgency treats impossible dates as unknown (neutral 50)', () => {
+    expect(computeUrgency('2026-02-31', TODAY)).toBe(50)
+    expect(computeUrgency('2026-13-01', TODAY)).toBe(50)
+  })
+
+  it('computePriority treats an impossible date as unknown', () => {
+    expect(computePriority(80, '2026-02-31', TODAY)).toEqual({ niveau: 'haute', score: 71, urgence: 50 })
   })
 })

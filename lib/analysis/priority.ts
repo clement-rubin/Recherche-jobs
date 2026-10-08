@@ -5,6 +5,13 @@ const DAY_MS = 86_400_000
 
 const toUtc = (d: string) => Date.parse(`${d}T00:00:00Z`)
 
+/** True for a real calendar date in YYYY-MM-DD form (rejects 2026-02-31, 2026-13-01). */
+export function isValidIsoDate(d: string): boolean {
+  if (!DATE_RE.test(d)) return false
+  const t = toUtc(d)
+  return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === d
+}
+
 /** Calendar days from `from` to `to` (both YYYY-MM-DD). Negative if `to` is earlier. */
 export function daysBetween(from: string, to: string): number {
   return Math.round((toUtc(to) - toUtc(from)) / DAY_MS)
@@ -22,7 +29,7 @@ export function computeMatchScore(exigences: Requirement[], domaineCoherent: boo
 }
 
 export function computeUrgency(dateLimite: string | null, today: string): number {
-  if (!dateLimite || !DATE_RE.test(dateLimite)) return 50
+  if (!dateLimite || !isValidIsoDate(dateLimite)) return 50
   const days = daysBetween(today, dateLimite)
   if (days <= 7) return 100
   if (days <= 14) return 85
@@ -35,7 +42,7 @@ export function computePriority(
   dateLimite: string | null,
   today: string,
 ): { niveau: Niveau; score: number; urgence: number } {
-  if (dateLimite && DATE_RE.test(dateLimite) && daysBetween(today, dateLimite) < 0) {
+  if (dateLimite && isValidIsoDate(dateLimite) && daysBetween(today, dateLimite) < 0) {
     return { niveau: 'expiree', score: 0, urgence: 0 }
   }
   const urgence = computeUrgency(dateLimite, today)

@@ -1,4 +1,5 @@
 import type { Offer } from '@/lib/supabase/types'
+import { isValidIsoDate } from './priority'
 
 const DESCRIPTION_KEYS = ['job_description', 'description', 'descriptif', 'summary'] as const
 const MIN_DESCRIPTION_CHARS = 300
@@ -45,7 +46,8 @@ export function offerToText(offer: Offer, manualText?: string): OfferText {
     }
   }
   const exp = raw.job_offer_expiration_datetime_utc
-  const dateLimite = typeof exp === 'string' && /^\d{4}-\d{2}-\d{2}/.test(exp) ? exp.slice(0, 10) : null
+  const expDay = typeof exp === 'string' ? exp.slice(0, 10) : null
+  const dateLimite = expDay && isValidIsoDate(expDay) ? expDay : null
   return buildOfferText({
     titre: offer.titre,
     entreprise: offer.entreprise,

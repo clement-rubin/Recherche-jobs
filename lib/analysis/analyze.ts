@@ -25,18 +25,32 @@ const defaultDeps: AnalyzeDeps = {
 }
 
 const BANNED = [
-  'passionné', 'passionnée', 'passionate', 'dynamique', 'dynamic', 'rigoureux', 'rigoureuse', 'rigorous',
-  'très motivé', 'highly motivated', 'leader du secteur', 'industry leader', 'votre entreprise',
+  'passionné', 'passionnée', 'passionnés', 'passionnées', 'passionate',
+  'dynamique', 'dynamiques', 'dynamic',
+  'rigoureux', 'rigoureuse', 'rigoureuses', 'rigorous',
+  'très motivé', 'très motivée', 'très motivés', 'highly motivated',
+  'leader du secteur', 'industry leader', 'votre entreprise',
   'your company', 'je me permets', 'opportunité', 'opportunités', 'opportunity', 'opportunities',
 ]
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+// Multi-word terms match any run of whitespace (including NBSP) between their words.
+const BANNED_RES = BANNED.map(term => ({
+  term,
+  re: new RegExp(`(?<![\\p{L}])${term.split(' ').map(escapeRe).join('\\s+')}(?![\\p{L}])`, 'iu'),
+}))
+
 export function findBannedTerms(text: string): string[] {
-  return BANNED.filter(term => new RegExp(`(?<![\\p{L}])${escapeRe(term)}(?![\\p{L}])`, 'iu').test(text))
+  return BANNED_RES.filter(({ re }) => re.test(text)).map(({ term }) => term)
 }
 
-const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+const fold = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+/** Folds accents and case, collapses whitespace and normalises typographic apostrophes. */
+const foldQuote = (s: string) => fold(s).replace(/[‘’]/g, "'").replace(/\s+/g, ' ')
+
+const MIN_CITED_LENGTH = 8
 
 const asString = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null)
 const asStringArray = (v: unknown): string[] =>
@@ -78,13 +92,19 @@ function parseModelOutput(raw: string): ModelOutput {
 
   const exigences: Requirement[] = o.exigences
     .filter((e: any) => asString(e?.competence))
-    .map((e: any) => ({
-      competence: e.competence.trim(),
-      obligatoire: e.obligatoire !== false,
-      present: e.present === true,
-      preuve_cv: e.present === true ? asString(e.preuve_cv) : null,
-      bloquante: e.bloquante === true && e.obligatoire !== false && e.present !== true,
-    }))
+    .map((e: any): Requirement => {
+      const preuve = e.present === true ? asString(e.preuve_cv) : null
+      // "present" is only accepted with a quoted proof from the CV.
+      const present = preuve !== null
+      const obligatoire = e.obligatoire !== false
+      return {
+        competence: e.competence.trim(),
+        obligatoire,
+        present,
+        preuve_cv: preuve,
+        bloquante: e.bloquante === true && obligatoire && !present,
+      }
+    })
 
   return {
     offre,
@@ -103,22 +123,24 @@ function parseModelOutput(raw: string): ModelOutput {
     },
     raison: asString(o.raison) ?? '',
     recommandations_cv: (Array.isArray(o.recommandations_cv) ? o.recommandations_cv : [])
-      .filter((r: any) => asString(r?.texte_suggere))
-      .slice(0, 5)
-      .map((r: any) => ({
+      .filter((r: any) => r && typeof r === 'object')
+      .map((r: any): CvRecommendation => ({
         section: asString(r.section) ?? 'CV',
         action: ['ajouter', 'reformuler', 'mettre_en_avant', 'retirer'].includes(r.action) ? r.action : 'reformuler',
         texte_actuel: asString(r.texte_actuel),
-        texte_suggere: r.texte_suggere.trim(),
+        texte_suggere: typeof r.texte_suggere === 'string' ? r.texte_suggere.trim() : '',
         source_cv_maitre: asString(r.source_cv_maitre),
-      })),
+      }))
+      // Removing a passage needs no replacement text; every other action does.
+      .filter((r: CvRecommendation) => r.texte_suggere !== '' || r.action === 'retirer')
+      .slice(0, 5),
   }
 }
 
 export async function analyzeOffer(input: AnalyzeInput, deps: AnalyzeDeps = defaultDeps): Promise<AnalysisResult> {
   const { profile, research, today } = input
   const cvUtilise: 'fr' | 'en' = input.lang === 'fr' ? 'fr' : 'en'
-  const cvEnvoye = (cvUtilise === 'fr' ? profile.cv_fr : profile.cv_en) ?? profile.cv_maitre
+  const cvEnvoye = (cvUtilise === 'fr' ? profile.cv_fr : profile.cv_en) || profile.cv_maitre
   const user = buildAnalysisUser({ profile, cvEnvoye, offerText: input.offerText, research, lang: input.lang, today })
 
   let parsed: ModelOutput | null = null
@@ -134,7 +156,9 @@ export async function analyzeOffer(input: AnalyzeInput, deps: AnalyzeDeps = defa
   }
   if (!parsed) throw lastError ?? new InvalidAnalysisError()
 
-  const scoreGlobal = computeMatchScore(parsed.exigences, parsed.domaine_coherent)
+  // With no extracted requirement the formula would hand out a free 70 points: cap it.
+  const rawScore = computeMatchScore(parsed.exigences, parsed.domaine_coherent)
+  const scoreGlobal = parsed.exigences.length === 0 ? Math.min(rawScore, 50) : rawScore
   const { niveau, score, urgence } = computePriority(scoreGlobal, parsed.offre.date_limite, today)
 
   const avertissements = [...(input.warnings ?? [])]
@@ -147,23 +171,32 @@ export async function analyzeOffer(input: AnalyzeInput, deps: AnalyzeDeps = defa
     avertissements.push('Recherche entreprise partielle : valeurs ou actualités manquantes.')
   }
 
-  const accroche = { ...parsed.accroche }
-  if (research.statut === 'insuffisante') accroche.valeur_citee = null
-  if (accroche.valeur_citee) {
-    const known = [...research.valeurs.map(v => v.valeur), ...research.actualites.map(a => a.resume)].map(fold)
-    const cited = fold(accroche.valeur_citee)
-    if (!known.some(k => k.includes(cited) || cited.includes(k))) {
-      accroche.valeur_citee = null
-      avertissements.push("Valeur citée introuvable dans la recherche entreprise : à vérifier avant d'utiliser l'accroche.")
+  let accroche: Accroche = { ...parsed.accroche }
+  if (niveau === 'expiree') {
+    // Nothing to apply to: no accroche, so no accroche-specific checks either.
+    accroche = { texte: '', valeur_citee: null, experience_cv_liee: null, avertissement: null }
+  } else {
+    if (research.statut === 'insuffisante') accroche.valeur_citee = null
+    if (accroche.valeur_citee) {
+      const known = [...research.valeurs.map(v => v.valeur), ...research.actualites.map(a => a.resume)].map(fold)
+      const cited = fold(accroche.valeur_citee)
+      const found = cited.length >= MIN_CITED_LENGTH && known.some(k => k.includes(cited) || cited.includes(k))
+      if (!found) {
+        accroche.valeur_citee = null
+        avertissements.push("Valeur citée introuvable dans la recherche entreprise : à vérifier avant d'utiliser l'accroche.")
+      }
     }
+
+    const banned = findBannedTerms(accroche.texte)
+    if (banned.length > 0) avertissements.push(`Mots à éviter dans l'accroche : ${banned.join(', ')}.`)
+    const words = accroche.texte.split(/\s+/).filter(Boolean).length
+    if (words > 60) avertissements.push(`Accroche trop longue (${words} mots, 60 maximum).`)
   }
 
-  const banned = findBannedTerms(accroche.texte)
-  if (banned.length > 0) avertissements.push(`Mots à éviter dans l'accroche : ${banned.join(', ')}.`)
-  const words = accroche.texte.split(/\s+/).filter(Boolean).length
-  if (words > 60) avertissements.push(`Accroche trop longue (${words} mots, 60 maximum).`)
-
-  if (niveau === 'expiree') accroche.texte = ''
+  // A quote the model attributes to the CV must really be in the CV that was sent.
+  const cvNormalise = foldQuote(cvEnvoye)
+  const recommandations = parsed.recommandations_cv.map(r =>
+    r.texte_actuel && !cvNormalise.includes(foldQuote(r.texte_actuel)) ? { ...r, texte_actuel: null } : r)
 
   return {
     offre: parsed.offre,
@@ -175,7 +208,7 @@ export async function analyzeOffer(input: AnalyzeInput, deps: AnalyzeDeps = defa
     entreprise_recherche: research,
     accroche,
     priorite: { niveau, score, urgence, raison: niveau === 'expiree' ? 'Date limite dépassée.' : parsed.raison },
-    recommandations_cv: parsed.recommandations_cv,
+    recommandations_cv: recommandations,
     cv_utilise: cvUtilise,
     avertissements,
   }

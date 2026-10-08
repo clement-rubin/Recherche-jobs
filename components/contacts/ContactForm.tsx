@@ -89,8 +89,8 @@ export function ContactForm({ contact, onClose, onSave }: Props) {
             <input value={form.entreprise} onChange={e => setForm(f => ({ ...f, entreprise: e.target.value }))} placeholder="Ex: Decathlon" className={inputClass} />
           </div>
           <div className="col-span-2">
-            <label className={labelClass}>Expériences du profil (copie-colle depuis LinkedIn)</label>
-            <textarea value={form.profil_texte} onChange={e => setForm(f => ({ ...f, profil_texte: e.target.value }))} rows={5} placeholder="Titre, expériences, formation... sert à suggérer un message personnalisé" className={inputClass} />
+            <label className={labelClass}>Profil LinkedIn : Ctrl+A puis Ctrl+C sur la page, et colle ici</label>
+            <textarea value={form.profil_texte} onChange={e => setForm(f => ({ ...f, profil_texte: e.target.value }))} rows={5} placeholder="Colle toute la page du profil, le tri est fait automatiquement. Sert à suggérer un message personnalisé." className={inputClass} />
           </div>
           <div className="col-span-2">
             <label className={labelClass}>Statut</label>

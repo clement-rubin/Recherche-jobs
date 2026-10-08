@@ -23,6 +23,7 @@ Candidat : ${PROFILE.niveau}, compétences : ${PROFILE.competences.join(', ')}. 
 
 Règles :
 - Maximum ${MAX_MESSAGE_LENGTH} caractères, message complet (pas de tronquage).
+- Le profil est un copier-coller brut de la page LinkedIn : ignore le bruit (menus, boutons, "Autres profils consultés", publicités, suggestions) et ne garde que le parcours de la personne.
 - Appuie-toi sur UNE ou DEUX expériences précises tirées du profil fourni (entreprise, mission, techno) et fais le lien avec le parcours du candidat. N'invente rien qui n'est pas dans le profil.
 - Ton naturel et poli, vouvoiement, pas de flatterie creuse, pas de formule "j'espère que vous allez bien".
 - Termine par une demande simple (échange de 15 minutes ou conseil), pas par une demande directe de stage.
@@ -34,7 +35,7 @@ Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`,
         content: `Personne à contacter : ${contact.nom}${contact.poste ? `, ${contact.poste}` : ''}${contact.entreprise ? ` chez ${contact.entreprise}` : ''}
 
 Profil LinkedIn (texte copié) :
-${contact.profil_texte.slice(0, 6000)}`,
+${contact.profil_texte.slice(0, 12000)}`,
       },
     ],
     response_format: { type: 'json_object' },

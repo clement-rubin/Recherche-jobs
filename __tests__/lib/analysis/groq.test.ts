@@ -23,7 +23,13 @@ describe('groqJson', () => {
       model: 'm',
       response_format: { type: 'json_object' },
       max_tokens: 100,
-    }))
+    }), expect.objectContaining({ maxRetries: 0, timeout: 20000 }))
+  })
+
+  it('passes a custom timeout and disables SDK retries', async () => {
+    mockCreate.mockResolvedValueOnce(reply('{}'))
+    await groqJson({ model: 'm', system: 's', user: 'u', maxTokens: 10, timeoutMs: 8000 })
+    expect(mockCreate).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ maxRetries: 0, timeout: 8000 }))
   })
 
   it('throws on empty content', async () => {

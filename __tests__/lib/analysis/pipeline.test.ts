@@ -9,18 +9,22 @@ import { makeAnalysis, makeResearch } from '@/test-utils/analysis-fixture'
 const TODAY = '2026-10-08'
 const profileRow = { user_id: 'u1', cv_maitre: 'M', cv_fr: 'F', cv_en: 'E', projet_pro: 'P' }
 
-function makeDb(opts: { profile?: object | null; cached?: object | null }) {
+function makeDb(opts: { profile?: object | null; cached?: unknown; cacheError?: { message: string } }) {
   const upsert = jest.fn().mockResolvedValue({ error: null })
+  const cacheSelect = jest.fn()
   const from = jest.fn().mockImplementation((table: string) => {
     if (table === 'candidate_profile') {
       return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: opts.profile ?? null, error: null }) }) }) }
     }
     return {
-      select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: opts.cached ?? null, error: null }) }) }) }),
+      select: () => {
+        cacheSelect()
+        return { eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: opts.cached ?? null, error: opts.cacheError ?? null }) }) }) }
+      },
       upsert,
     }
   })
-  return { db: { from }, upsert }
+  return { db: { from }, upsert, cacheSelect }
 }
 
 const base = (db: Db) => ({
@@ -75,6 +79,34 @@ describe('runAnalysis', () => {
     await runAnalysis(base(db), deps)
     expect(upsert).not.toHaveBeenCalled()
     expect(deps.analyzeOffer).toHaveBeenCalledWith(expect.objectContaining({ warnings: ['Recherche web indisponible'] }))
+  })
+})
+
+describe('runAnalysis cache robustness', () => {
+  it('treats a cache query error as a miss', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    const { db } = makeDb({ profile: profileRow, cacheError: { message: 'boom' } })
+    const deps = makeDeps()
+    await runAnalysis(base(db), deps)
+    expect(deps.researchCompany).toHaveBeenCalled()
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('treats malformed cached data as a miss', async () => {
+    const { db } = makeDb({ profile: profileRow, cached: { data: 'oops', date_recherche: '2026-10-01' } })
+    const deps = makeDeps()
+    await runAnalysis(base(db), deps)
+    expect(deps.researchCompany).toHaveBeenCalled()
+  })
+
+  it('does not look up the cache when the company is null', async () => {
+    const { db, cacheSelect, upsert } = makeDb({ profile: profileRow })
+    const deps = makeDeps()
+    await runAnalysis({ ...base(db), company: null }, deps)
+    expect(cacheSelect).not.toHaveBeenCalled()
+    expect(deps.researchCompany).toHaveBeenCalledWith(null, TODAY)
+    expect(upsert).not.toHaveBeenCalled()
   })
 })
 

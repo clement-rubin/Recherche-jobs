@@ -27,6 +27,12 @@ export interface PipelineDeps {
 
 const defaultDeps: PipelineDeps = { researchCompany, analyzeOffer }
 
+function isValidCachedResearch(data: unknown): data is CompanyResearch {
+  if (typeof data !== 'object' || data === null) return false
+  const d = data as Record<string, unknown>
+  return typeof d.statut === 'string' && Array.isArray(d.valeurs) && Array.isArray(d.actualites)
+}
+
 export const todayParis = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
 
 export async function runAnalysis(input: PipelineInput, deps: PipelineDeps = defaultDeps): Promise<AnalysisResult> {
@@ -42,10 +48,14 @@ export async function runAnalysis(input: PipelineInput, deps: PipelineDeps = def
   let research: CompanyResearch | null = null
 
   if (key) {
-    const { data: cached } = await input.supabase
+    const { data: cached, error: cacheError } = await input.supabase
       .from('company_research').select('data, date_recherche')
       .eq('user_id', input.userId).eq('nom_normalise', key).maybeSingle()
-    if (cached && daysBetween(cached.date_recherche, today) <= CACHE_DAYS) research = cached.data
+    if (cacheError) {
+      console.warn('[analysis] company_research read failed', cacheError.message)
+    } else if (cached && isValidCachedResearch(cached.data) && daysBetween(cached.date_recherche, today) <= CACHE_DAYS) {
+      research = cached.data
+    }
   }
 
   if (!research) {

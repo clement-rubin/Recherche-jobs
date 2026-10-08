@@ -30,7 +30,9 @@ export async function groqJson(opts: {
   user: string
   maxTokens: number
   temperature?: number
+  timeoutMs?: number
 }): Promise<string> {
+  // groq-sdk retries 429/5xx on its own; callWithRetry owns retries here, so disable the SDK's.
   const completion = await callWithRetry(() => getGroq().chat.completions.create({
     model: opts.model,
     messages: [
@@ -40,7 +42,7 @@ export async function groqJson(opts: {
     response_format: { type: 'json_object' },
     temperature: opts.temperature ?? 0.2,
     max_tokens: opts.maxTokens,
-  }))
+  }, { maxRetries: 0, timeout: opts.timeoutMs ?? 20000 }))
   const raw = completion.choices[0]?.message?.content
   if (!raw) throw new Error('Empty response from Groq')
   return raw

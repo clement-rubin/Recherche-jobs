@@ -39,8 +39,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       .update({ analysis, priority_score: analysis.priorite.score, analyzed_at: new Date().toISOString() })
       .eq('id', id)
       .eq('user_id', user.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ analysis })
+    if (error) {
+      // The analysis is valid and costly to produce: return it even if saving failed.
+      console.error('[analysis] failed to persist analysis', error.message)
+      return NextResponse.json({ analysis, persisted: false })
+    }
+    return NextResponse.json({ analysis, persisted: true })
   } catch (err) {
     return analysisErrorResponse(err)
   }

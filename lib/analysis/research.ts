@@ -36,7 +36,7 @@ export async function tavilySearch(query: string, opts: { news?: boolean } = {})
       topic: opts.news ? 'news' : 'general',
       ...(opts.news && { days: 365 }),
     }),
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(6000),
   })
   if (!res.ok) throw new Error(`Tavily ${res.status}`)
   const data = await res.json()
@@ -52,7 +52,7 @@ export async function tavilySearch(query: string, opts: { news?: boolean } = {})
 
 const defaultDeps: ResearchDeps = {
   search: tavilySearch,
-  extract: (system, user) => groqJson({ model: 'llama-3.1-8b-instant', system, user, maxTokens: 900, temperature: 0.1 }),
+  extract: (system, user) => groqJson({ model: 'llama-3.1-8b-instant', system, user, maxTokens: 900, temperature: 0.1, timeoutMs: 8000 }),
 }
 
 const LEGAL_FORMS = /\b(sas|sasu|sa|sarl|gmbh|ag|ltd|inc|llc|bv|nv|spa|srl|group|groupe)\b/g

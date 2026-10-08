@@ -21,7 +21,7 @@ export interface AnalyzeDeps {
 }
 
 const defaultDeps: AnalyzeDeps = {
-  complete: (system, user) => groqJson({ model: 'llama-3.3-70b-versatile', system, user, maxTokens: 2500, temperature: 0.2 }),
+  complete: (system, user) => groqJson({ model: 'llama-3.3-70b-versatile', system, user, maxTokens: 2500, temperature: 0.2, timeoutMs: 15000 }),
 }
 
 const BANNED = [

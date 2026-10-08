@@ -11,8 +11,9 @@ const offerRow = {
   raw_data: { job_description: LONG },
 }
 
-const updateEq2 = jest.fn().mockResolvedValue({ error: null })
-const update = jest.fn().mockReturnValue({ eq: () => ({ eq: updateEq2 }) })
+const updateEq1 = jest.fn()
+const updateEq2 = jest.fn()
+const update = jest.fn()
 let offerResult: { data: unknown } = { data: offerRow }
 
 const mockSupabase = {
@@ -37,6 +38,9 @@ const call = (body: object = {}) =>
 describe('POST /api/offers/[id]/analyze', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    updateEq2.mockResolvedValue({ error: null })
+    updateEq1.mockReturnValue({ eq: updateEq2 })
+    update.mockReturnValue({ eq: updateEq1 })
     offerResult = { data: offerRow }
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } } })
     mockRun.mockResolvedValue(makeAnalysis())
@@ -75,6 +79,42 @@ describe('POST /api/offers/[id]/analyze', () => {
       priority_score: 93,
       analyzed_at: expect.any(String),
     }))
+  })
+
+  it('filters the update by id and user_id', async () => {
+    await call()
+    expect(updateEq1).toHaveBeenCalledWith('id', 'o1')
+    expect(updateEq2).toHaveBeenCalledWith('user_id', 'u1')
+  })
+
+  it('returns persisted: true on success', async () => {
+    const body = await (await call()).json()
+    expect(body.persisted).toBe(true)
+  })
+
+  it('still returns the analysis with persisted: false when the update fails', async () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    updateEq2.mockResolvedValue({ error: { message: 'secret db detail' } })
+    const res = await call()
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.persisted).toBe(false)
+    expect(body.analysis.priorite.score).toBe(93)
+    expect(JSON.stringify(body)).not.toContain('secret db detail')
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  it('maps a Groq 429 to 429', async () => {
+    mockRun.mockRejectedValue({ status: 429 })
+    expect((await call()).status).toBe(429)
+  })
+
+  it('ignores a non-string text in the body', async () => {
+    offerResult = { data: { ...offerRow, raw_data: { job_description: 'Court.' } } }
+    const res = await call({ text: 123 })
+    expect(await res.json()).toEqual({ needsText: true })
+    expect(mockRun).not.toHaveBeenCalled()
   })
 
   it('maps a missing profile to 400', async () => {

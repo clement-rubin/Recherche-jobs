@@ -6,6 +6,8 @@ const mockGroqResponse = (content: object) => ({
   choices: [{ message: { content: JSON.stringify(content) } }]
 })
 
+jest.mock('@/lib/groq-quota', () => ({ reserveGroqCall: jest.fn().mockResolvedValue(undefined) }))
+
 jest.mock('groq-sdk', () => {
   return {
     __esModule: true,

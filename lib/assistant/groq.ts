@@ -1,4 +1,6 @@
 import Groq from 'groq-sdk'
+import { groqModelParams } from '@/lib/groq-model'
+import { reserveGroqCall } from '@/lib/groq-quota'
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
@@ -32,9 +34,10 @@ export async function processIntent(
   recentApplications: Array<{ id: string; entreprise: string; poste: string; statut: string }>
 ): Promise<AssistantIntent> {
   console.log('[groq] processIntent start', { transcription: transcription.slice(0, 80), appsCount: recentApplications.length })
+  await reserveGroqCall()
   const t0 = Date.now()
   const completion = await callWithRetry(() => groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    ...groqModelParams(),
     messages: [
       {
         role: 'system',
@@ -72,7 +75,7 @@ Règles importantes:
     ],
     response_format: { type: 'json_object' },
     temperature: 0.1,
-    max_tokens: 512,
+    max_completion_tokens: 1500,
   }))
 
   const raw = completion.choices[0].message.content

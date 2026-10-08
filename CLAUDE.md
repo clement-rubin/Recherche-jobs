@@ -80,7 +80,9 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 | `FRANCE_TRAVAIL_CLIENT_ID` | france-travail.ts scraper |
 | `FRANCE_TRAVAIL_CLIENT_SECRET` | france-travail.ts scraper |
 | `CRON_SECRET` | /api/jobs/fetch (Bearer auth for cron calls) |
-| `GROQ_API_KEY` | assistant/groq.ts (voice assistant) |
+| `GROQ_API_KEY` | assistant/groq.ts (voice assistant), email parser, LinkedIn outreach message |
+| `GROQ_MONTHLY_CAP` | `lib/groq-quota.ts` — max Groq calls per month across assistant, Telegram, email parser and LinkedIn message (default `300`, counted in `api_usage` source `groq`, fails closed) |
+| `GROQ_MODEL` | optional override of the Groq chat model (default `openai/gpt-oss-120b`, see `lib/groq-model.ts` — `llama-3.3-70b-versatile` was retired 2026-08-16) |
 | `ADZUNA_APP_ID` | adzuna.ts |
 | `ADZUNA_APP_KEY` | adzuna.ts |
 | `ADZUNA_MONTHLY_CAP` | adzuna.ts (default `900` if unset) |

@@ -40,7 +40,7 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 - `lib/scrapers/jsearch.ts` — JSearch RapidAPI (requires `RAPIDAPI_KEY`)
 - `lib/scrapers/apec.ts` — APEC REST API (cadre jobs, often 0 for manual work)
 - `lib/scrapers/hellowork.ts` — cheerio HTML scraping
-- `lib/scrapers/france-travail.ts` — France Travail OAuth2 API (requires `FRANCE_TRAVAIL_CLIENT_ID` + `FRANCE_TRAVAIL_CLIENT_SECRET`)
+- `lib/scrapers/france-travail.ts` — France Travail OAuth2 API (requires `FRANCE_TRAVAIL_CLIENT_ID` + `FRANCE_TRAVAIL_CLIENT_SECRET`). Searches by `commune` (INSEE code, resolved once per French location from lat/lng or name via geo.api.gouv.fr in `lib/geo/communes.ts`; Paris/Lyon/Marseille mapped to their 1st arrondissement) with `distance = rayon_km`; falls back to `departement` (CITY_TO_DEPT) when resolution fails. This is the only source where the radius applies.
 - Deduplicates by `lien` URL, inserts into `offers` table
 
 **Critical**: qualifications from profile are NOT appended to search queries — they are metadata only. Keywords must be searched one at a time (spaces = AND on APEC/FT/HW).

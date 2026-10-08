@@ -11,6 +11,19 @@ const MAX_PROFILE_CHARS = 12000
  * Returns the profile line mentioning the candidate's school (JUNIA / ISEN), or null.
  * Done in code rather than left to the model: "same school" decides the tone, so it must be reliable.
  */
+/**
+ * Models tend to emit typographic characters nobody types by hand (curly apostrophes, non-breaking
+ * hyphens, narrow no-break spaces before « ? »), which read as AI-written once pasted into LinkedIn.
+ */
+export function normalizeMessage(text: string): string {
+  return text
+    .replace(/[\u2018\u2019\u02BC]/g, "'")
+    .replace(/[\u2010\u2011\u2012]/g, '-')
+    .replace(/[\u00A0\u202F\u2009]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function detectSameSchool(profil: string): string | null {
   const line = profil.split('\n').find(l => /\b(junia|isen)\b/i.test(l))
   return line ? line.trim().slice(0, 160) : null
@@ -81,8 +94,8 @@ function buildSystemPrompt(sameSchoolLine: string | null): string {
 Contenu, dans cet ordre :
 1. « Bonjour <prénom>, » (vouvoiement partout, jamais « Monsieur/Madame »).
 2. ${ecoleBloc}
-3. UNE accroche précise sur son parcours (une mission, un projet, un changement de poste du profil), en une demi-phrase. Ne recopie ni ses technologies ni ses compétences, ne résume pas son CV, pas de liste.
-4. UNE question (deux au maximum, reliées) : ce que le candidat veut vraiment savoir, c'est si ce qu'on apprend à l'école est pleinement utile dans le métier au quotidien. Reformule-le avec tes mots, naturellement, en l'ancrant dans le poste de la personne : ce qui lui sert vraiment de sa formation, et ce qu'on ne voit pas assez en cours par rapport à la réalité du terrain. Ne pose pas la question de façon scolaire (« quelles sont les compétences attendues »), et ne l'accuse pas de rien utiliser : montre une vraie curiosité, pas un reproche envers l'école.
+3. UNE accroche précise sur son parcours (une mission, un projet, un changement de poste du profil), en une demi-phrase, qui amène la question avec un lien simple (« Vous avez travaillé sur… : », « En voyant… »). Jamais de verbe d'émotion sur son travail. Ne recopie ni ses technologies ni ses compétences, ne résume pas son CV, pas de liste.
+4. UNE question directe sur les compétences (deux au maximum, reliées) : parmi ce qu'on apprend à l'école, quelles compétences servent vraiment dans son poste au quotidien, et lesquelles ne s'apprennent que sur le terrain. Emploie le mot « compétences », et si le profil s'y prête, nomme UN domaine concret de son travail pour ancrer la question (ex. la modélisation de données, la qualité des données), sans lister de technologies. Va droit au but : pas de détour, pas d'introduction du type « je me demandais », « je voulais savoir ». Ne la formule pas de façon scolaire ni comme un reproche envers l'école.
 Le message se termine sur la question, rien après.
 
 Règles strictes :
@@ -91,10 +104,10 @@ Règles strictes :
 - Ne parle jamais de stage, de recherche d'emploi, de candidature ni de dates.
 - Ne cite aucune compétence du candidat : seulement « M1 Big Data IA ».
 - N'invente rien qui ne soit pas dans le profil. Le profil est un copier-coller brut de la page : ignore menus, boutons, « Autres profils consultés ».
-- Le message doit couler d'une seule traite, comme un message qu'on écrit vraiment : deux ou trois phrases qui s'enchaînent avec des liens naturels (« et », « du coup », « justement », « en voyant »), l'accroche amenant la question. Pas de phrases hachées ni de style télégraphique, mais pas non plus de phrase à rallonge. Mots simples. Interdits : « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
+- Le message doit couler d'une seule traite, comme un message qu'on écrit vraiment : deux ou trois phrases qui s'enchaînent avec des liens naturels (« et », « du coup », « justement », « en voyant »), l'accroche amenant la question. Pas de phrases hachées ni de style télégraphique, mais pas non plus de phrase à rallonge. Mots simples. Interdits : « m'intrigue », « m'inspire », « me fascine », « m'interpelle », « me passionne », « donné envie », « j'admire », « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
 
 Exemple de TON uniquement, pour une autre personne, ne le recopie pas :
-« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'intrigue : dans un poste comme le vôtre, est-ce que ce qu'on apprend en cours vous sert vraiment, et qu'est-ce qu'on ne voit pas assez à l'école ? »
+« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis en M1 Big Data IA. Vous avez travaillé sur la refonte du data warehouse chez Veolia : dans ce poste, quelles compétences vues en cours vous servent vraiment, et lesquelles ne s'apprennent que sur le terrain ? »
 
 Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`
 }
@@ -128,7 +141,7 @@ async function complete(groq: Groq, messages: ChatCompletionMessageParam[]): Pro
     console.error('[contacts-message] missing "message" field, raw:', raw.slice(0, 200))
     throw new OutreachError('Réponse invalide du modèle, réessaie', 502)
   }
-  return message.trim()
+  return normalizeMessage(message)
 }
 
 async function run(groq: Groq, contact: OutreachInput): Promise<string> {

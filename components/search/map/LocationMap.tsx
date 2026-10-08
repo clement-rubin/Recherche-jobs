@@ -26,6 +26,10 @@ export interface LocationMapProps {
 
 const EUROPE_BOUNDS: LatLngBoundsExpression = [[33, -27], [72, 46]]
 
+// Legacy data can hold duplicate cities (case/country variants): include the index.
+const markerKey = (l: SearchLocation, i: number) =>
+  `${l.ville.toLowerCase()}|${(l.pays ?? 'FR').toUpperCase()}|${i}`
+
 // Leaflet writes colours as SVG attributes, where CSS var() does not resolve.
 function readAccent(): string {
   return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6366f1'
@@ -148,9 +152,9 @@ export function LocationMap({ locations, focus, onPick, onPickPoint, onUnsupport
         )}
       </Pane>
 
-      {placed.map(l => (
+      {placed.map((l, i) => (
         <Circle
-          key={`circle-${l.ville}|${l.pays}`}
+          key={`circle-${markerKey(l, i)}`}
           center={[l.lat!, l.lng!]}
           radius={l.rayon_km * 1000}
           interactive={false}
@@ -173,9 +177,9 @@ export function LocationMap({ locations, focus, onPick, onPickPoint, onUnsupport
         </CircleMarker>
       ))}
 
-      {placed.map(l => (
+      {placed.map((l, i) => (
         <CircleMarker
-          key={`dot-${l.ville}|${l.pays}`}
+          key={`dot-${markerKey(l, i)}`}
           center={[l.lat!, l.lng!]}
           radius={5}
           interactive={false}

@@ -1,3 +1,5 @@
+import { groqModelParams } from '@/lib/groq-model'
+import { reserveGroqCall } from '@/lib/groq-quota'
 import Groq from 'groq-sdk'
 
 let _groq: Groq | null = null
@@ -32,9 +34,10 @@ async function callGroqWithRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promi
 }
 
 export async function parseEmailIntent(email: { sujet: string; corps: string }): Promise<ParsedEmail> {
+  await reserveGroqCall()
   const completion = await callGroqWithRetry(() =>
     getGroq().chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      ...groqModelParams(),
       messages: [
         {
           role: 'system',

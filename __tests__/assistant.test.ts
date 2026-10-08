@@ -4,6 +4,8 @@
 
 const mockGroqCreate = jest.fn()
 
+jest.mock('@/lib/groq-quota', () => ({ reserveGroqCall: jest.fn().mockResolvedValue(undefined) }))
+
 jest.mock('groq-sdk', () => ({
   __esModule: true,
   default: jest.fn().mockImplementation(() => ({

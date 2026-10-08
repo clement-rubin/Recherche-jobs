@@ -1,7 +1,9 @@
 import Groq from 'groq-sdk'
 import { PROFILE } from '@/lib/analyzer/profile'
+import { groqModelParams } from '@/lib/groq-model'
+import { GroqQuotaError, reserveGroqCall } from '@/lib/groq-quota'
+import { MAX_MESSAGE_LENGTH } from '@/lib/contacts-limits'
 
-const MODEL = 'llama-3.3-70b-versatile'
 const MAX_PROFILE_CHARS = 12000
 
 /** Error whose message is safe to show to the user. */
@@ -17,13 +19,13 @@ function toOutreachError(err: unknown): OutreachError {
   if (status === 429) return new OutreachError('Limite Groq atteinte, réessaie dans une minute', 429)
   if (status === 413) return new OutreachError('Profil collé trop long, raccourcis-le', 413)
   if (err instanceof OutreachError) return err
+  if (err instanceof GroqQuotaError) return new OutreachError(err.message, 429)
   // Unknown failure: surface Groq's own error (status + message, no secrets) so it can be diagnosed from the UI.
   const e = err as { name?: string; message?: string }
   const detail = [e?.name, status, e?.message].filter(Boolean).join(' ').slice(0, 300)
   return new OutreachError(`Génération du message impossible (${detail || 'erreur inconnue'})`, 502)
 }
 
-import { MAX_MESSAGE_LENGTH } from '@/lib/contacts-limits'
 
 export interface OutreachInput {
   nom: string
@@ -41,6 +43,7 @@ export async function generateOutreachMessage(contact: OutreachInput): Promise<s
   const groq = new Groq({ apiKey })
   const t0 = Date.now()
   try {
+    await reserveGroqCall()
     const message = await run(groq, contact)
     console.log('[contacts-message] done', { ms: Date.now() - t0, messageLength: message.length, overLimit: message.length > MAX_MESSAGE_LENGTH })
     return message
@@ -61,13 +64,13 @@ export async function generateOutreachMessage(contact: OutreachInput): Promise<s
 async function run(groq: Groq, contact: OutreachInput): Promise<string> {
   const profil = contact.profil_texte.slice(0, MAX_PROFILE_CHARS)
   console.log('[contacts-message] start', {
-    model: MODEL,
+    ...groqModelParams(),
     profileChars: contact.profil_texte.length,
     profileCharsSent: profil.length,
     truncated: profil.length < contact.profil_texte.length,
   })
   const completion = await groq.chat.completions.create({
-    model: MODEL,
+    ...groqModelParams(),
     messages: [
       {
         role: 'system',
@@ -93,7 +96,7 @@ ${profil}`,
     ],
     response_format: { type: 'json_object' },
     temperature: 0.6,
-    max_tokens: 400,
+    max_completion_tokens: 1500,
   })
 
   const choice = completion.choices[0]

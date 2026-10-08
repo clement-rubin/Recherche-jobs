@@ -5,6 +5,11 @@
 import { NextRequest } from 'next/server'
 
 const mockCreate = jest.fn()
+const mockReserve = jest.fn()
+jest.mock('@/lib/groq-quota', () => {
+  class GroqQuotaError extends Error {}
+  return { GroqQuotaError, reserveGroqCall: (...a: unknown[]) => mockReserve(...a) }
+})
 jest.mock('groq-sdk', () => ({
   __esModule: true,
   default: jest.fn().mockImplementation(() => ({ chat: { completions: { create: (...a: unknown[]) => mockCreate(...a) } } })),
@@ -32,6 +37,7 @@ const withContact = (data: unknown, error: unknown = null) =>
 describe('POST /api/contacts/[id]/message', () => {
   beforeEach(() => {
     mockCreate.mockReset()
+    mockReserve.mockReset().mockResolvedValue(undefined)
     process.env.GROQ_API_KEY = 'test-key'
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
   })
@@ -71,6 +77,16 @@ describe('POST /api/contacts/[id]/message', () => {
     const res = await call()
     expect(res.status).toBe(httpStatus)
     expect((await res.json()).error).toContain(text)
+  })
+
+  it('429 and no Groq call when the monthly cap is reached', async () => {
+    withContact(contact)
+    const { GroqQuotaError } = jest.requireMock('@/lib/groq-quota')
+    mockReserve.mockRejectedValue(new GroqQuotaError('Plafond mensuel Groq atteint (300 appels)'))
+    const res = await call()
+    expect(res.status).toBe(429)
+    expect((await res.json()).error).toContain('Plafond mensuel')
+    expect(mockCreate).not.toHaveBeenCalled()
   })
 
   it('500 with clear message when GROQ_API_KEY is missing', async () => {

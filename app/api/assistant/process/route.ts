@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { processIntent } from '@/lib/assistant/groq'
+import { GroqQuotaError } from '@/lib/groq-quota'
 import { executeIntent } from '@/lib/assistant/executeIntent'
 import type { Application } from '@/lib/supabase/types'
 
@@ -44,6 +45,9 @@ export async function POST(req: NextRequest) {
     console.log('[assistant/process] Groq intent', { intent: intentResult.intent, confidence: intentResult.confidence, ms: Date.now() - t0 })
   } catch (err) {
     console.error('[assistant/process] Groq error', err)
+    if (err instanceof GroqQuotaError) {
+      return NextResponse.json({ error: 'Quota reached', message: err.message }, { status: 429 })
+    }
     return NextResponse.json(
       { error: 'Assistant unavailable', message: "Je ne suis pas disponible pour l'instant. Réessayez dans quelques secondes." },
       { status: 503 }

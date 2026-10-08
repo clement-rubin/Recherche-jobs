@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabase } from '@/lib/supabase/admin'
 import { processIntent } from '@/lib/assistant/groq'
+import { GroqQuotaError } from '@/lib/groq-quota'
 import { executeIntent } from '@/lib/assistant/executeIntent'
 import { sendTelegramMessage } from '@/lib/telegram'
 import type { Application } from '@/lib/supabase/types'
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     intentResult = await processIntent(message.text, recentApps)
   } catch (err) {
     console.error('[telegram/webhook] Groq error', err)
-    await safeSend('❌ Assistant indisponible, réessaie dans quelques secondes')
+    await safeSend(err instanceof GroqQuotaError ? `❌ ${err.message}` : '❌ Assistant indisponible, réessaie dans quelques secondes')
     return NextResponse.json({ ok: true })
   }
 

@@ -98,7 +98,9 @@ export async function fetchFranceTravail(
   keywords: string,
   location: string,
   typeContrats?: string[],
-  tempsPlein?: boolean
+  tempsPlein?: boolean,
+  // INSEE commune + radius; FT ignores `distance` without `commune`
+  area?: { commune: string; distanceKm: number }
 ): Promise<ScrapedJob[]> {
   const token = await getFranceTravailToken()
   if (!token) return []
@@ -106,13 +108,17 @@ export async function fetchFranceTravail(
   try {
     const params: Record<string, string> = {
       motsCles: keywords,
-      distance: '30',
       nbMaxResultats: '20',
     }
 
-    const dept = cityToDept(location)
-    if (dept) {
-      params.departement = dept
+    if (area) {
+      params.commune = area.commune
+      params.distance = String(Math.min(100, Math.max(0, Math.round(area.distanceKm))))
+    } else {
+      const dept = cityToDept(location)
+      if (dept) {
+        params.departement = dept
+      }
     }
 
     if (typeContrats && typeContrats.length > 0) {

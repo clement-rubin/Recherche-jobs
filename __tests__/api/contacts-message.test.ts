@@ -23,7 +23,7 @@ const mockSupabase = {
 jest.mock('@/lib/supabase/server', () => ({ createServerSupabase: jest.fn().mockResolvedValue(mockSupabase) }))
 
 import { POST } from '@/app/api/contacts/[id]/message/route'
-import { detectSameSchool } from '@/lib/contacts-message'
+import { detectSameSchool, normalizeMessage } from '@/lib/contacts-message'
 
 const call = () =>
   POST(new NextRequest('http://localhost/api/contacts/c-1/message', { method: 'POST' }), { params: Promise.resolve({ id: 'c-1' }) })
@@ -94,7 +94,8 @@ describe('POST /api/contacts/[id]/message', () => {
     expect(system).toContain('je me permets')
     expect(system).toContain('300 caractères')
     expect(system).toContain('Ne propose aucun échange')
-    expect(system).toContain('pleinement utile dans le métier')
+    expect(system).toContain('quelles compétences servent vraiment')
+    expect(system).toContain("« m'intrigue »")
     expect(system).toContain('Le message se termine sur la question')
     expect(system).not.toMatch(/Une demande simple|15 minutes d'échange/)
   })
@@ -106,6 +107,13 @@ describe('POST /api/contacts/[id]/message', () => {
     const system: string = mockCreate.mock.calls[0][0].messages[0].content
     const example = system.split('Exemple de TON')[1].match(/«\s*([\s\S]+?)\s*»/)![1]
     expect(example.length).toBeLessThanOrEqual(300)
+  })
+
+  it('normalises curly apostrophes and non-breaking hyphens in the returned message', async () => {
+    withContact(contact)
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ message: 'Bonjour Marie, qu\u2019est\u2011ce qui vous sert\u202f?' }) } }] })
+    const res = await call()
+    expect((await res.json()).message).toBe("Bonjour Marie, qu'est-ce qui vous sert ?")
   })
 
   it('asks for one shorter rewrite when over 300 chars, counting a single quota reservation', async () => {
@@ -168,5 +176,12 @@ describe('detectSameSchool', () => {
   })
   it.each(['Université de Lille', 'Chisenhale Gallery', ''])('does not match %s', p => {
     expect(detectSameSchool(p)).toBeNull()
+  })
+})
+
+describe('normalizeMessage', () => {
+  it('replaces curly apostrophes, non-breaking hyphens and special spaces', () => {
+    expect(normalizeMessage('Votre travail m\u2019int\u00e9resse : qu\u2019est\u2011ce que vous utilisez\u202f?'))
+      .toBe("Votre travail m'int\u00e9resse : qu'est-ce que vous utilisez ?")
   })
 })

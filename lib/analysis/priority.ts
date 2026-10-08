@@ -1,0 +1,45 @@
+import type { Niveau, Requirement } from './types'
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const DAY_MS = 86_400_000
+
+const toUtc = (d: string) => Date.parse(`${d}T00:00:00Z`)
+
+/** Calendar days from `from` to `to` (both YYYY-MM-DD). Negative if `to` is earlier. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((toUtc(to) - toUtc(from)) / DAY_MS)
+}
+
+export function computeMatchScore(exigences: Requirement[], domaineCoherent: boolean): number {
+  const oblig = exigences.filter(e => e.obligatoire)
+  const souh = exigences.filter(e => !e.obligatoire)
+  const part = (list: Requirement[], weight: number) =>
+    list.length === 0 ? weight : (weight * list.filter(e => e.present).length) / list.length
+
+  let score = Math.round(part(oblig, 70) + part(souh, 20) + (domaineCoherent ? 10 : 0))
+  if (exigences.some(e => e.bloquante && !e.present)) score = Math.min(score, 40)
+  return Math.max(0, Math.min(100, score))
+}
+
+export function computeUrgency(dateLimite: string | null, today: string): number {
+  if (!dateLimite || !DATE_RE.test(dateLimite)) return 50
+  const days = daysBetween(today, dateLimite)
+  if (days <= 7) return 100
+  if (days <= 14) return 85
+  if (days <= 30) return 60
+  return 30
+}
+
+export function computePriority(
+  scoreGlobal: number,
+  dateLimite: string | null,
+  today: string,
+): { niveau: Niveau; score: number; urgence: number } {
+  if (dateLimite && DATE_RE.test(dateLimite) && daysBetween(today, dateLimite) < 0) {
+    return { niveau: 'expiree', score: 0, urgence: 0 }
+  }
+  const urgence = computeUrgency(dateLimite, today)
+  const score = Math.round(0.7 * scoreGlobal + 0.3 * urgence)
+  const niveau: Niveau = score >= 70 ? 'haute' : score >= 45 ? 'moyenne' : 'basse'
+  return { niveau, score, urgence }
+}

@@ -17,7 +17,10 @@ function toOutreachError(err: unknown): OutreachError {
   if (status === 429) return new OutreachError('Limite Groq atteinte, réessaie dans une minute', 429)
   if (status === 413) return new OutreachError('Profil collé trop long, raccourcis-le', 413)
   if (err instanceof OutreachError) return err
-  return new OutreachError('Génération du message impossible', 502)
+  // Unknown failure: surface Groq's own error (status + message, no secrets) so it can be diagnosed from the UI.
+  const e = err as { name?: string; message?: string }
+  const detail = [e?.name, status, e?.message].filter(Boolean).join(' ').slice(0, 300)
+  return new OutreachError(`Génération du message impossible (${detail || 'erreur inconnue'})`, 502)
 }
 
 import { MAX_MESSAGE_LENGTH } from '@/lib/contacts-limits'

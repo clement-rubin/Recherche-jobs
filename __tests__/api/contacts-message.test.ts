@@ -32,6 +32,7 @@ const withContact = (data: unknown, error: unknown = null) =>
 describe('POST /api/contacts/[id]/message', () => {
   beforeEach(() => {
     mockCreate.mockReset()
+    process.env.GROQ_API_KEY = 'test-key'
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
   })
 
@@ -58,6 +59,28 @@ describe('POST /api/contacts/[id]/message', () => {
     expect(res.status).toBe(200)
     expect((await res.json()).message).toContain('dbt')
     expect(mockCreate.mock.calls[0][0].messages[1].content).toContain('Doctolib')
+  })
+
+  it.each([
+    [429, 429, 'Limite Groq'],
+    [413, 413, 'trop long'],
+    [401, 502, 'GROQ_API_KEY'],
+  ])('maps groq status %s to a readable %s error', async (groqStatus, httpStatus, text) => {
+    withContact(contact)
+    mockCreate.mockRejectedValue(Object.assign(new Error('x'), { status: groqStatus }))
+    const res = await call()
+    expect(res.status).toBe(httpStatus)
+    expect((await res.json()).error).toContain(text)
+  })
+
+  it('500 with clear message when GROQ_API_KEY is missing', async () => {
+    withContact(contact)
+    const key = process.env.GROQ_API_KEY
+    delete process.env.GROQ_API_KEY
+    const res = await call()
+    process.env.GROQ_API_KEY = key
+    expect(res.status).toBe(500)
+    expect((await res.json()).error).toContain('GROQ_API_KEY')
   })
 
   it('502 when the model fails', async () => {

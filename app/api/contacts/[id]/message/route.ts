@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 import type { LinkedInContact } from '@/lib/supabase/types'
-import { generateOutreachMessage } from '@/lib/contacts-message'
+import { generateOutreachMessage, OutreachError } from '@/lib/contacts-message'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -9,7 +9,10 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
   const { id } = await params
   const supabase = await createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    console.warn('[contacts] message Unauthorized')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const { data, error } = await supabase
     .from('linkedin_contacts')
@@ -18,11 +21,16 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
     .eq('user_id', user.id)
     .single()
   const contact = data as LinkedInContact | null
-  if (error || !contact) return NextResponse.json({ error: 'Contact introuvable' }, { status: 404 })
+  if (error || !contact) {
+    console.warn('[contacts] message contact not found', { userId: user.id, id, dbError: error?.message })
+    return NextResponse.json({ error: 'Contact introuvable' }, { status: 404 })
+  }
   if (!contact.profil_texte?.trim()) {
+    console.warn('[contacts] message no profil_texte', { userId: user.id, id })
     return NextResponse.json({ error: 'Ajoute d’abord les expériences du profil (Modifier)' }, { status: 400 })
   }
 
+  console.log('[contacts] message request', { userId: user.id, id, profileChars: contact.profil_texte.length })
   try {
     const message = await generateOutreachMessage({
       nom: contact.nom,
@@ -32,7 +40,8 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
     })
     return NextResponse.json({ message })
   } catch (err) {
-    console.error('[contacts] message generation failed', err instanceof Error ? err.message : err)
+    if (err instanceof OutreachError) return NextResponse.json({ error: err.message }, { status: err.status })
+    console.error('[contacts] message generation failed (unexpected)', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Génération du message impossible' }, { status: 502 })
   }
 }

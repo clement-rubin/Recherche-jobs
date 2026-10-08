@@ -1,6 +1,9 @@
 import Groq from 'groq-sdk'
 import { PROFILE } from '@/lib/analyzer/profile'
 
+const MODEL = 'llama-3.3-70b-versatile'
+const MAX_PROFILE_CHARS = 12000
+
 /** Error whose message is safe to show to the user. */
 export class OutreachError extends Error {
   constructor(message: string, readonly status: number) {
@@ -28,19 +31,40 @@ export interface OutreachInput {
 
 export async function generateOutreachMessage(contact: OutreachInput): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) throw new OutreachError('GROQ_API_KEY non configurée sur le serveur', 500)
+  if (!apiKey) {
+    console.error('[contacts-message] GROQ_API_KEY missing from environment')
+    throw new OutreachError('GROQ_API_KEY non configurée sur le serveur', 500)
+  }
   const groq = new Groq({ apiKey })
+  const t0 = Date.now()
   try {
-    return await run(groq, contact)
+    const message = await run(groq, contact)
+    console.log('[contacts-message] done', { ms: Date.now() - t0, messageLength: message.length, overLimit: message.length > MAX_MESSAGE_LENGTH })
+    return message
   } catch (err) {
-    console.error('[contacts] groq call failed', { status: (err as { status?: number })?.status, message: err instanceof Error ? err.message : String(err) })
+    const e = err as { status?: number; name?: string; message?: string; error?: unknown }
+    console.error('[contacts-message] failed', {
+      ms: Date.now() - t0,
+      name: e?.name,
+      status: e?.status,
+      message: e?.message,
+      // Groq API error body (e.g. rate-limit type, request too large) — no secrets in it
+      body: e?.error,
+    })
     throw toOutreachError(err)
   }
 }
 
 async function run(groq: Groq, contact: OutreachInput): Promise<string> {
+  const profil = contact.profil_texte.slice(0, MAX_PROFILE_CHARS)
+  console.log('[contacts-message] start', {
+    model: MODEL,
+    profileChars: contact.profil_texte.length,
+    profileCharsSent: profil.length,
+    truncated: profil.length < contact.profil_texte.length,
+  })
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: MODEL,
     messages: [
       {
         role: 'system',
@@ -61,7 +85,7 @@ Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`,
         content: `Personne à contacter : ${contact.nom}${contact.poste ? `, ${contact.poste}` : ''}${contact.entreprise ? ` chez ${contact.entreprise}` : ''}
 
 Profil LinkedIn (texte copié) :
-${contact.profil_texte.slice(0, 12000)}`,
+${profil}`,
       },
     ],
     response_format: { type: 'json_object' },
@@ -69,14 +93,25 @@ ${contact.profil_texte.slice(0, 12000)}`,
     max_tokens: 400,
   })
 
-  const raw = completion.choices[0].message.content
+  const choice = completion.choices[0]
+  const raw = choice?.message?.content
+  console.log('[contacts-message] groq response', {
+    model: completion.model,
+    finishReason: choice?.finish_reason,
+    usage: completion.usage,
+    rawLength: raw?.length ?? 0,
+  })
   if (!raw) throw new OutreachError('Réponse vide du modèle, réessaie', 502)
   let message: unknown
   try {
     message = JSON.parse(raw).message
   } catch {
+    console.error('[contacts-message] JSON parse failed, raw:', raw.slice(0, 200))
     throw new OutreachError('Réponse invalide du modèle, réessaie', 502)
   }
-  if (typeof message !== 'string' || !message.trim()) throw new OutreachError('Réponse invalide du modèle, réessaie', 502)
+  if (typeof message !== 'string' || !message.trim()) {
+    console.error('[contacts-message] missing "message" field, raw:', raw.slice(0, 200))
+    throw new OutreachError('Réponse invalide du modèle, réessaie', 502)
+  }
   return message.trim()
 }

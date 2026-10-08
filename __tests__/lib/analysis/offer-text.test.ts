@@ -19,12 +19,14 @@ describe('offerToText', () => {
     expect(r.text).toContain('Titre : Data Analyst')
     expect(r.text).toContain('Entreprise : Thales')
     expect(r.text).toContain('Date limite : 2026-11-01')
+    expect(r.dateLimite).toBe('2026-11-01')
     expect(r.description).toContain('Mission de stage data.')
   })
 
   it('drops a malformed expiration date', () => {
     const r = offerToText(makeOffer({ job_description: LONG, job_offer_expiration_datetime_utc: '2026-02-31T00:00:00Z' }))
     expect(r.text).not.toContain('Date limite')
+    expect(r.dateLimite).toBeNull()
   })
 
   it('reads France Travail description', () => {

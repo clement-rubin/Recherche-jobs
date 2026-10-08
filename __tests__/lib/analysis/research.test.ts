@@ -239,6 +239,19 @@ describe('tavilySearch', () => {
     ])
   })
 
+  it('keeps only http(s) urls', async () => {
+    respond({
+      results: [
+        { url: 'javascript:alert(1)', title: 'x', content: 'x' },
+        { url: 'ftp://files.example.com/a', title: 'x', content: 'x' },
+        { url: ' https://padded.example.com', title: 'x', content: 'x' },
+        { url: 'HTTP://UPPER.example.com', title: 'up', content: 'y' },
+        { url: 'https://ok.example.com', title: 'ok', content: 'y' },
+      ],
+    })
+    expect((await tavilySearch('q')).map(r => r.url)).toEqual(['HTTP://UPPER.example.com', 'https://ok.example.com'])
+  })
+
   it('throws on a non-ok response', async () => {
     respond({}, false, 500)
     await expect(tavilySearch('q')).rejects.toThrow('Tavily 500')

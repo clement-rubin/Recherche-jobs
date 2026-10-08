@@ -3,18 +3,18 @@
  */
 import { runAnalysis, type Db } from '@/lib/analysis/pipeline'
 import { analysisErrorResponse } from '@/lib/analysis/http'
-import { ProfileMissingError, InvalidAnalysisError } from '@/lib/analysis/errors'
+import { ProfileMissingError, InvalidAnalysisError, SetupError } from '@/lib/analysis/errors'
 import { makeAnalysis, makeResearch } from '@/test-utils/analysis-fixture'
 
 const TODAY = '2026-10-08'
 const profileRow = { user_id: 'u1', cv_maitre: 'M', cv_fr: 'F', cv_en: 'E', projet_pro: 'P' }
 
-function makeDb(opts: { profile?: object | null; cached?: unknown; cacheError?: { message: string } }) {
+function makeDb(opts: { profile?: object | null; cached?: unknown; cacheError?: { message: string }; profileError?: { message: string; code?: string } }) {
   const upsert = jest.fn().mockResolvedValue({ error: null })
   const cacheSelect = jest.fn()
   const from = jest.fn().mockImplementation((table: string) => {
     if (table === 'candidate_profile') {
-      return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: opts.profile ?? null, error: null }) }) }) }
+      return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: opts.profile ?? null, error: opts.profileError ?? null }) }) }) }
     }
     return {
       select: () => {
@@ -37,6 +37,47 @@ const makeDeps = (over: Partial<{ outcome: object }> = {}) => ({
 })
 
 describe('runAnalysis', () => {
+  const realKey = process.env.GROQ_API_KEY
+  beforeEach(() => { process.env.GROQ_API_KEY = 'test-key' })
+  afterEach(() => {
+    if (realKey === undefined) delete process.env.GROQ_API_KEY
+    else process.env.GROQ_API_KEY = realKey
+  })
+
+  it('throws SetupError before any research when GROQ_API_KEY is missing', async () => {
+    delete process.env.GROQ_API_KEY
+    const { db, cacheSelect } = makeDb({ profile: profileRow })
+    const deps = makeDeps()
+    await expect(runAnalysis(base(db), deps)).rejects.toThrow(new SetupError('GROQ_API_KEY manquante'))
+    expect(deps.researchCompany).not.toHaveBeenCalled()
+    expect(cacheSelect).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [{ code: '42P01', message: 'relation does not exist' }],
+    [{ code: 'PGRST205', message: 'not found in schema cache' }],
+    [{ message: "Could not find the table 'public.candidate_profile'" }],
+  ])('throws SetupError when the candidate_profile table is missing (%j)', async (profileError) => {
+    const { db } = makeDb({ profileError })
+    const deps = makeDeps()
+    await expect(runAnalysis(base(db), deps)).rejects.toThrow(new SetupError('Migration 006 non appliquée dans Supabase'))
+    expect(deps.researchCompany).not.toHaveBeenCalled()
+  })
+
+  it('keeps a plain error for other profile query failures', async () => {
+    const { db } = makeDb({ profileError: { message: 'boom' } })
+    const err = await runAnalysis(base(db), makeDeps()).catch(e => e)
+    expect(err).toBeInstanceOf(Error)
+    expect(err).not.toBeInstanceOf(SetupError)
+  })
+
+  it('forwards a known deadline to the analysis', async () => {
+    const { db } = makeDb({ profile: profileRow })
+    const deps = makeDeps()
+    await runAnalysis({ ...base(db), dateLimite: '2026-10-30' }, deps)
+    expect(deps.analyzeOffer).toHaveBeenCalledWith(expect.objectContaining({ dateLimite: '2026-10-30' }))
+  })
+
   it('throws ProfileMissingError without a candidate profile', async () => {
     const { db } = makeDb({ profile: null })
     await expect(runAnalysis(base(db), makeDeps())).rejects.toBeInstanceOf(ProfileMissingError)
@@ -83,6 +124,13 @@ describe('runAnalysis', () => {
 })
 
 describe('runAnalysis cache robustness', () => {
+  const realKey = process.env.GROQ_API_KEY
+  beforeEach(() => { process.env.GROQ_API_KEY = 'test-key' })
+  afterEach(() => {
+    if (realKey === undefined) delete process.env.GROQ_API_KEY
+    else process.env.GROQ_API_KEY = realKey
+  })
+
   it('treats a cache query error as a miss', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
     const { db } = makeDb({ profile: profileRow, cacheError: { message: 'boom' } })
@@ -116,5 +164,8 @@ describe('analysisErrorResponse', () => {
     expect((await analysisErrorResponse({ status: 429 })).status).toBe(429)
     expect((await analysisErrorResponse(new InvalidAnalysisError())).status).toBe(502)
     expect((await analysisErrorResponse(new Error('boom'))).status).toBe(500)
+    const setup = await analysisErrorResponse(new SetupError('GROQ_API_KEY manquante'))
+    expect(setup.status).toBe(503)
+    expect(await setup.json()).toEqual({ error: 'GROQ_API_KEY manquante' })
   })
 })

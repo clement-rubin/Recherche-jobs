@@ -14,6 +14,8 @@ export interface AnalyzeInput {
   research: CompanyResearch
   today: string
   warnings?: string[]
+  /** Deadline known from structured offer data, used when the model finds none. */
+  dateLimite?: string | null
 }
 
 export interface AnalyzeDeps {
@@ -175,9 +177,12 @@ export async function analyzeOffer(input: AnalyzeInput, deps: AnalyzeDeps = defa
   if (!parsed) throw lastError ?? new InvalidAnalysisError()
 
   // With no extracted requirement the formula would hand out a free 70 points: cap it.
+  const dateLimite = parsed.offre.date_limite
+    ?? (input.dateLimite && isValidIsoDate(input.dateLimite) ? input.dateLimite : null)
+  const offre: OfferInfo = { ...parsed.offre, date_limite: dateLimite }
   const rawScore = computeMatchScore(parsed.exigences, parsed.domaine_coherent)
   const scoreGlobal = parsed.exigences.length === 0 ? Math.min(rawScore, 50) : rawScore
-  const { niveau, score, urgence } = computePriority(scoreGlobal, parsed.offre.date_limite, today)
+  const { niveau, score, urgence } = computePriority(scoreGlobal, dateLimite, today)
 
   const avertissements = [...(input.warnings ?? [])]
   if (parsed.exigences.length === 0) {
@@ -217,7 +222,7 @@ export async function analyzeOffer(input: AnalyzeInput, deps: AnalyzeDeps = defa
     r.texte_actuel && !cvNormalise.includes(foldQuote(r.texte_actuel)) ? { ...r, texte_actuel: null } : r)
 
   return {
-    offre: parsed.offre,
+    offre,
     soft_skills: parsed.soft_skills,
     langues: parsed.langues,
     mots_cles_ats: parsed.mots_cles_ats,

@@ -18,8 +18,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   let body: { text?: string } = {}
   try { body = await req.json() } catch { /* empty body is fine */ }
 
-  const { data: offer } = await supabase
+  const { data: offer, error: offerError } = await supabase
     .from('offers').select('*').eq('id', id).eq('user_id', user.id).maybeSingle()
+  if (offerError) {
+    console.error('[analysis] failed to read offer', offerError.message)
+    return NextResponse.json({ error: "Erreur de lecture de l'offre" }, { status: 500 })
+  }
   if (!offer) return NextResponse.json({ error: 'Offre introuvable' }, { status: 404 })
 
   const parts = offerToText(offer as Offer, typeof body.text === 'string' ? body.text : undefined)
@@ -32,6 +36,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       company: (offer as Offer).entreprise,
       offerText: parts.text,
       description: parts.description,
+      dateLimite: parts.dateLimite,
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)

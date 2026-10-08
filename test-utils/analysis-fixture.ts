@@ -13,7 +13,7 @@ export const makeAnalysis = (over: Partial<AnalysisResult> = {}): AnalysisResult
   offre: {
     titre: 'Stage Data Engineer', entreprise: 'Thales', publie_par_intermediaire: false,
     lieu: 'Lille', teletravail: null, type_contrat: 'stage', duree: '3 mois',
-    date_debut: '2027-05', date_limite: '2026-10-20', niveau_etudes: 'Bac+4/5', langue_offre: 'fr',
+    date_debut: '2027-05', date_limite: null, niveau_etudes: 'Bac+4/5', langue_offre: 'fr',
   },
   soft_skills: ['Autonomie'],
   langues: [{ langue: 'Anglais', niveau: 'B2', obligatoire: true }],
@@ -30,7 +30,7 @@ export const makeAnalysis = (over: Partial<AnalysisResult> = {}): AnalysisResult
     experience_cv_liee: 'Fridgia',
     avertissement: null,
   },
-  priorite: { niveau: 'haute', score: 93, urgence: 85, raison: 'Python couvert, Spark manquant.' },
+  priorite: { niveau: 'haute', score: 78, urgence: 50, raison: 'Python couvert, Spark manquant.' },
   recommandations_cv: [
     { section: 'Expériences', action: 'mettre_en_avant', texte_actuel: 'API Flask reliant les modèles à PostgreSQL', texte_suggere: 'Pipeline de données Flask/PostgreSQL en production', source_cv_maitre: null },
   ],

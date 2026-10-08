@@ -18,6 +18,7 @@ export interface OfferText {
   text: string
   description: string
   sufficient: boolean
+  dateLimite: string | null
 }
 
 export function buildOfferText(p: OfferTextParts): OfferText {
@@ -33,6 +34,7 @@ export function buildOfferText(p: OfferTextParts): OfferText {
     text: `${header}\n\n${description}`,
     description,
     sufficient: description.length >= MIN_DESCRIPTION_CHARS,
+    dateLimite: p.dateLimite ?? null,
   }
 }
 

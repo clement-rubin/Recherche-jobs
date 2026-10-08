@@ -41,7 +41,7 @@ export async function tavilySearch(query: string, opts: { news?: boolean } = {})
   if (!res.ok) throw new Error(`Tavily ${res.status}`)
   const data = await res.json()
   return ((Array.isArray(data.results) ? data.results : []) as Record<string, unknown>[])
-    .filter(r => r && typeof r.url === 'string' && r.url.trim() !== '')
+    .filter(r => r && typeof r.url === 'string' && /^https?:\/\//i.test(r.url))
     .map(r => ({
       url: r.url as string,
       title: String(r.title ?? ''),

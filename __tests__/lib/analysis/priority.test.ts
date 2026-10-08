@@ -2,9 +2,10 @@
  * @jest-environment node
  */
 import {
-  computeMatchScore, computeUrgency, computePriority, daysBetween, isValidIsoDate,
+  computeMatchScore, computeUrgency, computePriority, currentPriority, daysBetween, isValidIsoDate, todayIso,
 } from '@/lib/analysis/priority'
 import type { Requirement } from '@/lib/analysis/types'
+import { makeAnalysis } from '@/test-utils/analysis-fixture'
 
 const req = (over: Partial<Requirement> = {}): Requirement => ({
   competence: 'Python', obligatoire: true, present: true, preuve_cv: 'Fridgia', bloquante: false, ...over,
@@ -106,5 +107,30 @@ describe('impossible dates', () => {
 
   it('computePriority treats an impossible date as unknown', () => {
     expect(computePriority(80, '2026-02-31', TODAY)).toEqual({ niveau: 'haute', score: 71, urgence: 50 })
+  })
+})
+
+describe('currentPriority', () => {
+  it('recomputes the priority from the deadline and keeps the stored reason', () => {
+    const base = makeAnalysis() // score_global 90
+    const a = makeAnalysis({ offre: { ...base.offre, date_limite: '2026-10-20' } })
+    expect(currentPriority(a, '2026-10-08')).toEqual({
+      ...computePriority(90, '2026-10-20', '2026-10-08'),
+      raison: a.priorite.raison,
+    })
+  })
+
+  it('becomes expiree with score 0 once the deadline is past', () => {
+    const base = makeAnalysis()
+    const a = makeAnalysis({ offre: { ...base.offre, date_limite: '2026-10-20' } })
+    expect(currentPriority(a, '2026-11-01')).toEqual({
+      niveau: 'expiree', score: 0, urgence: 0, raison: 'Date limite dépassée.',
+    })
+  })
+})
+
+describe('todayIso', () => {
+  it('returns a YYYY-MM-DD date', () => {
+    expect(isValidIsoDate(todayIso())).toBe(true)
   })
 })

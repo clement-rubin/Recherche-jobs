@@ -9,11 +9,23 @@ jest.mock('groq-sdk', () => ({
 }))
 
 import { groqJson } from '@/lib/analysis/groq'
+import { SetupError } from '@/lib/analysis/errors'
 
 const reply = (content: string | null) => ({ choices: [{ message: { content } }] })
 
 describe('groqJson', () => {
-  beforeEach(() => { mockCreate.mockReset(); jest.useRealTimers() })
+  const realKey = process.env.GROQ_API_KEY
+  beforeEach(() => { mockCreate.mockReset(); jest.useRealTimers(); process.env.GROQ_API_KEY = 'test-key' })
+  afterEach(() => {
+    if (realKey === undefined) delete process.env.GROQ_API_KEY
+    else process.env.GROQ_API_KEY = realKey
+  })
+
+  it('throws SetupError when GROQ_API_KEY is missing', async () => {
+    delete process.env.GROQ_API_KEY
+    await expect(groqJson({ model: 'm', system: 's', user: 'u', maxTokens: 10 })).rejects.toBeInstanceOf(SetupError)
+    expect(mockCreate).not.toHaveBeenCalled()
+  })
 
   it('returns the message content and requests JSON mode', async () => {
     mockCreate.mockResolvedValueOnce(reply('{"ok":true}'))

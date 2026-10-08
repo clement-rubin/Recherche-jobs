@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
-import { InvalidAnalysisError, ProfileMissingError } from './errors'
+import { InvalidAnalysisError, ProfileMissingError, SetupError } from './errors'
 
 export function analysisErrorResponse(err: unknown) {
   if (err instanceof ProfileMissingError) {
     return NextResponse.json({ error: err.message }, { status: 400 })
+  }
+  if (err instanceof SetupError) {
+    return NextResponse.json({ error: err.message }, { status: 503 })
   }
   if ((err as { status?: number } | null)?.status === 429) {
     return NextResponse.json({ error: 'Limite Groq atteinte, réessaie dans 1 min' }, { status: 429 })

@@ -1,7 +1,7 @@
 -- 006_offer_analysis.sql
 -- Candidate profile (CVs as text), company research cache, analysis stored on offers.
 
-create table candidate_profile (
+create table if not exists candidate_profile (
   user_id uuid primary key references auth.users,
   cv_maitre text not null,
   cv_fr text,
@@ -10,7 +10,7 @@ create table candidate_profile (
   updated_at timestamptz not null default now()
 );
 
-create table company_research (
+create table if not exists company_research (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users not null,
   nom_normalise text not null,
@@ -27,5 +27,7 @@ alter table offers
 alter table candidate_profile enable row level security;
 alter table company_research enable row level security;
 
+drop policy if exists "own data" on candidate_profile;
 create policy "own data" on candidate_profile for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own data" on company_research;
 create policy "own data" on company_research for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

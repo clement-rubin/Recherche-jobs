@@ -6,6 +6,12 @@ import { InlineConfirm } from '@/components/ui/InlineConfirm'
 import { OfferDetailModal } from './OfferDetailModal'
 import { PriorityBadge } from '@/components/analysis/PriorityBadge'
 import type { AnalysisResult } from '@/lib/analysis/types'
+import { currentPriority, todayIso } from '@/lib/analysis/priority'
+
+function CurrentPriorityBadge({ analysis }: { analysis: AnalysisResult }) {
+  const { niveau, score } = currentPriority(analysis, todayIso())
+  return <PriorityBadge niveau={niveau} score={score} />
+}
 
 const SOURCE_LABELS: Record<string, string> = {
   jsearch: 'JSearch',
@@ -65,7 +71,7 @@ export function OfferCard({ offer, onAction, onAnalyzed }: Props) {
               {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
             </span>
             {offer.analysis && (
-              <PriorityBadge niveau={offer.analysis.priorite.niveau} score={offer.analysis.priorite.score} />
+              <CurrentPriorityBadge analysis={offer.analysis} />
             )}
             <span className="text-xs" style={{ color: 'var(--muted-light)' }}>Voir détails →</span>
           </div>

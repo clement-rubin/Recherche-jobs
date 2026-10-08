@@ -1,9 +1,12 @@
 import Groq from 'groq-sdk'
+import { SetupError } from './errors'
 
 let _groq: Groq | null = null
 
 export function getGroq(): Groq {
-  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) throw new SetupError('GROQ_API_KEY manquante')
+  if (!_groq) _groq = new Groq({ apiKey })
   return _groq
 }
 

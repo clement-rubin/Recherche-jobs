@@ -1,7 +1,7 @@
 import { analyzeOffer } from './analyze'
-import { ProfileMissingError } from './errors'
+import { ProfileMissingError, SetupError } from './errors'
 import { detectLang } from './lang'
-import { daysBetween } from './priority'
+import { daysBetween, todayIso } from './priority'
 import { normalizeCompanyName, researchCompany } from './research'
 import type { AnalysisResult, CandidateProfile, CompanyResearch } from './types'
 
@@ -18,6 +18,7 @@ export interface PipelineInput {
   offerText: string
   description: string
   today?: string
+  dateLimite?: string | null
 }
 
 export interface PipelineDeps {
@@ -33,14 +34,22 @@ function isValidCachedResearch(data: unknown): data is CompanyResearch {
   return typeof d.statut === 'string' && Array.isArray(d.valeurs) && Array.isArray(d.actualites)
 }
 
-export const todayParis = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+export const todayParis = todayIso
 
 export async function runAnalysis(input: PipelineInput, deps: PipelineDeps = defaultDeps): Promise<AnalysisResult> {
   const today = input.today ?? todayParis()
 
+  // Fail before any research so no Tavily credit is spent on a misconfigured server.
+  if (!process.env.GROQ_API_KEY) throw new SetupError('GROQ_API_KEY manquante')
+
   const { data: profile, error: profileError } = await input.supabase
     .from('candidate_profile').select('*').eq('user_id', input.userId).maybeSingle()
-  if (profileError) throw new Error(profileError.message)
+  if (profileError) {
+    if (profileError.code === '42P01' || profileError.code === 'PGRST205' || /candidate_profile/.test(profileError.message ?? '')) {
+      throw new SetupError('Migration 006 non appliquée dans Supabase')
+    }
+    throw new Error(profileError.message)
+  }
   if (!profile) throw new ProfileMissingError()
 
   const key = input.company ? normalizeCompanyName(input.company) : ''
@@ -81,5 +90,6 @@ export async function runAnalysis(input: PipelineInput, deps: PipelineDeps = def
     research,
     today,
     warnings,
+    dateLimite: input.dateLimite,
   })
 }

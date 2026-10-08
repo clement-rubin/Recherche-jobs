@@ -12,9 +12,17 @@ describe('AnalysisPanel', () => {
 
   it('shows the priority badge, reason and accroche', () => {
     render(<AnalysisPanel analysis={makeAnalysis()} />)
-    expect(screen.getByLabelText('Priorité Haute, 93')).toHaveTextContent('Haute · 93')
+    expect(screen.getByLabelText('Priorité Haute, 78')).toHaveTextContent('Haute · 78')
     expect(screen.getByText('Python couvert, Spark manquant.')).toBeInTheDocument()
     expect(screen.getByText(/Thales mise sur la confiance/)).toBeInTheDocument()
+  })
+
+  it('recomputes the priority when the deadline has passed since the analysis', () => {
+    const base = makeAnalysis()
+    const analysis = makeAnalysis({ offre: { ...base.offre, date_limite: '2020-01-01' } }) // stored priorite says haute
+    render(<AnalysisPanel analysis={analysis} />)
+    expect(screen.getByLabelText('Priorité Expirée')).toBeInTheDocument()
+    expect(screen.getByText('Date limite dépassée.')).toBeInTheDocument()
   })
 
   it('lists present skills with their CV proof and missing ones apart', () => {
@@ -68,6 +76,7 @@ describe('AnalysisPanel', () => {
 
   it('hides the accroche for an expired offer', () => {
     const analysis = makeAnalysis({
+      offre: { ...makeAnalysis().offre, date_limite: '2020-01-01' },
       priorite: { niveau: 'expiree', score: 0, urgence: 0, raison: 'Date limite dépassée.' },
       accroche: { texte: '', valeur_citee: null, experience_cv_liee: null, avertissement: null },
     })

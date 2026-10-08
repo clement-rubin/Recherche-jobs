@@ -39,7 +39,7 @@ const formatResults = (label: string, results: TavilyResult[]) =>
   `<${label}>\n${results.map(r => `url: ${r.url}\ntitre: ${sanitizeForPrompt(r.title)}${r.published_date ? `\ndate: ${r.published_date}` : ''}\ncontenu: ${sanitizeForPrompt(r.content)}`).join('\n---\n')}\n</${label}>`
 
 export function buildExtractionUser(company: string, site: TavilyResult[], news: TavilyResult[]): string {
-  return `Entreprise : ${company}\n\n${formatResults('resultats_site', site)}\n\n${formatResults('resultats_actualites', news)}`
+  return `Entreprise : ${sanitizeForPrompt(company)}\n\n${formatResults('resultats_site', site)}\n\n${formatResults('resultats_actualites', news)}`
 }
 
 export const ANALYSIS_SYSTEM = `Tu es un assistant de recherche de stage. Tu analyses UNE offre pour UN étudiant. Réponds uniquement avec un objet JSON valide, sans texte autour.

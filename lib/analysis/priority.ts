@@ -1,4 +1,4 @@
-import type { Niveau, Requirement } from './types'
+import type { AnalysisResult, Niveau, Priorite, Requirement } from './types'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const DAY_MS = 86_400_000
@@ -49,4 +49,21 @@ export function computePriority(
   const score = Math.round(0.7 * scoreGlobal + 0.3 * urgence)
   const niveau: Niveau = score >= 70 ? 'haute' : score >= 45 ? 'moyenne' : 'basse'
   return { niveau, score, urgence }
+}
+
+/** Local date (YYYY-MM-DD) in Europe/Paris. Pure and client-safe. */
+export const todayIso = (): string => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+
+/**
+ * Priority as of `today`: the stored one is frozen at analysis time, so a deadline that has
+ * since passed (or got closer) must be reflected when displaying and sorting.
+ */
+export function currentPriority(analysis: AnalysisResult, today: string): Priorite {
+  const { niveau, score, urgence } = computePriority(
+    analysis.correspondance.score_global, analysis.offre.date_limite, today,
+  )
+  return {
+    niveau, score, urgence,
+    raison: niveau === 'expiree' ? 'Date limite dépassée.' : analysis.priorite.raison,
+  }
 }

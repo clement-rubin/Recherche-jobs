@@ -48,6 +48,25 @@ describe('analyzeOffer', () => {
     expect(r.entreprise_recherche).toEqual(makeResearch())
   })
 
+  it('falls back to the known deadline when the model finds none', async () => {
+    const out = JSON.parse(modelOutput())
+    out.offre.date_limite = null
+    const complete = jest.fn().mockResolvedValue(JSON.stringify(out))
+    const r = await analyzeOffer({ ...input(), dateLimite: '2026-10-12' }, { complete })
+    expect(r.offre.date_limite).toBe('2026-10-12')
+    expect(r.priorite.urgence).toBe(100) // 4 days left
+  })
+
+  it('prefers the model deadline and ignores an invalid fallback', async () => {
+    const complete = jest.fn().mockResolvedValue(modelOutput()) // date_limite 2026-10-20
+    expect((await analyzeOffer({ ...input(), dateLimite: '2026-10-12' }, { complete })).offre.date_limite).toBe('2026-10-20')
+
+    const out = JSON.parse(modelOutput())
+    out.offre.date_limite = null
+    complete.mockResolvedValue(JSON.stringify(out))
+    expect((await analyzeOffer({ ...input(), dateLimite: '2026-02-31' }, { complete })).offre.date_limite).toBeNull()
+  })
+
   it('sends the master CV and only the matching short CV', async () => {
     const complete = jest.fn().mockResolvedValue(modelOutput())
     await analyzeOffer(input(), { complete })

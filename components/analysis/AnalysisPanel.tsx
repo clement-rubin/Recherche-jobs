@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import type { AnalysisResult } from '@/lib/analysis/types'
+import { currentPriority, todayIso } from '@/lib/analysis/priority'
 import { PriorityBadge } from './PriorityBadge'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -22,7 +23,8 @@ export function AnalysisPanel({ analysis }: { analysis: AnalysisResult }) {
   const [copyFailed, setCopyFailed] = useState(false)
   const present = analysis.exigences.filter(e => e.present)
   const missing = analysis.exigences.filter(e => !e.present)
-  const { entreprise_recherche: research, accroche, priorite } = analysis
+  const { entreprise_recherche: research, accroche } = analysis
+  const priorite = currentPriority(analysis, todayIso())
 
   const copy = async () => {
     try {

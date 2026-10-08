@@ -23,7 +23,7 @@ describe('OfferDetailModal analysis', () => {
     mockFetch({ analysis: makeAnalysis(), persisted: true })
     const { user, onAnalyzed } = setup()
     await user.click(screen.getByRole('button', { name: 'Analyser' }))
-    expect(await screen.findByLabelText('Priorité Haute, 93')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Priorité Haute, 78')).toBeInTheDocument()
     expect(global.fetch).toHaveBeenCalledWith('/api/offers/o1/analyze', expect.objectContaining({ method: 'POST' }))
     expect(onAnalyzed).toHaveBeenCalledWith('o1', expect.objectContaining({ cv_utilise: 'fr' }))
     expect(screen.getByRole('button', { name: 'Réanalyser' })).toBeInTheDocument()
@@ -32,7 +32,7 @@ describe('OfferDetailModal analysis', () => {
 
   it('shows a stored analysis immediately', () => {
     setup({ ...offer, analysis: makeAnalysis() })
-    expect(screen.getByLabelText('Priorité Haute, 93')).toBeInTheDocument()
+    expect(screen.getByLabelText('Priorité Haute, 78')).toBeInTheDocument()
   })
 
   it('asks for the text when the description is missing, then re-sends it', async () => {
@@ -43,7 +43,7 @@ describe('OfferDetailModal analysis', () => {
     mockFetch({ analysis: makeAnalysis(), persisted: true })
     await user.type(box, 'Texte complet de l offre')
     await user.click(screen.getByRole('button', { name: /analyser ce texte/i }))
-    await waitFor(() => expect(screen.getByLabelText('Priorité Haute, 93')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByLabelText('Priorité Haute, 78')).toBeInTheDocument())
     expect(JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body)).toEqual({ text: 'Texte complet de l offre' })
   })
 
@@ -88,7 +88,7 @@ describe('OfferDetailModal analysis', () => {
     mockFetch({ analysis: makeAnalysis(), persisted: false })
     const { user, onAnalyzed } = setup()
     await user.click(screen.getByRole('button', { name: 'Analyser' }))
-    expect(await screen.findByLabelText('Priorité Haute, 93')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Priorité Haute, 78')).toBeInTheDocument()
     expect(onAnalyzed).toHaveBeenCalledWith('o1', expect.objectContaining({ cv_utilise: 'fr' }))
     expect(
       screen.getByText('Analyse affichée mais non enregistrée (vérifie que la migration 006 est appliquée).')

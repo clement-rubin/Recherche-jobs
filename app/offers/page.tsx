@@ -7,6 +7,7 @@ import { InlineConfirm } from '@/components/ui/InlineConfirm'
 import { SwipeDeck } from '@/components/offers/SwipeDeck'
 import { ViewToggle } from '@/components/offers/ViewToggle'
 import type { AnalysisResult } from '@/lib/analysis/types'
+import { currentPriority, todayIso } from '@/lib/analysis/priority'
 
 const STATUS_FILTERS: { value: OfferStatus | ''; label: string }[] = [
   { value: '', label: 'À traiter' },
@@ -123,12 +124,13 @@ export default function OffersPage() {
     ))
   }
 
-  const displayedOffers = useMemo(
-    () => sortBy === 'priorite'
-      ? [...offers].sort((a, b) => (b.priority_score ?? -1) - (a.priority_score ?? -1))
-      : offers,
-    [offers, sortBy],
-  )
+  const displayedOffers = useMemo(() => {
+    if (sortBy !== 'priorite') return offers
+    // The stored priority_score is frozen at analysis time: recompute it so expired offers sink.
+    const today = todayIso()
+    const score = (o: Offer) => (o.analysis ? currentPriority(o.analysis, today).score : -1)
+    return [...offers].sort((a, b) => score(b) - score(a))
+  }, [offers, sortBy])
 
   if (loading) {
     return (

@@ -1,7 +1,7 @@
 # LLM offer analysis (Groq + Tavily) — design
 
 Date: 2026-10-08
-Status: approved in brainstorming, pending spec review
+Status: implemented (branch feat/llm-offer-analysis)
 
 ## Goal
 
@@ -12,7 +12,7 @@ Triggered on demand from an offer's detail modal ("Analyser"), result stored on 
 ## Constraints
 
 - **Groq free tier**: `llama-3.3-70b-versatile` ≈ 12k tokens/min. One analysis ≈ 8k tokens → roughly one analysis per minute. No background/bulk analysis.
-- **Netlify**: synchronous functions are cut at ~26 s. Route uses `maxDuration = 26`.
+- **Netlify**: synchronous functions are cut at ~26 s by default. The routes export `maxDuration = 26`, which is not enough on its own: raise the function timeout in the Netlify site settings (Site settings → Functions) if analyses get cut off.
 - **Tavily free tier**: 1000 credits/month. Company research is cached 90 days, so it is paid once per company.
 - **Personal data**: CV text (phone, address) never goes in the repo. It lives in Supabase only.
 
@@ -111,7 +111,7 @@ RLS on both new tables: `auth.uid() = user_id` for all operations (same pattern 
 | Groq invalid / incomplete JSON | 1 retry, then 502 « Analyse invalide » |
 | Unknown `source_url` | dropped; `statut` recomputed (≥ 1 valeur and ≥ 1 actualité → suffisante; one of the two → partielle; none → insuffisante) |
 | Banned word or > 60 words in accroche | kept; warning added to the result-level `avertissements: string[]` (not to `accroche.avertissement`, which stays the model's own field). Same list holds unknown cited value and research-quality warnings |
-| Timeouts | Tavily 6 s per call; Groq 8 s (8B) / 15 s (70B), `maxRetries: 0`; route `maxDuration = 26` |
+| Timeouts | Tavily 6 s per call; Groq 8 s (8B) / 15 s (70B), `maxRetries: 0`; route `maxDuration = 26` (plus a raised Netlify function timeout in site settings) |
 
 The model's own priority/score fields, if present, are ignored.
 
@@ -142,6 +142,9 @@ Styling follows `globals.css` tokens (light zinc), no hardcoded dark hex.
 - A recommendation's `texte_actuel` that cannot be found in the CV is nulled.
 - An empty `exigences` list is capped at 50.
 - Groq `maxRetries: 0` with explicit timeouts (8B 8 s, 70B 15 s); Tavily 6 s.
+- The stored priority is frozen at analysis time, so it is recomputed at display and sort time (`currentPriority` in `priority.ts`): an offer whose deadline has passed shows "Expirée" and sorts last.
+- Missing configuration (`GROQ_API_KEY` empty, migration 006 not applied) raises `SetupError` before any Tavily call and is returned as HTTP 503 with an explicit message.
+- A deadline known from structured data (JSearch expiration date) is used when the model finds none.
 - The offer route returns a `persisted` flag; the modal warns when the analysis could not be stored (e.g. migration 006 not applied).
 
 ## Out of scope

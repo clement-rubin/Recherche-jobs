@@ -22,8 +22,14 @@ const mockIntentResponse = (intent: object) => ({
 })
 
 describe('processIntent', () => {
+  const realKey = process.env.GROQ_API_KEY
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env.GROQ_API_KEY = 'test-key'
+  })
+  afterEach(() => {
+    if (realKey === undefined) delete process.env.GROQ_API_KEY
+    else process.env.GROQ_API_KEY = realKey
   })
 
   it('returns update_application intent for interview announcement', async () => {

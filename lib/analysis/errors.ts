@@ -11,3 +11,11 @@ export class InvalidAnalysisError extends Error {
     this.name = 'InvalidAnalysisError'
   }
 }
+
+/** Missing server configuration (API key, unapplied migration): not the user's fault. */
+export class SetupError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SetupError'
+  }
+}

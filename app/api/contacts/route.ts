@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     poste: body.poste || null,
     entreprise: body.entreprise || null,
     linkedin_url,
+    profil_texte: body.profil_texte || null,
     statut,
     date_contact: statut === 'a_contacter' ? null : (body.date_contact || new Date().toISOString().slice(0, 10)),
     notes: body.notes || null,

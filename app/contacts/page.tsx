@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { LinkedInContact, ContactStatus } from '@/lib/supabase/types'
 import { ContactForm } from '@/components/contacts/ContactForm'
 import { Card } from '@/components/ui/Card'
+import { MAX_MESSAGE_LENGTH } from '@/lib/contacts-limits'
 
 type Tab = 'a_contacter' | 'contactes'
 
@@ -22,6 +23,9 @@ export default function ContactsPage() {
   const [tab, setTab] = useState<Tab>('a_contacter')
   const [editing, setEditing] = useState<LinkedInContact | null>(null)
   const [creating, setCreating] = useState(false)
+  const [messages, setMessages] = useState<Record<string, string>>({})
+  const [generating, setGenerating] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
 
   const fetchContacts = useCallback(async () => {
     const res = await fetch('/api/contacts')
@@ -68,6 +72,30 @@ export default function ContactsPage() {
       setContacts(prev => prev.filter(c => c.id !== id))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur')
+    }
+  }
+
+  const handleSuggest = async (id: string) => {
+    setGenerating(id)
+    setError(null)
+    try {
+      const res = await request(`/api/contacts/${id}/message`, 'POST')
+      const { message } = await res.json()
+      setMessages(prev => ({ ...prev, [id]: message }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur')
+    } finally {
+      setGenerating(null)
+    }
+  }
+
+  const handleCopy = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(id)
+      setTimeout(() => setCopied(c => (c === id ? null : c)), 2000)
+    } catch {
+      setError('Copie impossible, sélectionne le texte manuellement')
     }
   }
 
@@ -152,6 +180,16 @@ export default function ContactsPage() {
                     {c.notes && <p className="text-sm mt-2 whitespace-pre-line" style={{ color: 'var(--foreground)' }}>{c.notes}</p>}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {c.profil_texte && (
+                      <button
+                        onClick={() => handleSuggest(c.id)}
+                        disabled={generating === c.id}
+                        className="border border-[color:var(--accent)] px-3 py-1.5 rounded-[var(--r-lg)] text-sm disabled:opacity-50"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        {generating === c.id ? 'Rédaction...' : messages[c.id] ? 'Régénérer' : 'Suggérer un message'}
+                      </button>
+                    )}
                     {action && (
                       <button
                         onClick={() => handleUpdate(c.id, { statut: action.next }).catch(err => setError(err.message))}
@@ -168,6 +206,25 @@ export default function ContactsPage() {
                     </button>
                   </div>
                 </div>
+                {messages[c.id] && (
+                  <div className="mt-3 rounded-[var(--r-lg)] p-3" style={{ background: 'var(--accent-surface)', border: '1px solid var(--accent-border)' }}>
+                    <textarea
+                      value={messages[c.id]}
+                      onChange={e => setMessages(prev => ({ ...prev, [c.id]: e.target.value }))}
+                      rows={4}
+                      className="w-full bg-transparent text-sm focus:outline-none"
+                      style={{ color: 'var(--foreground)' }}
+                    />
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs" style={{ color: messages[c.id].length > MAX_MESSAGE_LENGTH ? 'var(--danger-text)' : 'var(--muted)' }}>
+                        {messages[c.id].length}/{MAX_MESSAGE_LENGTH}
+                      </span>
+                      <button onClick={() => handleCopy(c.id, messages[c.id])} className="text-sm underline" style={{ color: 'var(--accent)' }}>
+                        {copied === c.id ? 'Copié ✓' : 'Copier'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </Card>
             )
           })}

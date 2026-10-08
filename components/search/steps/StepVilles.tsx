@@ -1,10 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import dynamic from 'next/dynamic'
+import { useEffect, useRef, useState } from 'react'
 import type { SearchLocation } from '@/lib/supabase/types'
+import { reverseGeocode, searchCity, type GeoPlace } from '@/lib/geo/nominatim'
 import { inputClass } from '../wizardStyles'
 import { EUROPE_COUNTRIES } from '../countries'
-import { CITY_HUB_SUGGESTIONS } from '../cityHubSuggestions'
+
+// Leaflet needs `window`: load the map on the client only.
+const LocationMap = dynamic(() => import('../map/LocationMap').then(m => m.LocationMap), {
+  ssr: false,
+  loading: () => <div className="h-72 rounded-xl animate-pulse" style={{ background: 'var(--surface)' }} />,
+})
+
+const COUNTRY_CODES = EUROPE_COUNTRIES.map(c => c.code)
+const DEFAULT_RAYON_KM = 30
+const MSG_UNSUPPORTED = 'Pays non couvert par la recherche'
+
+type Place = Pick<SearchLocation, 'ville' | 'pays'>
+const countryOf = (l: Place) => (l.pays ?? 'FR').toUpperCase()
+const keyOf = (l: Place) => `${l.ville.toLowerCase()}|${countryOf(l)}`
+const countryLabel = (code: string) => EUROPE_COUNTRIES.find(c => c.code === code)?.label ?? code
 
 interface StepVillesProps {
   value: SearchLocation[]
@@ -12,7 +28,87 @@ interface StepVillesProps {
 }
 
 export function StepVilles({ value, onChange }: StepVillesProps) {
-  const [ids, setIds] = useState<string[]>(() => value.map(() => crypto.randomUUID()))
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<GeoPlace[]>([])
+  const [message, setMessage] = useState<string | null>(null)
+  const [focus, setFocus] = useState<{ lat: number; lng: number } | null>(null)
+
+  // Async callbacks (geocoding) must merge into the latest value, not the one
+  // captured when the request started.
+  const valueRef = useRef(value)
+  useEffect(() => { valueRef.current = value })
+
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchSeq = useRef(0)
+  useEffect(() => () => { if (searchTimer.current) clearTimeout(searchTimer.current) }, [])
+
+  // Legacy profiles saved before the map have no coords: geocode them once so
+  // their radius circle can be drawn. Silent on failure.
+  useEffect(() => {
+    const missing = value.filter(l => l.ville.trim() && (l.lat === undefined || l.lng === undefined))
+    if (missing.length === 0) return
+    let cancelled = false
+    ;(async () => {
+      const coords = new Map<string, { lat: number; lng: number }>()
+      for (const l of missing) {
+        const [hit] = await searchCity(l.ville, [countryOf(l)])
+        if (hit) coords.set(keyOf(l), { lat: hit.lat, lng: hit.lng })
+      }
+      if (cancelled || coords.size === 0) return
+      onChange(valueRef.current.map(l => {
+        const c = coords.get(keyOf(l))
+        return c && l.lat === undefined ? { ...l, ...c } : l
+      }))
+    })()
+    return () => { cancelled = true }
+    // Mount-only: later rows always come with coords from the picker.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const addPlace = (place: GeoPlace) => {
+    if (!COUNTRY_CODES.includes(place.pays)) {
+      setMessage(MSG_UNSUPPORTED)
+      return
+    }
+    setMessage(null)
+    setFocus({ lat: place.lat, lng: place.lng })
+    const current = valueRef.current
+    if (current.some(l => keyOf(l) === keyOf(place))) return
+    onChange([...current, { ...place, rayon_km: DEFAULT_RAYON_KM }])
+  }
+
+  const handlePickPoint = async (lat: number, lng: number) => {
+    setMessage('Recherche de la ville…')
+    const place = await reverseGeocode(lat, lng)
+    if (!place) {
+      setMessage('Ville introuvable à cet endroit')
+      return
+    }
+    addPlace(place)
+  }
+
+  const handleQuery = (q: string) => {
+    setQuery(q)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    const trimmed = q.trim()
+    if (trimmed.length < 2) {
+      setResults([])
+      return
+    }
+    searchTimer.current = setTimeout(async () => {
+      const seq = ++searchSeq.current
+      const found = await searchCity(trimmed, COUNTRY_CODES)
+      if (seq !== searchSeq.current) return // a newer search superseded this one
+      setResults(found)
+      setMessage(found.length === 0 ? 'Ville introuvable' : null)
+    }, 400)
+  }
+
+  const pickResult = (place: GeoPlace) => {
+    addPlace(place)
+    setQuery('')
+    setResults([])
+  }
 
   const updateRow = (index: number, patch: Partial<SearchLocation>) => {
     onChange(value.map((row, i) => (i === index ? { ...row, ...patch } : row)))
@@ -20,88 +116,98 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
 
   const removeRow = (index: number) => {
     onChange(value.filter((_, i) => i !== index))
-    setIds(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const addRow = () => {
-    onChange([...value, { ville: '', rayon_km: 30, pays: 'FR' }])
-    setIds(prev => [...prev, crypto.randomUUID()])
   }
 
   return (
     <div className="space-y-3">
       <label className="block text-xs font-medium" style={{ color: 'var(--muted)' }}>Villes recherchées</label>
-      {value.map((row, index) => {
-        const cityHubs = CITY_HUB_SUGGESTIONS[(row.pays ?? 'FR').toUpperCase()] ?? []
-        return (
-          <div key={ids[index] ?? index} className="space-y-1.5">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--muted-light)' }}>Ville</label>
-                <input
-                  value={row.ville}
-                  onChange={e => updateRow(index, { ville: e.target.value })}
-                  placeholder="Lille"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--muted-light)' }}>Pays</label>
-                <select
-                  value={(row.pays ?? 'FR').toUpperCase()}
-                  onChange={e => updateRow(index, { pays: e.target.value })}
-                  className={`${inputClass} w-40`}
+
+      <div className="relative">
+        <input
+          value={query}
+          onChange={e => handleQuery(e.target.value)}
+          placeholder="Rechercher une ville…"
+          className={inputClass}
+        />
+        {results.length > 0 && (
+          <ul
+            className="absolute z-10 mt-1 w-full rounded-lg border shadow-md overflow-hidden"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+          >
+            {results.map(r => (
+              <li key={`${r.ville}|${r.pays}`}>
+                <button
+                  type="button"
+                  onClick={() => pickResult(r)}
+                  className="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-zinc-100"
+                  style={{ color: 'var(--foreground)' }}
                 >
-                  {EUROPE_COUNTRIES.map(c => (
-                    <option key={c.code} value={c.code}>{c.label}</option>
-                  ))}
-                </select>
+                  {r.ville}
+                  <span className="text-xs ml-1.5" style={{ color: 'var(--muted)' }}>{countryLabel(r.pays)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <LocationMap
+        locations={value}
+        focus={focus}
+        onPick={addPlace}
+        onPickPoint={handlePickPoint}
+        onUnsupported={() => setMessage(MSG_UNSUPPORTED)}
+      />
+      <p className="text-xs" style={{ color: message ? 'var(--accent)' : 'var(--muted-light)' }} aria-live="polite">
+        {message ?? 'Clique sur un pays pour zoomer, puis sur une ville (ou un point de la carte).'}
+      </p>
+
+      {value.length === 0 ? (
+        <p className="text-xs" style={{ color: 'var(--muted-light)' }}>Aucune ville sélectionnée.</p>
+      ) : (
+        <ul className="space-y-2">
+          {value.map((row, index) => (
+            <li
+              key={`${keyOf(row)}|${index}`}
+              className="rounded-lg border px-3 py-2"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
+                  {row.ville || 'Ville non renseignée'}
+                  <span className="text-xs font-normal ml-1.5" style={{ color: 'var(--muted)' }}>{countryLabel(countryOf(row))}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeRow(index)}
+                  aria-label={`Supprimer la ville ${row.ville || index + 1}`}
+                  className="text-xs px-2 py-1 rounded-lg transition-colors hover:bg-red-50 hover:text-red-500"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  ✕
+                </button>
               </div>
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--muted-light)' }}>Rayon (km)</label>
+              <div className="flex items-center gap-3 mt-1.5">
                 <input
-                  type="number" min="0" max="100"
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
                   value={row.rayon_km}
-                  onChange={e => updateRow(index, { rayon_km: Math.min(100, Math.max(0, Number(e.target.value))) })}
-                  className={`${inputClass} w-24`}
+                  onChange={e => updateRow(index, { rayon_km: Number(e.target.value) })}
+                  aria-label={`Rayon autour de ${row.ville}`}
+                  className="flex-1"
+                  style={{ accentColor: 'var(--accent)' }}
                 />
+                <span className="text-xs w-14 text-right" style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+                  {row.rayon_km} km
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={() => removeRow(index)}
-                aria-label={`Supprimer la ville ${row.ville || index + 1}`}
-                className="text-xs px-2 py-2 rounded-lg transition-colors hover:bg-red-50 hover:text-red-500"
-                style={{ color: 'var(--muted)' }}
-              >
-                ✕
-              </button>
-            </div>
-            {cityHubs.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {cityHubs.map(city => (
-                  <button
-                    key={city}
-                    type="button"
-                    onClick={() => updateRow(index, { ville: city })}
-                    className="px-2.5 py-1 rounded-full text-xs border transition-colors"
-                    style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      })}
-      <button
-        type="button"
-        onClick={addRow}
-        className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
-        style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
-      >
-        + Ajouter une ville
-      </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <p className="text-xs" style={{ color: 'var(--muted-light)' }}>
         Le rayon ne s&apos;applique qu&apos;aux offres françaises (APEC, France Travail, HelloWork) ; pour les autres pays, la recherche couvre tout le pays via JSearch et EURES.
       </p>

@@ -94,8 +94,8 @@ function buildSystemPrompt(sameSchoolLine: string | null): string {
 Contenu, dans cet ordre :
 1. « Bonjour <prénom>, » (vouvoiement partout, jamais « Monsieur/Madame »).
 2. ${ecoleBloc}
-3. UNE accroche précise sur son parcours (une mission, un projet, un changement de poste du profil), en une demi-phrase, qui amène la question avec un lien simple (« Vous avez travaillé sur… : », « En voyant… »). Jamais de verbe d'émotion sur son travail. Ne recopie ni ses technologies ni ses compétences, ne résume pas son CV, pas de liste.
-4. UNE question directe sur les compétences (deux au maximum, reliées) : parmi ce qu'on apprend à l'école, quelles compétences servent vraiment dans son poste au quotidien, et lesquelles ne s'apprennent que sur le terrain. Emploie le mot « compétences », et si le profil s'y prête, nomme UN domaine concret de son travail pour ancrer la question (ex. la modélisation de données, la qualité des données), sans lister de technologies. Va droit au but : pas de détour, pas d'introduction du type « je me demandais », « je voulais savoir ». Ne la formule pas de façon scolaire ni comme un reproche envers l'école.
+3. UNE accroche précise sur son parcours (une mission, un projet, un changement de poste du profil) en une phrase simple qui cite l'entreprise (« Vous avez développé … chez … . »). Elle se termine par un point : jamais collée à la question sans ponctuation. Ne recopie ni ses technologies ni ses compétences, ne résume pas son CV, pas de liste. Jamais de verbe d'émotion sur son travail.
+4. UNE question directe sur les compétences (deux au maximum, reliées), dans l'esprit exact de : « Je voulais savoir quelles compétences apprises à l'école vous sont réellement utiles au quotidien, et lesquelles ne s'apprennent qu'en situation ? ». Garde ces mots simples (« compétences », « réellement utiles au quotidien », « en situation ») plutôt que des synonymes plus savants. Tu peux l'adapter légèrement au poste de la personne, sans lister de technologies. Pas de formulation scolaire, pas de reproche envers l'école.
 Le message se termine sur la question, rien après.
 
 Règles strictes :
@@ -107,7 +107,7 @@ Règles strictes :
 - Le message doit couler d'une seule traite, comme un message qu'on écrit vraiment : deux ou trois phrases qui s'enchaînent avec des liens naturels (« et », « du coup », « justement », « en voyant »), l'accroche amenant la question. Pas de phrases hachées ni de style télégraphique, mais pas non plus de phrase à rallonge. Mots simples. Interdits : « m'intrigue », « m'inspire », « me fascine », « m'interpelle », « me passionne », « donné envie », « j'admire », « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
 
 Exemple de TON uniquement, pour une autre personne, ne le recopie pas :
-« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis en M1 Big Data IA. Vous avez travaillé sur la refonte du data warehouse chez Veolia : dans ce poste, quelles compétences vues en cours vous servent vraiment, et lesquelles ne s'apprennent que sur le terrain ? »
+« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis en M1 Big Data IA. Vous avez travaillé sur la refonte du data warehouse chez Veolia. Je voulais savoir quelles compétences apprises à l'école vous sont réellement utiles au quotidien, et lesquelles ne s'apprennent qu'en situation ? »
 
 Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`
 }

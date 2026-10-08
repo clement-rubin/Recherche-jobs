@@ -56,6 +56,8 @@ export interface SearchLocation {
   ville: string
   rayon_km: number
   pays?: string // ISO2 country code, e.g. 'FR', 'DE', 'GB' (uppercase). Missing/undefined means 'FR'; legacy rows may hold lowercase, normalize case defensively when reading.
+  lat?: number // city centre, set by the map picker; legacy rows may lack it (scrapers ignore it)
+  lng?: number
 }
 
 export interface SearchProfile {

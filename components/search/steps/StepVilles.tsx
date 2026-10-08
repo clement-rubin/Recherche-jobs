@@ -236,7 +236,7 @@ export function StepVilles({ value, onChange }: StepVillesProps) {
       )}
 
       <p className="text-xs" style={{ color: 'var(--muted-light)' }}>
-        Le rayon ne s&apos;applique qu&apos;aux offres françaises (APEC, France Travail, HelloWork) ; pour les autres pays, la recherche couvre tout le pays via JSearch et EURES.
+        Le rayon s&apos;applique aux offres France Travail autour de la ville. Les autres sources cherchent dans la ville (France) ou dans tout le pays (hors France).
       </p>
     </div>
   )

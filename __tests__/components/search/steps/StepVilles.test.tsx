@@ -216,4 +216,11 @@ describe('StepVilles', () => {
     expect(screen.getByText('0 km')).toBeInTheDocument()
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  it('explains that the radius applies to France Travail only', () => {
+    render(<StepVilles value={[lille]} onChange={() => {}} />)
+    expect(screen.getByText(
+      "Le rayon s'applique aux offres France Travail autour de la ville. Les autres sources cherchent dans la ville (France) ou dans tout le pays (hors France)."
+    )).toBeInTheDocument()
+  })
 })

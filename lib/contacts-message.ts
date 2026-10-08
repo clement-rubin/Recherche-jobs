@@ -2,9 +2,19 @@ import Groq from 'groq-sdk'
 import { PROFILE } from '@/lib/analyzer/profile'
 import { groqModelParams } from '@/lib/groq-model'
 import { GroqQuotaError, reserveGroqCall } from '@/lib/groq-quota'
+import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions'
 import { MAX_MESSAGE_LENGTH } from '@/lib/contacts-limits'
 
 const MAX_PROFILE_CHARS = 12000
+
+/**
+ * Returns the profile line mentioning the candidate's school (JUNIA / ISEN), or null.
+ * Done in code rather than left to the model: "same school" decides the tone, so it must be reliable.
+ */
+export function detectSameSchool(profil: string): string | null {
+  const line = profil.split('\n').find(l => /\b(junia|isen)\b/i.test(l))
+  return line ? line.trim().slice(0, 160) : null
+}
 
 /** Error whose message is safe to show to the user. */
 export class OutreachError extends Error {
@@ -61,41 +71,42 @@ export async function generateOutreachMessage(contact: OutreachInput): Promise<s
   }
 }
 
-async function run(groq: Groq, contact: OutreachInput): Promise<string> {
-  const profil = contact.profil_texte.slice(0, MAX_PROFILE_CHARS)
-  console.log('[contacts-message] start', {
-    ...groqModelParams(),
-    profileChars: contact.profil_texte.length,
-    profileCharsSent: profil.length,
-    truncated: profil.length < contact.profil_texte.length,
-  })
+function buildSystemPrompt(sameSchoolLine: string | null): string {
+  const ecoleBloc = sameSchoolLine
+    ? `Cette personne est passée par la même école que le candidat (${PROFILE.ecole}) : ligne du profil « ${sameSchoolLine} ». Dis-le dès le début, simplement (ex. « je suis moi aussi passé par JUNIA ISEN »), et prends un ton plus chaleureux, comme entre anciens de la même école, tout en restant respectueux.`
+    : 'Ton chaleureux mais respectueux. Ne mentionne pas d\'école commune (il n\'y en a pas).'
+
+  return `Tu écris l'accroche LinkedIn d'un étudiant (${PROFILE.niveau} à ${PROFILE.ecole}) qui veut comprendre, en vrai, comment se passe un métier. Le message doit sonner comme écrit par un étudiant sérieux et sympathique, pas par une IA ni par un rapport universitaire.
+
+Contenu, dans cet ordre :
+1. « Bonjour <prénom>, » (vouvoiement partout, jamais « Monsieur/Madame »).
+2. ${ecoleBloc}
+3. UNE accroche précise sur son parcours (une mission, un projet, un changement de poste du profil), en une demi-phrase. Ne recopie ni ses technologies ni ses compétences, ne résume pas son CV, pas de liste.
+4. UNE question concrète (deux au maximum) sur la réalité du poste, au choix selon son profil :
+   - ce qu'on attend concrètement d'un jeune ingénieur sur ce poste, le niveau d'exigence ;
+   - comment ses compétences et ses outils sont mis en place au quotidien ;
+   - les outils et méthodes réellement utilisés, pas ceux des offres d'emploi.
+5. Une demande simple : 15 minutes d'échange ou quelques conseils.
+
+Règles strictes :
+- Maximum ${MAX_MESSAGE_LENGTH} caractères au total, message complet.
+- Ne parle jamais de stage, de recherche d'emploi, de candidature ni de dates.
+- Ne cite aucune compétence du candidat : seulement « M1 Big Data IA ».
+- N'invente rien qui ne soit pas dans le profil. Le profil est un copier-coller brut de la page : ignore menus, boutons, « Autres profils consultés ».
+- Phrases courtes, mots simples. Interdits : « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
+
+Exemple de TON uniquement, pour une autre personne, ne le recopie pas :
+« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN, aujourd'hui en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'a donné envie de vous demander : au quotidien, qu'est-ce qu'on attend concrètement d'un jeune ingénieur sur ce poste ? Auriez-vous 15 minutes pour m'en parler ? »
+
+Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`
+}
+
+async function complete(groq: Groq, messages: ChatCompletionMessageParam[]): Promise<string> {
   const completion = await groq.chat.completions.create({
     ...groqModelParams(),
-    messages: [
-      {
-        role: 'system',
-        content: `Tu rédiges des messages d'accroche LinkedIn en français pour un étudiant en recherche de stage.
-Candidat : ${PROFILE.niveau}, compétences : ${PROFILE.competences.join(', ')}. Période de stage : ${PROFILE.periode_debut} à ${PROFILE.periode_fin}.
-
-Règles :
-- Maximum ${MAX_MESSAGE_LENGTH} caractères, message complet (pas de tronquage).
-- Le profil est un copier-coller brut de la page LinkedIn : ignore le bruit (menus, boutons, "Autres profils consultés", publicités, suggestions) et ne garde que le parcours de la personne.
-- Appuie-toi sur UNE ou DEUX expériences précises tirées du profil fourni (entreprise, mission, techno) et fais le lien avec le parcours du candidat. N'invente rien qui n'est pas dans le profil.
-- Ton naturel et poli, vouvoiement, pas de flatterie creuse, pas de formule "j'espère que vous allez bien".
-- Termine par une demande simple (échange de 15 minutes ou conseil), pas par une demande directe de stage.
-- Pas d'emoji, pas de hashtag, pas de placeholder entre crochets. Signe sans nom (le nom est déjà dans LinkedIn).
-Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`,
-      },
-      {
-        role: 'user',
-        content: `Personne à contacter : ${contact.nom}${contact.poste ? `, ${contact.poste}` : ''}${contact.entreprise ? ` chez ${contact.entreprise}` : ''}
-
-Profil LinkedIn (texte copié) :
-${profil}`,
-      },
-    ],
+    messages,
     response_format: { type: 'json_object' },
-    temperature: 0.6,
+    temperature: 0.7,
     max_completion_tokens: 1500,
   })
 
@@ -120,4 +131,38 @@ ${profil}`,
     throw new OutreachError('Réponse invalide du modèle, réessaie', 502)
   }
   return message.trim()
+}
+
+async function run(groq: Groq, contact: OutreachInput): Promise<string> {
+  const profil = contact.profil_texte.slice(0, MAX_PROFILE_CHARS)
+  const sameSchoolLine = detectSameSchool(profil)
+  console.log('[contacts-message] start', {
+    ...groqModelParams(),
+    sameSchool: sameSchoolLine !== null,
+    profileChars: contact.profil_texte.length,
+    profileCharsSent: profil.length,
+    truncated: profil.length < contact.profil_texte.length,
+  })
+
+  const messages: ChatCompletionMessageParam[] = [
+    { role: 'system', content: buildSystemPrompt(sameSchoolLine) },
+    {
+      role: 'user',
+      content: `Personne à contacter : ${contact.nom}${contact.poste ? `, ${contact.poste}` : ''}${contact.entreprise ? ` chez ${contact.entreprise}` : ''}
+
+Profil LinkedIn (texte copié) :
+${profil}`,
+    },
+  ]
+
+  const message = await complete(groq, messages)
+  if (message.length <= MAX_MESSAGE_LENGTH) return message
+
+  // Models are unreliable at hard length limits and LinkedIn rejects invitation notes over 300 chars: one rewrite pass.
+  console.warn('[contacts-message] too long, asking for a shorter rewrite', { length: message.length, max: MAX_MESSAGE_LENGTH })
+  messages.push(
+    { role: 'assistant', content: JSON.stringify({ message }) },
+    { role: 'user', content: `Trop long (${message.length} caractères). Réécris-le en ${MAX_MESSAGE_LENGTH} caractères maximum, même ton, en gardant la question. Retourne le même JSON.` }
+  )
+  return complete(groq, messages)
 }

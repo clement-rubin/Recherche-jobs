@@ -3,6 +3,13 @@ import userEvent from '@testing-library/user-event'
 import { WizardModal } from '@/components/search/WizardModal'
 import type { SearchProfile } from '@/lib/supabase/types'
 
+// The Villes step renders a Leaflet map (not runnable in jsdom) and geocodes legacy rows.
+jest.mock('next/dynamic', () => () => function MockLocationMap() { return null })
+jest.mock('@/lib/geo/nominatim', () => ({
+  reverseGeocode: jest.fn().mockResolvedValue(null),
+  searchCity: jest.fn().mockResolvedValue([]),
+}))
+
 describe('WizardModal', () => {
   it('disables "Suivant" on step 1 until a name is entered', async () => {
     render(<WizardModal onSave={jest.fn()} onClose={jest.fn()} />)

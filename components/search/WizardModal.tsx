@@ -115,7 +115,7 @@ export function WizardModal({ profile, onSave, onClose }: WizardModalProps) {
     >
       <div
         ref={cardRef}
-        className="w-full max-w-lg rounded-2xl shadow-xl overflow-hidden"
+        className={`w-full ${step === 1 ? 'max-w-2xl' : 'max-w-lg'} rounded-2xl shadow-xl overflow-hidden`}
         style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
       >
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>

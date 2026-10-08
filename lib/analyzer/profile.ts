@@ -1,5 +1,6 @@
 export const PROFILE = {
   niveau: 'M1 Big Data IA',
+  ecole: 'JUNIA ISEN',
   experience_mois: 0,
   competences: ['Python', 'SQL', 'Machine Learning', 'Data visualisation', 'pandas', 'numpy', 'scikit-learn', 'Power BI', 'Tableau'],
   langues: ['Français (natif)', 'Anglais B2+'],

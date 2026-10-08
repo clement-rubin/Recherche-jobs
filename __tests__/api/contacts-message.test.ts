@@ -23,6 +23,7 @@ const mockSupabase = {
 jest.mock('@/lib/supabase/server', () => ({ createServerSupabase: jest.fn().mockResolvedValue(mockSupabase) }))
 
 import { POST } from '@/app/api/contacts/[id]/message/route'
+import { detectSameSchool } from '@/lib/contacts-message'
 
 const call = () =>
   POST(new NextRequest('http://localhost/api/contacts/c-1/message', { method: 'POST' }), { params: Promise.resolve({ id: 'c-1' }) })
@@ -67,6 +68,46 @@ describe('POST /api/contacts/[id]/message', () => {
     expect(mockCreate.mock.calls[0][0].messages[1].content).toContain('Doctolib')
   })
 
+  it('same school: detected from the profile and injected into the prompt', async () => {
+    withContact({ ...contact, profil_texte: 'Data engineer chez Doctolib\nFormation : ISEN Lille, ingénieur' })
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ message: 'Bonjour Marie, ISEN aussi.' }) } }] })
+    await call()
+    const system = mockCreate.mock.calls[0][0].messages[0].content
+    expect(system).toContain('même école')
+    expect(system).toContain('ISEN Lille')
+  })
+
+  it('different school: no shared-school claim', async () => {
+    withContact(contact)
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ message: 'Bonjour Marie.' }) } }] })
+    await call()
+    expect(mockCreate.mock.calls[0][0].messages[0].content).toContain("Ne mentionne pas d'école commune")
+  })
+
+  it('prompt bans internships, skills lists and AI-sounding phrases', async () => {
+    withContact(contact)
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ message: 'Bonjour Marie.' }) } }] })
+    await call()
+    const system = mockCreate.mock.calls[0][0].messages[0].content
+    expect(system).toContain('Ne parle jamais de stage')
+    expect(system).toContain('Ne cite aucune compétence du candidat')
+    expect(system).toContain('je me permets')
+    expect(system).toContain('300 caractères')
+  })
+
+  it('asks for one shorter rewrite when over 300 chars, counting a single quota reservation', async () => {
+    withContact(contact)
+    const long = 'x'.repeat(320)
+    mockCreate
+      .mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify({ message: long }) } }] })
+      .mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify({ message: 'Bonjour Marie, version courte.' }) } }] })
+    const res = await call()
+    expect((await res.json()).message).toBe('Bonjour Marie, version courte.')
+    expect(mockCreate).toHaveBeenCalledTimes(2)
+    expect(mockCreate.mock.calls[1][0].messages.at(-1).content).toContain('Trop long (320 caractères)')
+    expect(mockReserve).toHaveBeenCalledTimes(1)
+  })
+
   it.each([
     [429, 429, 'Limite Groq'],
     [413, 413, 'trop long'],
@@ -105,5 +146,14 @@ describe('POST /api/contacts/[id]/message', () => {
     const res = await call()
     expect(res.status).toBe(502)
     expect((await res.json()).error).toContain('404 model not found')
+  })
+})
+
+describe('detectSameSchool', () => {
+  it.each(['Formation\nJUNIA ISEN - M2', 'Isen Lille', 'ISEN-Yncréa'])('matches %s', p => {
+    expect(detectSameSchool(p)).not.toBeNull()
+  })
+  it.each(['Université de Lille', 'Chisenhale Gallery', ''])('does not match %s', p => {
+    expect(detectSameSchool(p)).toBeNull()
   })
 })

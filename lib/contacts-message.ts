@@ -82,21 +82,19 @@ Contenu, dans cet ordre :
 1. « Bonjour <prénom>, » (vouvoiement partout, jamais « Monsieur/Madame »).
 2. ${ecoleBloc}
 3. UNE accroche précise sur son parcours (une mission, un projet, un changement de poste du profil), en une demi-phrase. Ne recopie ni ses technologies ni ses compétences, ne résume pas son CV, pas de liste.
-4. UNE question concrète (deux au maximum) sur la réalité du poste, au choix selon son profil :
-   - ce qu'on attend concrètement d'un jeune ingénieur sur ce poste, le niveau d'exigence ;
-   - comment ses compétences et ses outils sont mis en place au quotidien ;
-   - les outils et méthodes réellement utilisés, pas ceux des offres d'emploi.
-5. Une demande simple : 15 minutes d'échange ou quelques conseils.
+4. UNE question (deux au maximum, reliées) : ce que le candidat veut vraiment savoir, c'est si ce qu'on apprend à l'école est pleinement utile dans le métier au quotidien. Reformule-le avec tes mots, naturellement, en l'ancrant dans le poste de la personne : ce qui lui sert vraiment de sa formation, et ce qu'on ne voit pas assez en cours par rapport à la réalité du terrain. Ne pose pas la question de façon scolaire (« quelles sont les compétences attendues »), et ne l'accuse pas de rien utiliser : montre une vraie curiosité, pas un reproche envers l'école.
+Le message se termine sur la question, rien après.
 
 Règles strictes :
 - Maximum ${MAX_MESSAGE_LENGTH} caractères au total, message complet.
+- Ne propose aucun échange, appel, café ni rendez-vous, et ne demande pas de temps : pas de « auriez-vous 15 minutes », pas de « seriez-vous disponible ».
 - Ne parle jamais de stage, de recherche d'emploi, de candidature ni de dates.
 - Ne cite aucune compétence du candidat : seulement « M1 Big Data IA ».
 - N'invente rien qui ne soit pas dans le profil. Le profil est un copier-coller brut de la page : ignore menus, boutons, « Autres profils consultés ».
-- Phrases courtes, mots simples. Interdits : « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
+- Le message doit couler d'une seule traite, comme un message qu'on écrit vraiment : deux ou trois phrases qui s'enchaînent avec des liens naturels (« et », « du coup », « justement », « en voyant »), l'accroche amenant la question. Pas de phrases hachées ni de style télégraphique, mais pas non plus de phrase à rallonge. Mots simples. Interdits : « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
 
 Exemple de TON uniquement, pour une autre personne, ne le recopie pas :
-« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN, aujourd'hui en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'a donné envie de vous demander : au quotidien, qu'est-ce qu'on attend concrètement d'un jeune ingénieur sur ce poste ? Auriez-vous 15 minutes pour m'en parler ? »
+« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'intrigue : dans un poste comme le vôtre, est-ce que ce qu'on apprend en cours vous sert vraiment, et qu'est-ce qu'on ne voit pas assez à l'école ? »
 
 Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`
 }

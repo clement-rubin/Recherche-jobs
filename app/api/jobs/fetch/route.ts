@@ -93,9 +93,10 @@ export async function POST(req: NextRequest) {
     const isFrench = (loc: { pays?: string }) => (loc.pays ?? 'fr').toLowerCase() === 'fr'
 
     // INSEE commune per French location (once, not per keyword) so France Travail
-    // can apply the radius; null → FT falls back to a departement-wide search
-    const communeCodes = await Promise.all(
-      locations.map(loc => (isFrench(loc) ? resolveCommuneCode(loc) : Promise.resolve(null)))
+    // can apply the radius; null → FT falls back to a departement-wide search.
+    // Not awaited here: only the France Travail calls wait for it.
+    const communeCodes = locations.map(loc =>
+      isFrench(loc) ? resolveCommuneCode(loc) : Promise.resolve(null)
     )
 
     // JSearch + EURES fire for every location (multi-country); APEC/HelloWork/France Travail
@@ -104,8 +105,9 @@ export async function POST(req: NextRequest) {
     const taggedPromises = locations.flatMap((loc, locIndex) => {
       const country = (loc.pays ?? 'fr').toLowerCase()
       const isFrance = isFrench(loc)
-      const commune = communeCodes[locIndex]
-      const ftArea = commune ? { commune, distanceKm: loc.rayon_km } : undefined
+      const ftArea = communeCodes[locIndex].then(commune =>
+        commune ? { commune, distanceKm: loc.rayon_km } : undefined
+      )
       return keywordsList.flatMap(kw => {
         const entries: [string, Promise<ScrapedJob[]>][] = [
           ['jsearch', withTimeout(fetchJSearch(kw, loc.ville, [], country), 15000)],
@@ -115,7 +117,8 @@ export async function POST(req: NextRequest) {
           entries.push(
             ['apec', withTimeout(fetchAPEC(kw, loc.ville), 7000)],
             ['hellowork', withTimeout(fetchHelloWork(kw, loc.ville, typeContrats), 7000)],
-            ['france_travail', withTimeout(fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter, ftArea), 7000)],
+            // 12s = up to 5s commune lookup + 7s France Travail
+            ['france_travail', withTimeout(ftArea.then(area => fetchFranceTravail(kw, loc.ville, typeContrats, tempsPleinFilter, area)), 12000)],
           )
         }
         return entries

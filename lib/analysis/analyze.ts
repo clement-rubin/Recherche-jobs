@@ -52,6 +52,8 @@ const foldQuote = (s: string) => fold(s).replace(/[‘’]/g, "'").replace(/\s+/
 
 const MIN_CITED_LENGTH = 8
 
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
 const asString = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null)
 const asStringArray = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').map(x => x.trim()) : []
@@ -69,71 +71,87 @@ interface ModelOutput {
 }
 
 function parseModelOutput(raw: string): ModelOutput {
-  let o: any
-  try { o = JSON.parse(raw) } catch { throw new InvalidAnalysisError('JSON invalide') }
-  if (!o || typeof o !== 'object') throw new InvalidAnalysisError('JSON invalide')
-  if (!o.offre || typeof o.offre !== 'object' || !asString(o.offre.titre)) throw new InvalidAnalysisError('offre.titre manquant')
+  let parsedJson: unknown
+  try { parsedJson = JSON.parse(raw) } catch { throw new InvalidAnalysisError('JSON invalide') }
+  if (!isRecord(parsedJson)) throw new InvalidAnalysisError('JSON invalide')
+  const o = parsedJson
+  const off = o.offre
+  const titre = isRecord(off) ? asString(off.titre) : null
+  if (!isRecord(off) || !titre) throw new InvalidAnalysisError('offre.titre manquant')
   if (!Array.isArray(o.exigences)) throw new InvalidAnalysisError('exigences manquantes')
-  if (!o.accroche || typeof o.accroche.texte !== 'string') throw new InvalidAnalysisError('accroche.texte manquant')
+  const acc = o.accroche
+  if (!isRecord(acc) || typeof acc.texte !== 'string') throw new InvalidAnalysisError('accroche.texte manquant')
 
   const offre: OfferInfo = {
-    titre: o.offre.titre.trim(),
-    entreprise: asString(o.offre.entreprise),
-    publie_par_intermediaire: o.offre.publie_par_intermediaire === true,
-    lieu: asString(o.offre.lieu),
-    teletravail: asString(o.offre.teletravail),
-    type_contrat: ['stage', 'alternance'].includes(o.offre.type_contrat) ? o.offre.type_contrat : 'autre',
-    duree: asString(o.offre.duree),
-    date_debut: asString(o.offre.date_debut),
-    date_limite: typeof o.offre.date_limite === 'string' && isValidIsoDate(o.offre.date_limite) ? o.offre.date_limite : null,
-    niveau_etudes: asString(o.offre.niveau_etudes),
-    langue_offre: ['fr', 'en'].includes(o.offre.langue_offre) ? o.offre.langue_offre : 'autre',
+    titre,
+    entreprise: asString(off.entreprise),
+    publie_par_intermediaire: off.publie_par_intermediaire === true,
+    lieu: asString(off.lieu),
+    teletravail: asString(off.teletravail),
+    type_contrat: off.type_contrat === 'stage' || off.type_contrat === 'alternance' ? off.type_contrat : 'autre',
+    duree: asString(off.duree),
+    date_debut: asString(off.date_debut),
+    date_limite: typeof off.date_limite === 'string' && isValidIsoDate(off.date_limite) ? off.date_limite : null,
+    niveau_etudes: asString(off.niveau_etudes),
+    langue_offre: off.langue_offre === 'fr' || off.langue_offre === 'en' ? off.langue_offre : 'autre',
   }
 
-  const exigences: Requirement[] = o.exigences
-    .filter((e: any) => asString(e?.competence))
-    .map((e: any): Requirement => {
-      const preuve = e.present === true ? asString(e.preuve_cv) : null
-      // "present" is only accepted with a quoted proof from the CV.
-      const present = preuve !== null
-      const obligatoire = e.obligatoire !== false
-      return {
-        competence: e.competence.trim(),
-        obligatoire,
-        present,
-        preuve_cv: preuve,
-        bloquante: e.bloquante === true && obligatoire && !present,
-      }
+  const exigences: Requirement[] = []
+  for (const e of o.exigences) {
+    if (!isRecord(e)) continue
+    const competence = asString(e.competence)
+    if (!competence) continue
+    const preuve = e.present === true ? asString(e.preuve_cv) : null
+    // "present" is only accepted with a quoted proof from the CV.
+    const present = preuve !== null
+    const obligatoire = e.obligatoire !== false
+    exigences.push({
+      competence,
+      obligatoire,
+      present,
+      preuve_cv: preuve,
+      bloquante: e.bloquante === true && obligatoire && !present,
     })
+  }
+
+  const langues: LanguageReq[] = []
+  for (const l of Array.isArray(o.langues) ? o.langues : []) {
+    if (!isRecord(l)) continue
+    const langue = asString(l.langue)
+    if (!langue) continue
+    langues.push({ langue, niveau: asString(l.niveau), obligatoire: l.obligatoire !== false })
+  }
+
+  const recommandations_cv: CvRecommendation[] = []
+  for (const r of Array.isArray(o.recommandations_cv) ? o.recommandations_cv : []) {
+    if (!isRecord(r)) continue
+    const action = (['ajouter', 'reformuler', 'mettre_en_avant', 'retirer'] as const).find(a => a === r.action) ?? 'reformuler'
+    const rec: CvRecommendation = {
+      section: asString(r.section) ?? 'CV',
+      action,
+      texte_actuel: asString(r.texte_actuel),
+      texte_suggere: typeof r.texte_suggere === 'string' ? r.texte_suggere.trim() : '',
+      source_cv_maitre: asString(r.source_cv_maitre),
+    }
+    // Removing a passage needs no replacement text; every other action does.
+    if (rec.texte_suggere !== '' || rec.action === 'retirer') recommandations_cv.push(rec)
+  }
 
   return {
     offre,
     soft_skills: asStringArray(o.soft_skills),
-    langues: (Array.isArray(o.langues) ? o.langues : [])
-      .filter((l: any) => asString(l?.langue))
-      .map((l: any) => ({ langue: l.langue.trim(), niveau: asString(l.niveau), obligatoire: l.obligatoire !== false })),
+    langues,
     mots_cles_ats: asStringArray(o.mots_cles_ats).slice(0, 15),
     exigences,
     domaine_coherent: o.domaine_coherent === true,
     accroche: {
-      texte: o.accroche.texte.trim(),
-      valeur_citee: asString(o.accroche.valeur_citee),
-      experience_cv_liee: asString(o.accroche.experience_cv_liee),
-      avertissement: asString(o.accroche.avertissement),
+      texte: acc.texte.trim(),
+      valeur_citee: asString(acc.valeur_citee),
+      experience_cv_liee: asString(acc.experience_cv_liee),
+      avertissement: asString(acc.avertissement),
     },
     raison: asString(o.raison) ?? '',
-    recommandations_cv: (Array.isArray(o.recommandations_cv) ? o.recommandations_cv : [])
-      .filter((r: any) => r && typeof r === 'object')
-      .map((r: any): CvRecommendation => ({
-        section: asString(r.section) ?? 'CV',
-        action: ['ajouter', 'reformuler', 'mettre_en_avant', 'retirer'].includes(r.action) ? r.action : 'reformuler',
-        texte_actuel: asString(r.texte_actuel),
-        texte_suggere: typeof r.texte_suggere === 'string' ? r.texte_suggere.trim() : '',
-        source_cv_maitre: asString(r.source_cv_maitre),
-      }))
-      // Removing a passage needs no replacement text; every other action does.
-      .filter((r: CvRecommendation) => r.texte_suggere !== '' || r.action === 'retirer')
-      .slice(0, 5),
+    recommandations_cv: recommandations_cv.slice(0, 5),
   }
 }
 

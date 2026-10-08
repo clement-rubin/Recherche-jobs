@@ -11,8 +11,8 @@ export async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 2): Pr
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn()
-    } catch (err: any) {
-      if (err?.status === 429 && attempt < maxRetries) {
+    } catch (err: unknown) {
+      if ((err as { status?: number } | null)?.status === 429 && attempt < maxRetries) {
         const waitMs = (attempt + 1) * 2000
         console.warn(`[groq] 429 rate limit, retry in ${waitMs}ms`)
         await new Promise(r => setTimeout(r, waitMs))

@@ -2,6 +2,9 @@ import { groqJson } from './groq'
 import { EXTRACTION_SYSTEM, buildExtractionUser } from './prompt'
 import type { CompanyNews, CompanyResearch, CompanyValue, ResearchStatut } from './types'
 
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+
 export interface TavilyResult {
   url: string
   title: string
@@ -107,8 +110,9 @@ export async function researchCompany(
 
   let parsed: Record<string, unknown>
   try {
-    parsed = JSON.parse(await deps.extract(EXTRACTION_SYSTEM, buildExtractionUser(name, site, news)))
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('extraction is not an object')
+    const json: unknown = JSON.parse(await deps.extract(EXTRACTION_SYSTEM, buildExtractionUser(name, site, news)))
+    if (!isRecord(json)) throw new Error('extraction is not an object')
+    parsed = json
   } catch (err) {
     console.warn('[research] extraction failed', err)
     return { research: emptyResearch(today), cacheable: false, warning: "Extraction de la recherche entreprise impossible" }
@@ -118,25 +122,29 @@ export async function researchCompany(
   const allUrls = new Set([...siteUrls, ...news.map(r => r.url)])
 
   const seen = new Set<string>()
-  const valeurs: CompanyValue[] = (Array.isArray(parsed.valeurs) ? parsed.valeurs : [])
-    .filter((v: any) => typeof v?.valeur === 'string' && v.valeur.trim() && siteUrls.has(v?.source_url))
-    .map((v: any): CompanyValue => ({ valeur: v.valeur.trim().slice(0, MAX_VALUE_LENGTH).trim(), source_url: v.source_url }))
-    .filter((v: CompanyValue) => {
-      const key = fold(v.valeur)
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-    .slice(0, 5)
+  const valeurs: CompanyValue[] = []
+  for (const v of Array.isArray(parsed.valeurs) ? parsed.valeurs : []) {
+    if (!isRecord(v) || typeof v.valeur !== 'string' || !v.valeur.trim()) continue
+    if (typeof v.source_url !== 'string' || !siteUrls.has(v.source_url)) continue
+    const valeur = v.valeur.trim().slice(0, MAX_VALUE_LENGTH).trim()
+    const key = fold(valeur)
+    if (seen.has(key)) continue
+    seen.add(key)
+    valeurs.push({ valeur, source_url: v.source_url })
+    if (valeurs.length === 5) break
+  }
 
-  const actualites: CompanyNews[] = (Array.isArray(parsed.actualites) ? parsed.actualites : [])
-    .filter((a: any) => typeof a?.resume === 'string' && a.resume.trim() && allUrls.has(a?.source_url))
-    .slice(0, 4)
-    .map((a: any) => ({
+  const actualites: CompanyNews[] = []
+  for (const a of Array.isArray(parsed.actualites) ? parsed.actualites : []) {
+    if (!isRecord(a) || typeof a.resume !== 'string' || !a.resume.trim()) continue
+    if (typeof a.source_url !== 'string' || !allUrls.has(a.source_url)) continue
+    actualites.push({
       resume: a.resume.trim().slice(0, MAX_SUMMARY_LENGTH).trim(),
       date: typeof a.date === 'string' && MONTH_RE.test(a.date) ? a.date.slice(0, 7) : null,
       source_url: a.source_url,
-    }))
+    })
+    if (actualites.length === 4) break
+  }
 
   const statut = computeStatut(valeurs, actualites)
   const perimetre = typeof parsed.perimetre === 'string' && parsed.perimetre.trim() ? parsed.perimetre.trim() : null

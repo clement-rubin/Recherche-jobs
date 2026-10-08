@@ -82,10 +82,7 @@ Contenu, dans cet ordre :
 1. « Bonjour <prénom>, » (vouvoiement partout, jamais « Monsieur/Madame »).
 2. ${ecoleBloc}
 3. UNE accroche précise sur son parcours (une mission, un projet, un changement de poste du profil), en une demi-phrase. Ne recopie ni ses technologies ni ses compétences, ne résume pas son CV, pas de liste.
-4. UNE question concrète (deux au maximum) sur la réalité du poste, au choix selon son profil :
-   - ce qu'on attend concrètement d'un jeune ingénieur sur ce poste, le niveau d'exigence ;
-   - comment ses compétences et ses outils sont mis en place au quotidien ;
-   - les outils et méthodes réellement utilisés, pas ceux des offres d'emploi.
+4. UNE question (deux au maximum, reliées) : ce que le candidat veut vraiment savoir, c'est si ce qu'on apprend à l'école est pleinement utile dans le métier au quotidien. Reformule-le avec tes mots, naturellement, en l'ancrant dans le poste de la personne : ce qui lui sert vraiment de sa formation, et ce qu'on ne voit pas assez en cours par rapport à la réalité du terrain. Ne pose pas la question de façon scolaire (« quelles sont les compétences attendues »), et ne l'accuse pas de rien utiliser : montre une vraie curiosité, pas un reproche envers l'école.
 Le message se termine sur la question, rien après.
 
 Règles strictes :
@@ -97,7 +94,7 @@ Règles strictes :
 - Le message doit couler d'une seule traite, comme un message qu'on écrit vraiment : deux ou trois phrases qui s'enchaînent avec des liens naturels (« et », « du coup », « justement », « en voyant »), l'accroche amenant la question. Pas de phrases hachées ni de style télégraphique, mais pas non plus de phrase à rallonge. Mots simples. Interdits : « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
 
 Exemple de TON uniquement, pour une autre personne, ne le recopie pas :
-« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis aujourd'hui en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'intrigue : concrètement, qu'est-ce qu'on attend d'un jeune ingénieur sur ce genre de poste, et quels outils utilisez-vous vraiment au quotidien ? »
+« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'intrigue : dans un poste comme le vôtre, est-ce que ce qu'on apprend en cours vous sert vraiment, et qu'est-ce qu'on ne voit pas assez à l'école ? »
 
 Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`
 }

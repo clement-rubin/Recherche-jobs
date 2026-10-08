@@ -94,8 +94,18 @@ describe('POST /api/contacts/[id]/message', () => {
     expect(system).toContain('je me permets')
     expect(system).toContain('300 caractères')
     expect(system).toContain('Ne propose aucun échange')
+    expect(system).toContain('pleinement utile dans le métier')
     expect(system).toContain('Le message se termine sur la question')
     expect(system).not.toMatch(/Une demande simple|15 minutes d'échange/)
+  })
+
+  it('the tone example in the prompt respects the 300 char limit it asks for', async () => {
+    withContact(contact)
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ message: 'Bonjour Marie.' }) } }] })
+    await call()
+    const system: string = mockCreate.mock.calls[0][0].messages[0].content
+    const example = system.split('Exemple de TON')[1].match(/«\s*([\s\S]+?)\s*»/)![1]
+    expect(example.length).toBeLessThanOrEqual(300)
   })
 
   it('asks for one shorter rewrite when over 300 chars, counting a single quota reservation', async () => {

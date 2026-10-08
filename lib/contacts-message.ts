@@ -86,17 +86,18 @@ Contenu, dans cet ordre :
    - ce qu'on attend concrètement d'un jeune ingénieur sur ce poste, le niveau d'exigence ;
    - comment ses compétences et ses outils sont mis en place au quotidien ;
    - les outils et méthodes réellement utilisés, pas ceux des offres d'emploi.
-5. Une demande simple : 15 minutes d'échange ou quelques conseils.
+Le message se termine sur la question, rien après.
 
 Règles strictes :
 - Maximum ${MAX_MESSAGE_LENGTH} caractères au total, message complet.
+- Ne propose aucun échange, appel, café ni rendez-vous, et ne demande pas de temps : pas de « auriez-vous 15 minutes », pas de « seriez-vous disponible ».
 - Ne parle jamais de stage, de recherche d'emploi, de candidature ni de dates.
 - Ne cite aucune compétence du candidat : seulement « M1 Big Data IA ».
 - N'invente rien qui ne soit pas dans le profil. Le profil est un copier-coller brut de la page : ignore menus, boutons, « Autres profils consultés ».
-- Phrases courtes, mots simples. Interdits : « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
+- Le message doit couler d'une seule traite, comme un message qu'on écrit vraiment : deux ou trois phrases qui s'enchaînent avec des liens naturels (« et », « du coup », « justement », « en voyant »), l'accroche amenant la question. Pas de phrases hachées ni de style télégraphique, mais pas non plus de phrase à rallonge. Mots simples. Interdits : « je me permets », « n'hésitez pas », « dans le cadre de », « je souhaiterais », « inspirent », « enrichissant », « approfondir », « bonnes pratiques », « parcours impressionnant », « ravi », « cordialement », « j'espère que vous allez bien », tirets longs (—), listes, emoji, hashtags, crochets, plus d'un point d'exclamation, signature.
 
 Exemple de TON uniquement, pour une autre personne, ne le recopie pas :
-« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN, aujourd'hui en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'a donné envie de vous demander : au quotidien, qu'est-ce qu'on attend concrètement d'un jeune ingénieur sur ce poste ? Auriez-vous 15 minutes pour m'en parler ? »
+« Bonjour Camille, je suis moi aussi passé par JUNIA ISEN et je suis aujourd'hui en M1 Big Data IA. Votre refonte du data warehouse chez Veolia m'intrigue : concrètement, qu'est-ce qu'on attend d'un jeune ingénieur sur ce genre de poste, et quels outils utilisez-vous vraiment au quotidien ? »
 
 Retourne UNIQUEMENT du JSON : {"message": "<texte>"}`
 }

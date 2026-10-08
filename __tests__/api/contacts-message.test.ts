@@ -93,6 +93,9 @@ describe('POST /api/contacts/[id]/message', () => {
     expect(system).toContain('Ne cite aucune compétence du candidat')
     expect(system).toContain('je me permets')
     expect(system).toContain('300 caractères')
+    expect(system).toContain('Ne propose aucun échange')
+    expect(system).toContain('Le message se termine sur la question')
+    expect(system).not.toMatch(/Une demande simple|15 minutes d'échange/)
   })
 
   it('asks for one shorter rewrite when over 300 chars, counting a single quota reservation', async () => {

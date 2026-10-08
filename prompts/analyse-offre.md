@@ -1,3 +1,5 @@
+> Reference copy. The production prompts live in `lib/analysis/prompt.ts` (research extraction + analysis). Code computes `score_global`, urgency and priority; the model only returns `exigences` / `domaine_coherent`.
+
 <cv_maitre>
 {{CV_MAITRE}}
 </cv_maitre>

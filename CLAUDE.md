@@ -45,6 +45,10 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 
 **Critical**: qualifications from profile are NOT appended to search queries — they are metadata only. Keywords must be searched one at a time (spaces = AND on APEC/FT/HW).
 
+### Offer analysis
+
+LLM analysis of an offer against the candidate's CVs (Groq + Tavily), triggered from the offer detail modal or the `/analyze` page. Pipeline in `lib/analysis/pipeline.ts`; scores (`score_global`, urgency, priority) are computed in code in `priority.ts`, never by the model. Requires migration `supabase/migrations/006_offer_analysis.sql` (apply manually in the Supabase SQL Editor) and a `candidate_profile` row (insert manually, never commit CV text). `lib/analyzer/` now only holds the URL scraper used by `/analyze`. A full analysis can take ~15–25 s, so the Netlify function timeout must be raised (Site settings → Functions) if analyses get cut off; `maxDuration = 26` in the routes is not enough on its own.
+
 ### Key Design Decisions
 
 - **AppShell** (`components/layout/AppShell.tsx`) renders desktop sidebar (`hidden lg:flex`) + `MobileHeader` (hamburger + GSAP drawer). Main content gets `lg:ml-56 pt-20 lg:pt-0`.
@@ -70,7 +74,8 @@ Called from UI "Lancer maintenant" or via cron. For each active `search_profile`
 | `FRANCE_TRAVAIL_CLIENT_ID` | france-travail.ts scraper |
 | `FRANCE_TRAVAIL_CLIENT_SECRET` | france-travail.ts scraper |
 | `CRON_SECRET` | /api/jobs/fetch (Bearer auth for cron calls) |
-| `GROQ_API_KEY` | assistant/groq.ts (voice assistant) |
+| `GROQ_API_KEY` | assistant/groq.ts (voice assistant), lib/analysis (offer analysis) |
+| `TAVILY_API_KEY` | lib/analysis/research.ts (company research; missing → research "insuffisante") |
 
 ### Testing
 

@@ -1,16 +1,3 @@
-export const PROFILE = {
-  niveau: 'M1 Big Data IA',
-  experience_mois: 0,
-  competences: ['Python', 'SQL', 'Machine Learning', 'Data visualisation', 'pandas', 'numpy', 'scikit-learn', 'Power BI', 'Tableau'],
-  langues: ['Français (natif)', 'Anglais B2+'],
-  periode_debut: 'mi-avril 2027',
-  periode_fin: 'fin mai 2027',
-  duree_max_mois: 3,
-  preferences: ['consulting', 'conseil', 'client', 'client-facing', 'analytics', 'analyse', 'engineering', 'data engineering', 'business intelligence', 'bi', 'data science'],
-  a_eviter: ["trop technique / isolé", 'marketing pur', 'senior/lead requis', "pas d'interaction humaine"],
-  mots_cles_negatifs_titre: ['senior', 'lead', 'principal', 'manager', 'directeur', 'director', 'head of'],
-}
-
 export const TECH_KEYWORDS = [
   'python', 'sql', 'scala', 'java', 'spark', 'hadoop', 'kafka',
   'airflow', 'dbt', 'luigi', 'mlflow', 'kubeflow',
@@ -48,11 +35,4 @@ export const ALLOWED_DOMAINS = [
   'welcometothejungle.com',
   'francetravail.fr',
   'pole-emploi.fr',
-]
-
-export const DIRECTORY_DOMAINS = [
-  'pagesjaunes.fr', 'societe.com', 'verif.com', 'pappers.fr',
-  'manageo.fr', 'kompass.com', 'societeinfo.com',
-  'wikipedia.org', 'linkedin.com', 'facebook.com',
-  'twitter.com', 'instagram.com',
 ]

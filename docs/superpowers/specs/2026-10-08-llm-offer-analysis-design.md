@@ -22,7 +22,7 @@ Triggered on demand from an offer's detail modal ("Analyser"), result stored on 
 OfferDetailModal ── "Analyser" ──► POST /api/offers/[id]/analyze
                                       │
   candidate_profile ◄─────────────────┤ 1. load profile (400 if missing)
-  offerToText(offer) ─────────────────┤ 2. build offer text (needsText if < 300 chars)
+  offerToText(offer) ─────────────────┤ 2. build offer text (needsText if description < 300 chars)
   company_research (90 d cache) ◄─────┤ 3. cache hit? else Tavily + Groq extraction → upsert
   Groq analysis (JSON mode) ──────────┤ 4. analysis
   lib/analysis/priority.ts (pure) ────┤ 5. score_global, urgence, score, niveau computed in code
@@ -36,7 +36,7 @@ POST /api/analyze (URL or text) ─► same lib, nothing persisted
 | File | Responsibility | Depends on |
 |---|---|---|
 | `types.ts` | `AnalysisResult`, `CompanyResearch`, `CandidateProfile` types | — |
-| `offer-text.ts` | `offerToText(offer)`: title/company/location/contract + description read from known `raw_data` keys (`job_description`, `description`, …). Returns `{ text, sufficient }` (`sufficient` = text ≥ 300 chars) | `Offer` type |
+| `offer-text.ts` | `offerToText(offer)`: title/company/location/contract + description read from known `raw_data` keys (`job_description`, `description`, …). Returns `{ text, description, sufficient }` (`sufficient` = **description** ≥ 300 chars; the header is not counted) | `Offer` type |
 | `lang.ts` | `detectLang(text)`: `'fr' \| 'en' \| 'autre'` by stopword counts. Picks which CV variant is sent (only one, to save tokens) | — |
 | `research.ts` | `researchCompany(name, { tavily, groq })`: 2 Tavily searches (official site values/careers; news last 12 months), Groq extraction with `llama-3.1-8b-instant`, then **drops every `source_url` not in the Tavily result set**, recomputes `statut`. `normalizeCompanyName(name)` for the cache key | Tavily HTTP API, Groq |
 | `analyze.ts` | `analyzeOffer({ profile, offerText, lang, research, today })`: builds the prompt, calls Groq `llama-3.3-70b-versatile` with `response_format: json_object`, validates, one retry on invalid JSON, flags banned words / > 60 words | Groq, `prompt.ts`, `priority.ts` |
@@ -105,13 +105,13 @@ RLS on both new tables: `auth.uid() = user_id` for all operations (same pattern 
 | Case | Behaviour |
 |---|---|
 | No `candidate_profile` | 400 « Profil candidat non configuré » |
-| Offer text < 300 chars | 200 `{ needsText: true }`; modal shows a textarea, re-POST with `{ text }` |
+| Offer description < 300 chars | 200 `{ needsText: true }`; modal shows a textarea, re-POST with `{ text }` |
 | Groq 429 | 2 retries (2 s, 4 s), then 429 « Limite Groq atteinte, réessaie dans 1 min » |
-| Tavily error / no key | research `insuffisante` + `avertissement`; **not cached** |
+| Tavily error / no key | research `insuffisante` + warning; **not cached**. Research is cached only when `statut !== 'insuffisante'` and both searches succeeded (a partial search failure is not cached) |
 | Groq invalid / incomplete JSON | 1 retry, then 502 « Analyse invalide » |
 | Unknown `source_url` | dropped; `statut` recomputed (≥ 1 valeur and ≥ 1 actualité → suffisante; one of the two → partielle; none → insuffisante) |
-| Banned word or > 60 words in accroche | kept, warning appended to `accroche.avertissement` |
-| Timeouts | Tavily 8 s per call; route `maxDuration = 26` |
+| Banned word or > 60 words in accroche | kept; warning added to the result-level `avertissements: string[]` (not to `accroche.avertissement`, which stays the model's own field). Same list holds unknown cited value and research-quality warnings |
+| Timeouts | Tavily 6 s per call; Groq 8 s (8B) / 15 s (70B), `maxRetries: 0`; route `maxDuration = 26` |
 
 The model's own priority/score fields, if present, are ignored.
 
@@ -121,7 +121,7 @@ The model's own priority/score fields, if present, are ignored.
 - `OfferDetailModal`: "Analyser" button → loading state (10–20 s) → `AnalysisPanel`; "Réanalyser" once analysed; textarea when `needsText`.
 - `OfferCard`: small priority badge when `priority_score` is set.
 - Offers list: sort "Priorité" next to date (`priority_score desc nulls last`).
-- `/analyze`: same engine via `POST /api/analyze`, renders `AnalysisPanel`, nothing stored.
+- `/analyze`: same engine via `POST /api/analyze`, renders `AnalysisPanel`, nothing stored. Manual-text mode has an optional "Entreprise" input (without it the company research is always empty).
 
 Styling follows `globals.css` tokens (light zinc), no hardcoded dark hex.
 
@@ -134,6 +134,15 @@ Styling follows `globals.css` tokens (light zinc), no hardcoded dark hex.
 - `__tests__/lib/analysis/lang.test.ts`: fr / en / other.
 - `__tests__/api/offer-analyze.test.ts`: 400 without profile, `needsText`, cache hit skips Tavily, persists `analysis` + `priority_score`.
 - `__tests__/components/analysis/AnalysisPanel.test.tsx`: states (each niveau, insuffisante warning, copy button).
+
+## Hardening (post-review)
+
+- Untrusted text (offer, Tavily content) is sanitised before it is placed in prompt tags, so it cannot close or spoof them.
+- A requirement counts as `present` only if it has a `preuve_cv`.
+- A recommendation's `texte_actuel` that cannot be found in the CV is nulled.
+- An empty `exigences` list is capped at 50.
+- Groq `maxRetries: 0` with explicit timeouts (8B 8 s, 70B 15 s); Tavily 6 s.
+- The offer route returns a `persisted` flag; the modal warns when the analysis could not be stored (e.g. migration 006 not applied).
 
 ## Out of scope
 

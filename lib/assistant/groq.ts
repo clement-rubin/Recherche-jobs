@@ -1,6 +1,4 @@
-import Groq from 'groq-sdk'
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+import { groq, callWithRetry } from '@/lib/analysis/groq'
 
 export interface AssistantIntent {
   intent: 'update_application' | 'add_application' | 'add_note' | 'query' | 'unknown'
@@ -8,23 +6,6 @@ export interface AssistantIntent {
   action: Record<string, unknown>
   message: string
   requires_confirmation: boolean
-}
-
-async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn()
-    } catch (err: any) {
-      if (err?.status === 429 && attempt < maxRetries) {
-        const waitMs = (attempt + 1) * 2000
-        console.warn(`[groq] 429 rate limit, retry in ${waitMs}ms`)
-        await new Promise(r => setTimeout(r, waitMs))
-        continue
-      }
-      throw err
-    }
-  }
-  throw new Error('Unreachable')
 }
 
 export async function processIntent(

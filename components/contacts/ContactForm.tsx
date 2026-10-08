@@ -22,6 +22,7 @@ export function ContactForm({ contact, onClose, onSave }: Props) {
     poste: contact?.poste ?? '',
     entreprise: contact?.entreprise ?? '',
     linkedin_url: contact?.linkedin_url ?? '',
+    profil_texte: contact?.profil_texte ?? '',
     statut: contact?.statut ?? ('a_contacter' as ContactStatus),
     notes: contact?.notes ?? '',
   })
@@ -38,6 +39,7 @@ export function ContactForm({ contact, onClose, onSave }: Props) {
         poste: form.poste || null,
         entreprise: form.entreprise || null,
         notes: form.notes || null,
+        profil_texte: form.profil_texte || null,
       })
       onClose()
     } catch (err) {
@@ -85,6 +87,10 @@ export function ContactForm({ contact, onClose, onSave }: Props) {
           <div>
             <label className={labelClass}>Entreprise</label>
             <input value={form.entreprise} onChange={e => setForm(f => ({ ...f, entreprise: e.target.value }))} placeholder="Ex: Decathlon" className={inputClass} />
+          </div>
+          <div className="col-span-2">
+            <label className={labelClass}>Profil LinkedIn : Ctrl+A puis Ctrl+C sur la page, et colle ici</label>
+            <textarea value={form.profil_texte} onChange={e => setForm(f => ({ ...f, profil_texte: e.target.value }))} rows={5} placeholder="Colle toute la page du profil, le tri est fait automatiquement. Sert à suggérer un message personnalisé." className={inputClass} />
           </div>
           <div className="col-span-2">
             <label className={labelClass}>Statut</label>

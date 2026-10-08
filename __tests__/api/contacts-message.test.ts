@@ -1,0 +1,68 @@
+/**
+ * @jest-environment node
+ */
+
+import { NextRequest } from 'next/server'
+
+const mockCreate = jest.fn()
+jest.mock('groq-sdk', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({ chat: { completions: { create: (...a: unknown[]) => mockCreate(...a) } } })),
+}))
+
+const contact = { id: 'c-1', user_id: 'user-1', nom: 'Marie', poste: 'Data lead', entreprise: 'Decathlon', profil_texte: 'Data engineer chez Doctolib, migration vers dbt.' }
+const mockSupabase = {
+  auth: { getUser: jest.fn() },
+  from: jest.fn(),
+}
+jest.mock('@/lib/supabase/server', () => ({ createServerSupabase: jest.fn().mockResolvedValue(mockSupabase) }))
+
+import { POST } from '@/app/api/contacts/[id]/message/route'
+
+const call = () =>
+  POST(new NextRequest('http://localhost/api/contacts/c-1/message', { method: 'POST' }), { params: Promise.resolve({ id: 'c-1' }) })
+
+const withContact = (data: unknown, error: unknown = null) =>
+  mockSupabase.from.mockReturnValue({
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data, error }),
+  })
+
+describe('POST /api/contacts/[id]/message', () => {
+  beforeEach(() => {
+    mockCreate.mockReset()
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+  })
+
+  it('401 when unauthenticated', async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } })
+    expect((await call()).status).toBe(401)
+  })
+
+  it('404 when contact not found', async () => {
+    withContact(null, { message: 'nope' })
+    expect((await call()).status).toBe(404)
+  })
+
+  it('400 when no profile text', async () => {
+    withContact({ ...contact, profil_texte: '  ' })
+    expect((await call()).status).toBe(400)
+    expect(mockCreate).not.toHaveBeenCalled()
+  })
+
+  it('returns generated message grounded in the profile', async () => {
+    withContact(contact)
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ message: 'Bonjour Marie, ...dbt...' }) } }] })
+    const res = await call()
+    expect(res.status).toBe(200)
+    expect((await res.json()).message).toContain('dbt')
+    expect(mockCreate.mock.calls[0][0].messages[1].content).toContain('Doctolib')
+  })
+
+  it('502 when the model fails', async () => {
+    withContact(contact)
+    mockCreate.mockRejectedValue(new Error('groq down'))
+    expect((await call()).status).toBe(502)
+  })
+})

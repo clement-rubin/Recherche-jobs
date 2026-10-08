@@ -102,6 +102,7 @@ export interface LinkedInContact {
   poste: string | null
   entreprise: string | null
   linkedin_url: string
+  profil_texte: string | null
   statut: ContactStatus
   date_contact: string | null
   notes: string | null

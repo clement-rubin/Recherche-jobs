@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     if (raw.statut === 'a_contacter') body.date_contact = null
     else if (raw.date_contact === undefined) body.date_contact = new Date().toISOString().slice(0, 10)
   }
-  for (const k of ['poste', 'entreprise', 'notes'] as const) {
+  for (const k of ['poste', 'entreprise', 'notes', 'profil_texte'] as const) {
     if (raw[k] !== undefined) body[k] = raw[k] || null
   }
   if (raw.date_contact !== undefined && body.date_contact === undefined) body.date_contact = raw.date_contact || null

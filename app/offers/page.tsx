@@ -6,6 +6,7 @@ import { OfferCard } from '@/components/offers/OfferCard'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
 import { SwipeDeck } from '@/components/offers/SwipeDeck'
 import { ViewToggle } from '@/components/offers/ViewToggle'
+import type { AnalysisResult } from '@/lib/analysis/types'
 
 const STATUS_FILTERS: { value: OfferStatus | ''; label: string }[] = [
   { value: '', label: 'À traiter' },
@@ -32,6 +33,7 @@ export default function OffersPage() {
   const [error, setError] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'swipe'>('list')
+  const [sortBy, setSortBy] = useState<'date' | 'priorite'>('date')
 
   useEffect(() => {
     const stored = localStorage.getItem('offers-view-mode') as 'list' | 'swipe' | null
@@ -113,6 +115,18 @@ export default function OffersPage() {
     }
   }
 
+  const handleAnalyzed = (id: string, analysis: AnalysisResult) => {
+    setOffers(prev => prev.map(o =>
+      o.id === id
+        ? { ...o, analysis, priority_score: analysis.priorite.score, analyzed_at: new Date().toISOString() }
+        : o
+    ))
+  }
+
+  const displayedOffers = sortBy === 'priorite'
+    ? [...offers].sort((a, b) => (b.priority_score ?? -1) - (a.priority_score ?? -1))
+    : offers
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -186,6 +200,22 @@ export default function OffersPage() {
             </button>
           ))}
         </div>
+        <div className="flex flex-wrap gap-2">
+          {([['date', 'Plus récentes'], ['priorite', 'Priorité']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setSortBy(value)}
+              className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+              style={
+                sortBy === value
+                  ? { background: 'var(--foreground)', borderColor: 'var(--foreground)', color: '#fff' }
+                  : { borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--card)' }
+              }
+            >
+              Tri : {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
@@ -199,14 +229,14 @@ export default function OffersPage() {
         </div>
       ) : viewMode === 'swipe' ? (
         <SwipeDeck
-          offers={offers}
+          offers={displayedOffers}
           onAction={handleAction}
           onNeedMore={fetchOffers}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {offers.map(offer => (
-            <OfferCard key={offer.id} offer={offer} onAction={handleAction} />
+          {displayedOffers.map(offer => (
+            <OfferCard key={offer.id} offer={offer} onAction={handleAction} onAnalyzed={handleAnalyzed} />
           ))}
         </div>
       )}

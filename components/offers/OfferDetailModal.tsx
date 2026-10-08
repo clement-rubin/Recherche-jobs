@@ -5,6 +5,8 @@ import gsap from 'gsap'
 import type { Offer } from '@/lib/supabase/types'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
 import { useState } from 'react'
+import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
+import type { AnalysisResult } from '@/lib/analysis/types'
 
 const SOURCE_LABELS: Record<string, string> = {
   jsearch: 'JSearch',
@@ -18,6 +20,7 @@ interface Props {
   offer: Offer
   onAction: (id: string, action: 'postule' | 'ignore' | 'sauvegarde') => Promise<void>
   onClose: () => void
+  onAnalyzed?: (id: string, analysis: AnalysisResult) => void
 }
 
 function extractRaw(raw: Record<string, unknown> | null) {
@@ -35,10 +38,39 @@ function extractRaw(raw: Record<string, unknown> | null) {
   }
 }
 
-export function OfferDetailModal({ offer, onAction, onClose }: Props) {
+export function OfferDetailModal({ offer, onAction, onClose, onAnalyzed }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [confirmIgnore, setConfirmIgnore] = useState(false)
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(offer.analysis ?? null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [notPersisted, setNotPersisted] = useState(false)
+  const [needsText, setNeedsText] = useState(false)
+  const [pastedText, setPastedText] = useState('')
+
+  const runAnalysis = async (text?: string) => {
+    setAnalyzing(true)
+    setAnalysisError(null)
+    try {
+      const res = await fetch(`/api/offers/${offer.id}/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(text ? { text } : {}),
+      })
+      const data = await res.json()
+      if (!res.ok) { setAnalysisError(data.error ?? "Erreur pendant l'analyse"); return }
+      if (data.needsText) { setNeedsText(true); return }
+      setNeedsText(false)
+      setNotPersisted(data.persisted === false)
+      setAnalysis(data.analysis)
+      onAnalyzed?.(offer.id, data.analysis)
+    } catch {
+      setAnalysisError('Erreur réseau')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
 
   const raw = extractRaw(offer.raw_data)
 
@@ -134,6 +166,51 @@ export function OfferDetailModal({ offer, onAction, onClose }: Props) {
 
         {/* Body — scrollable */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {/* AI analysis */}
+          <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>Analyse IA</h3>
+              <button
+                onClick={() => runAnalysis()}
+                disabled={analyzing}
+                className="text-xs px-3 py-1.5 rounded-lg btn-accent text-white"
+                style={{ opacity: analyzing ? 0.6 : 1 }}
+              >
+                {analyzing ? 'Analyse en cours…' : analysis ? 'Réanalyser' : 'Analyser'}
+              </button>
+            </div>
+            {notPersisted && (
+              <p className="text-xs" style={{ color: 'var(--warning)' }}>
+                Analyse affichée mais non enregistrée (vérifie que la migration 006 est appliquée).
+              </p>
+            )}
+            {analysisError && <p className="text-sm" style={{ color: 'var(--danger)' }}>{analysisError}</p>}
+            {needsText && (
+              <div className="space-y-2">
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                  Cette source ne fournit pas la description. Ouvre l&apos;offre, copie son texte et colle-le ici.
+                </p>
+                <textarea
+                  value={pastedText}
+                  onChange={e => setPastedText(e.target.value)}
+                  placeholder="Colle ici le texte complet de l'offre…"
+                  rows={6}
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y"
+                  style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+                />
+                <button
+                  onClick={() => runAnalysis(pastedText.trim())}
+                  disabled={analyzing || !pastedText.trim()}
+                  className="text-xs px-3 py-1.5 rounded-lg btn-accent text-white"
+                  style={{ opacity: analyzing || !pastedText.trim() ? 0.6 : 1 }}
+                >
+                  Analyser ce texte
+                </button>
+              </div>
+            )}
+            {analysis && <AnalysisPanel analysis={analysis} />}
+          </div>
+
           {/* Highlights (JSearch) */}
           {raw.highlights && Object.keys(raw.highlights).length > 0 && (
             <div className="space-y-3">

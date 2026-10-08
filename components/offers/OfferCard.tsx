@@ -4,6 +4,8 @@ import { useState } from 'react'
 import type { Offer } from '@/lib/supabase/types'
 import { InlineConfirm } from '@/components/ui/InlineConfirm'
 import { OfferDetailModal } from './OfferDetailModal'
+import { PriorityBadge } from '@/components/analysis/PriorityBadge'
+import type { AnalysisResult } from '@/lib/analysis/types'
 
 const SOURCE_LABELS: Record<string, string> = {
   jsearch: 'JSearch',
@@ -16,9 +18,10 @@ const SOURCE_LABELS: Record<string, string> = {
 interface Props {
   offer: Offer
   onAction: (id: string, action: 'postule' | 'ignore' | 'sauvegarde') => Promise<void>
+  onAnalyzed?: (id: string, analysis: AnalysisResult) => void
 }
 
-export function OfferCard({ offer, onAction }: Props) {
+export function OfferCard({ offer, onAction, onAnalyzed }: Props) {
   const [confirmIgnore, setConfirmIgnore] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
 
@@ -61,6 +64,9 @@ export function OfferCard({ offer, onAction }: Props) {
             >
               {SOURCE_LABELS[offer.source ?? ''] ?? offer.source ?? 'Inconnu'}
             </span>
+            {offer.analysis && (
+              <PriorityBadge niveau={offer.analysis.priorite.niveau} score={offer.analysis.priorite.score} />
+            )}
             <span className="text-xs" style={{ color: 'var(--muted-light)' }}>Voir détails →</span>
           </div>
         </div>
@@ -110,6 +116,7 @@ export function OfferCard({ offer, onAction }: Props) {
           offer={offer}
           onAction={onAction}
           onClose={() => setShowDetail(false)}
+          onAnalyzed={onAnalyzed}
         />
       )}
     </>

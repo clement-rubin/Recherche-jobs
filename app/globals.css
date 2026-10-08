@@ -208,3 +208,8 @@ input:focus, select:focus, textarea:focus {
     transform: none !important;
   }
 }
+
+/* Map location picker — country hover. Leaflet sets fill-opacity as an SVG
+   attribute; this CSS rule overrides it on hover only. */
+.europe-country { cursor: pointer; transition: fill-opacity 120ms ease; }
+.europe-country:hover { fill-opacity: 0.25; }
